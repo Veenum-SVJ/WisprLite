@@ -1,0 +1,24 @@
+# Secret-scan rules for this repo. Extends gitleaks defaults; the same rules run locally and in CI.
+title = "personal gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API key"
+regex = '''gsk_[A-Za-z0-9]{20,}'''
+keywords = ["gsk_"]
+
+[[rules]]
+id = "signing-password"
+description = "Android signing password literal in source"
+regex = '''(storePassword|keyPassword)\s*=\s*"[^"\s]{4,}"'''
+keywords = ["storepassword", "keypassword"]
+
+[allowlist]
+description = "Placeholders and docs"
+regexes = ['''gsk_(…|\.\.\.)''', '''gsk_X+''', '''(storePassword|keyPassword)\s*=\s*"android"''']
+# Commit that added the old debug signing config (public Android default password "android"); not a secret.
+commits = ["49642fae809b05f05ae211cd4b21e8d7492e62da"]
+

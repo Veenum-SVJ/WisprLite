@@ -1,0 +1,1 @@
+WisprLite incorporates EdiBianco/OpenWhispr v4.0.0 (7f41114c1028190749b3bfeed721c3aef05d56fe), based on kafkasl/phone-whisper. See LICENSE and docs/upstream for original attribution. WisprLite modifications are documented in Git history.

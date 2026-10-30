@@ -1,0 +1,131 @@
+package com.edib.openwhispr
+
+import android.content.Context
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
+import java.io.*
+import java.util.concurrent.TimeUnit
+
+enum class ModelArchitecture { NEMO_CTC, WHISPER, NEMO_TRANSDUCER, MOONSHINE }
+
+data class Model(
+    val name: String,
+    val archive: String,
+    val sizeMb: Int,
+    val qualityResId: Int,
+    val architecture: ModelArchitecture,
+    val hotwordModelingUnit: String? = null,
+    val recommended: Boolean = false,
+    /** Language codes the model transcribes. English-only models list just "en". */
+    val languages: Set<String> = setOf("en"),
+)
+
+private val PARAKEET_V3_LANGUAGES = setOf(
+    "bg", "hr", "cs", "da", "nl", "en", "et", "fi", "fr", "de", "el", "hu", "it", "lv", "lt",
+    "mt", "pl", "pt", "ro", "sk", "sl", "es", "sv", "ru", "uk",
+)
+
+private val WHISPER_LANGUAGES = TranscriptionLanguages.CODES.toSet()
+
+val MODEL_CATALOG = listOf(
+    Model("Parakeet 110M", "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
+        100, R.string.model_quality_best_value, ModelArchitecture.NEMO_CTC, recommended = true),
+    Model("Whisper Base", "sherpa-onnx-whisper-base.en",
+        199, R.string.model_quality_stars, ModelArchitecture.WHISPER),
+    Model("Parakeet 0.6B", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
+        465, R.string.model_quality_best, ModelArchitecture.NEMO_TRANSDUCER, hotwordModelingUnit = "cjkchar",
+        languages = PARAKEET_V3_LANGUAGES),
+    Model("Moonshine Tiny", "sherpa-onnx-moonshine-tiny-en-int8",
+        103, R.string.model_quality_fast, ModelArchitecture.MOONSHINE),
+    Model("Whisper Base (multilingual)", "sherpa-onnx-whisper-base",
+        207, R.string.model_quality_stars, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES),
+    Model("Whisper Small (multilingual)", "sherpa-onnx-whisper-small",
+        639, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES),
+)
+
+sealed class DownloadState {
+    data class Downloading(val progress: Float) : DownloadState()
+    object Extracting : DownloadState()
+    object Done : DownloadState()
+    data class Error(val message: String) : DownloadState()
+}
+
+object ModelDownloader {
+    private const val BASE_URL =
+        "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
+    private val client = OkHttpClient.Builder()
+        .readTimeout(60, TimeUnit.SECONDS).build()
+
+    fun modelDir(ctx: Context, model: Model) =
+        File(ctx.filesDir, "models/${model.archive}")
+
+    fun isInstalled(ctx: Context, model: Model) =
+        modelDir(ctx, model).exists()
+
+    /** Download and extract model. Callbacks fire on background thread. */
+    fun download(ctx: Context, model: Model, onState: (DownloadState) -> Unit) {
+        val url = "$BASE_URL/${model.archive}.tar.bz2"
+        val tmpFile = File(ctx.cacheDir, "${model.archive}.tar.bz2")
+        val outDir = File(ctx.filesDir, "models")
+
+        Thread {
+            try {
+                downloadFile(url, tmpFile, ctx.getString(R.string.empty_download_response), onState)
+                onState(DownloadState.Extracting)
+                extractTarBz2(tmpFile, outDir)
+                onState(DownloadState.Done)
+            } catch (e: Exception) {
+                onState(DownloadState.Error(e.message ?: ctx.getString(R.string.unknown_error)))
+            } finally {
+                tmpFile.delete()
+            }
+        }.start()
+    }
+
+    fun delete(ctx: Context, model: Model) =
+        modelDir(ctx, model).deleteRecursively()
+
+    private fun downloadFile(
+        url: String, dest: File, emptyResponseMessage: String, onState: (DownloadState) -> Unit
+    ) {
+        val response = client.newCall(Request.Builder().url(url).build()).execute()
+        if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+        val body = response.body ?: throw IOException(emptyResponseMessage)
+        val total = body.contentLength()
+        var downloaded = 0L
+
+        body.byteStream().use { src ->
+            FileOutputStream(dest).use { dst ->
+                val buf = ByteArray(16384)
+                var n: Int
+                while (src.read(buf).also { n = it } != -1) {
+                    dst.write(buf, 0, n)
+                    downloaded += n
+                    if (total > 0)
+                        onState(DownloadState.Downloading(downloaded.toFloat() / total))
+                }
+            }
+        }
+    }
+
+    /** Extract tar.bz2 to outDir. Validates paths to prevent traversal. */
+    fun extractTarBz2(archive: File, outDir: File) {
+        outDir.mkdirs()
+        val bzIn = BZip2CompressorInputStream(BufferedInputStream(FileInputStream(archive)))
+        TarArchiveInputStream(bzIn).use { tar ->
+            generateSequence { tar.nextEntry }.forEach { entry ->
+                val dest = File(outDir, entry.name)
+                require(dest.canonicalPath.startsWith(outDir.canonicalPath)) {
+                    "Path traversal: ${entry.name}"
+                }
+                if (entry.isDirectory) dest.mkdirs()
+                else {
+                    dest.parentFile?.mkdirs()
+                    FileOutputStream(dest).use { tar.copyTo(it) }
+                }
+            }
+        }
+    }
+}
