@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 /** Text and counters remain entirely in app-private storage. */
-class HistoryDatabase(context: Context) : SQLiteOpenHelper(context.applicationContext, "wisprlite.db", null, 1) {
+class HistoryDatabase(context: Context, databaseName: String = "wisprlite.db") : SQLiteOpenHelper(context.applicationContext, databaseName, null, 1) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE transcripts (id TEXT PRIMARY KEY, created_at INTEGER NOT NULL, original TEXT NOT NULL, cleaned TEXT, speaking_ms INTEGER NOT NULL, mode TEXT NOT NULL)")
         db.execSQL("CREATE INDEX transcript_date ON transcripts(created_at DESC, id DESC)")
@@ -23,8 +23,8 @@ data class DictationRecord(val id: String, val createdAt: Long, val original: St
 data class InsightTotals(val recordings: Long, val words: Long, val speakingMillis: Long)
 data class HistoryCursor(val timestamp: Long, val id: String)
 
-class HistoryRepository(context: Context) : java.io.Closeable {
-    private val helper = HistoryDatabase(context)
+class HistoryRepository(context: Context, databaseName: String = "wisprlite.db") : java.io.Closeable {
+    private val helper = HistoryDatabase(context, databaseName)
 
     fun saveSuccessful(record: DictationRecord) {
         require(record.original.isNotBlank() && record.speakingMillis >= 0)

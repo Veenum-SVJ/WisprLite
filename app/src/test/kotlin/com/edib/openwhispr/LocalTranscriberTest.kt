@@ -12,6 +12,23 @@ import java.io.File
 import java.nio.file.Files
 
 class LocalTranscriberTest {
+    @Test fun `loads actual prefixed Whisper archive filenames and prefers int8`() {
+        withTempDir { root ->
+            val dir = File(root, "sherpa-onnx-whisper-base").apply { mkdirs() }
+            for (name in listOf("base-tokens.txt", "base-encoder.onnx", "base-encoder.int8.onnx", "base-decoder.int8.onnx")) File(dir, name).writeText("fixture")
+            assertTrue(LocalTranscriber.isModelComplete(dir))
+            val config = requireNotNull(LocalTranscriber.buildRecognizerConfig(dir, emptyList(), File(root, "hotwords"), "yo"))
+            assertTrue(config.modelConfig.whisper.encoder.endsWith("base-encoder.int8.onnx"))
+            assertEquals("yo", config.modelConfig.whisper.language)
+        }
+    }
+    @Test fun `incomplete transducer must not be accepted as a Whisper model`() {
+        withTempDir { root ->
+            val dir = File(root, "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8").apply { mkdirs() }
+            for (name in listOf("tokens.txt", "encoder.int8.onnx", "decoder.int8.onnx")) File(dir, name).writeText("fixture")
+            assertFalse(LocalTranscriber.isModelComplete(dir))
+        }
+    }
     private val transducerModel = MODEL_CATALOG.first { it.archive == "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" }
 
     @Test

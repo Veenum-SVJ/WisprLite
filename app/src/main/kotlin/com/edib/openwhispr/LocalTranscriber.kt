@@ -29,9 +29,11 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
 
     companion object {
         fun isModelComplete(directory: File): Boolean = try {
-            directory.isDirectory && directory.listFiles().orEmpty().any { it.name.endsWith(".onnx") && it.length() > 0 } &&
-                directory.listFiles().orEmpty().filter { it.name.endsWith(".onnx") || it.name == "tokens.txt" }.all { it.length() > 0 } &&
-                detectModelConfig(directory) != null
+            val model = MODEL_CATALOG.firstOrNull { it.archive == directory.name }
+            val detected = if (directory.isDirectory) detectModelConfig(directory) else null
+            model != null && detected?.architecture == model.architecture &&
+                directory.listFiles().orEmpty().any { it.name.endsWith(".onnx") && it.length() > 0 } &&
+                directory.listFiles().orEmpty().filter { it.name.endsWith(".onnx") || it.name.endsWith("tokens.txt") }.all { it.length() > 0 }
         } catch (_: Exception) { false }
         private const val TAG = "LocalTranscriber"
         private const val HOTWORDS_SCORE = 2.0f
@@ -207,8 +209,9 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
 
         private fun detectModelConfig(dir: File): DetectedConfig? {
             val path = dir.absolutePath
-            val tokens = "$path/tokens.txt"
-            if (!File(tokens).exists()) return null
+            val tokens = File(dir, "tokens.txt").takeIf { it.isFile }?.absolutePath
+                ?: dir.listFiles()?.firstOrNull { it.isFile && it.name.endsWith("-tokens.txt") }?.absolutePath
+                ?: return null
 
             if (File("$path/preprocess.onnx").exists()) {
                 return DetectedConfig(
@@ -274,10 +277,13 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
 
         private fun findFile(dir: String, prefix: String): String? {
             val directory = File(dir)
-            directory.listFiles()?.firstOrNull { it.name.startsWith(prefix) && it.name.contains("int8") }
+            fun matches(file: File): Boolean = file.isFile &&
+                (file.name.startsWith(prefix) || file.name.contains("-$prefix")) &&
+                (file.name.endsWith(".onnx") || file.name.endsWith(".ort"))
+            directory.listFiles()?.firstOrNull { matches(it) && it.name.contains("int8") }
                 ?.let { return it.absolutePath }
             return directory.listFiles()?.firstOrNull {
-                it.name.startsWith(prefix) && (it.name.endsWith(".onnx") || it.name.endsWith(".ort"))
+                matches(it)
             }?.absolutePath
         }
     }

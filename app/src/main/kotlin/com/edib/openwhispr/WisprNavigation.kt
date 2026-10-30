@@ -26,6 +26,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     private var generation = 0
     private var cursor: HistoryCursor? = null
     private var lastDay = ""
+    private var drawerOverlay: View? = null
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun text(value: String, size: Float = 16f) = TextView(activity).apply {
         text = value; textSize = size; setPadding(dp(12), dp(12), dp(12), dp(12))
@@ -45,6 +46,14 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         }
     }
     fun build(): View {
+        activity.onBackPressedDispatcher.addCallback(activity, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (closeDrawer()) return
+                if (destination != "Home") { show("Home"); return }
+                isEnabled = false
+                activity.onBackPressedDispatcher.onBackPressed()
+            }
+        })
         val header = LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(24), dp(16), dp(8))
             addView(button("☰") { drawer() }.apply { contentDescription = "Open navigation" }, LinearLayout.LayoutParams(dp(64), dp(56)))
@@ -63,9 +72,16 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         state.putString("dictionary_draft", dictionaryDraft)
     }
     fun close() { generation++; worker.shutdown() }
+    private fun closeDrawer(): Boolean {
+        val overlay = drawerOverlay ?: return false
+        frame.removeView(overlay); drawerOverlay = null
+        return true
+    }
     private fun drawer() {
+        closeDrawer()
         val cover = FrameLayout(activity).apply { setBackgroundColor(0x66000000) }
-        cover.setOnClickListener { frame.removeView(cover) }
+        drawerOverlay = cover
+        cover.setOnClickListener { closeDrawer() }
         val panel = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(40), dp(16), dp(20))
             val background = android.util.TypedValue()
@@ -74,9 +90,9 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             isClickable = true
         }
         panel.addView(text("WisprLite", 26f))
-        for (name in listOf("Home", "Insights", "Dictionary")) panel.addView(button(name) { frame.removeView(cover); show(name) })
+        for (name in listOf("Home", "Insights", "Dictionary")) panel.addView(button(name) { closeDrawer(); show(name) })
         panel.addView(View(activity), LinearLayout.LayoutParams(1, 0, 1f))
-        panel.addView(button("Settings") { frame.removeView(cover); show("Settings") })
+        panel.addView(button("Settings") { closeDrawer(); show("Settings") })
         cover.addView(panel, FrameLayout.LayoutParams(dp(280), -1, Gravity.START))
         frame.addView(cover, FrameLayout.LayoutParams(-1, -1))
     }

@@ -891,6 +891,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             val buf = ByteArray(bufSize)
             while (state == State.RECORDING && session.isCurrent(job)) {
                 val n = try { recorder.read(buf, 0, buf.size) } catch (_: RuntimeException) { break }
+                if (n <= 0) break
                 if (n > 0) {
                     if (!session.isCurrent(job) || state != State.RECORDING) break
                     stream.write(buf, 0, n)
@@ -905,6 +906,12 @@ class WhisperAccessibilityService : AccessibilityService() {
                     }
                     val level = (peak / 12000f).coerceIn(0f, 1f)
                     handler.post { onAudioLevel(level) }
+                }
+            }
+            handler.post {
+                if (serviceAlive && state == State.RECORDING && session.isCurrent(job)) {
+                    cancelRecording()
+                    reset("Microphone recording stopped. Check its permission and try again.")
                 }
             }
         }
@@ -1086,6 +1093,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             val vocabulary = Dictionary.load(prefs())
             val prompt = PostProcessor.effectivePrompt(customInstructions, vocabulary)
 
+            session.runIfCurrent(job) {
             cleanupCall = PostProcessor.process(text, prompt, apiKey, cleanupConfig) { result ->
                 handler.post {
                     if (!session.isCurrent(job)) return@post
@@ -1116,6 +1124,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                     }
                     goIdle()
                 }
+            }
             }
         } else {
             handler.post {

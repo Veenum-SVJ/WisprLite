@@ -11,13 +11,16 @@ class HistoryRepositoryTest {
     private lateinit var repo: HistoryRepository
     @Before fun setup() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase("wisprlite.db")
-        repo = HistoryRepository(context)
+        context.deleteDatabase("wisprlite-instrumentation.db")
+        repo = HistoryRepository(context, "wisprlite-instrumentation.db")
     }
     @After fun finish() { repo.close() }
     @Test fun unicodeAndExactlyOnceCountersSurviveHistoryDeletion() {
         val record = DictationRecord("one", 1000, "Ẹ káàárọ̀, abeg send am", null, 3000, "Direct")
-        repo.saveSuccessful(record); repo.saveSuccessful(record)
+        repo.saveSuccessful(record)
+        repo.close()
+        repo = HistoryRepository(InstrumentationRegistry.getInstrumentation().targetContext, "wisprlite-instrumentation.db")
+        repo.saveSuccessful(record)
         assertEquals(record, repo.listBefore().single())
         assertEquals(1L, repo.totals().recordings)
         repo.updateCleanup("one", "Ẹ káàárọ̀, abeg send am.")
