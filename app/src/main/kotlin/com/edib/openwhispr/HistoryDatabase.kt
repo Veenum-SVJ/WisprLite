@@ -31,6 +31,8 @@ class HistoryRepository(context: Context) : java.io.Closeable {
         val db = helper.writableDatabase
         db.beginTransaction()
         try {
+            val existing = db.rawQuery("SELECT 1 FROM transcripts WHERE id=?", arrayOf(record.id)).use { it.moveToFirst() }
+            if (existing) { db.setTransactionSuccessful(); return }
             val event = ContentValues().apply {
                 put("id", record.id); put("created_at", record.createdAt)
                 put("words", InsightCalculator.wordCount(record.original)); put("speaking_ms", record.speakingMillis)

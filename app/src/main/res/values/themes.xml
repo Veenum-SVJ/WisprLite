@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.OpenWhispr" parent="Theme.Material3Expressive.DayNight.NoActionBar">
+        <item name="android:colorBackground">@color/app_background</item>
+        <item name="colorSurface">@color/app_background</item>
         <!-- Accent Colors -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryContainer">@color/primary_container</item>
@@ -22,3 +24,4 @@
          Android 11; values-v31 adds the animated splash for Android 12+. -->
     <style name="Theme.OpenWhispr.Launch" parent="Theme.OpenWhispr" />
 </resources>
+

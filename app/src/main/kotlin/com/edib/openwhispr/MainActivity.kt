@@ -90,8 +90,10 @@ class MainActivity : AppCompatActivity() {
     ) { uri -> if (uri != null) readBackup(uri) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(prefs().getInt("appearance", -1))
         super.onCreate(savedInstanceState)
         ServiceWatchdog.schedule(this)
+        RetentionWorker.schedule(this)
 
         // First launch on a fresh install (no saved settings yet): offer to restore a backup.
         if (!prefs().contains("welcome_done") && prefs().all.isEmpty()) {
@@ -288,7 +290,7 @@ class MainActivity : AppCompatActivity() {
             promptTranscriptionLanguages()
         }
         languageRowSub = languageRow.findViewWithTag("subtitle")
-        dictationContainer.addView(group().apply { addView(languageRow) })
+        // Language selection lives in the WisprLite settings controls.
 
         dictationContainer.addView(sectionHeader(getString(R.string.text_enhancement)))
         val postGroup = group()
@@ -354,19 +356,6 @@ class MainActivity : AppCompatActivity() {
         voiceGroup.visibility = View.GONE
 
         // ================= Settings tab =================
-
-        settingsContainer.addView(sectionHeader(getString(R.string.tab_settings)))
-        settingsContainer.addView(settingsRow(
-            getString(R.string.dictionary_title),
-            Dictionary.load(prefs()).let {
-                if (it.isEmpty()) getString(R.string.dictionary_summary)
-                else getString(R.string.dictionary_word_count, it.size)
-            },
-        ) { promptDictionary() })
-
-        val keyRow = settingsRow(getString(R.string.groq_api_key), getString(R.string.tap_to_set)) { promptApiKey() }
-        keyRowSub = keyRow.findViewWithTag("subtitle")
-        settingsContainer.addView(group().apply { addView(keyRow) })
 
         settingsContainer.addView(sectionHeader(getString(R.string.bubble_size_section)))
         val bubbleSizePanel = vertical(dp(24), dp(8))
@@ -549,38 +538,12 @@ class MainActivity : AppCompatActivity() {
 
         aboutGroup.addView(settingsRow(getString(R.string.github), getString(R.string.github_summary)) {
             try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/EdiBianco/OpenWhispr")))
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Veenum-SVJ/WisprLite")))
             } catch (e: Exception) {
                 toast(getString(R.string.open_browser_failed, e.message ?: getString(R.string.unknown_error)))
             }
         })
 
-        aboutGroup.addView(settingsRow(getString(R.string.check_updates), getString(R.string.about_current_version, versionName)) {
-            checkForUpdate(force = true)
-        })
-
-        // [privacy] Opt-in switch for the automatic check on app open (see onCreate).
-        val autoUpdateSwitch = MaterialSwitch(this).apply {
-            isChecked = prefs().getBoolean("auto_update_check", false)
-            isClickable = false
-        }
-        // [ui] Subtitle follows the switch state (it used to always say "Off").
-        fun autoUpdateText(on: Boolean) =
-            if (on) "On: checks when the app opens (at most every 12 h)"
-            else "Off: only when you tap Check for updates"
-        lateinit var autoUpdateRowSub: TextView
-        val autoUpdateRow = settingsRow(
-            "Check for updates automatically",
-            autoUpdateText(autoUpdateSwitch.isChecked),
-            autoUpdateSwitch
-        ) {
-            val newVal = !autoUpdateSwitch.isChecked
-            prefs().edit().putBoolean("auto_update_check", newVal).apply()
-            autoUpdateSwitch.isChecked = newVal
-            autoUpdateRowSub.text = autoUpdateText(newVal)
-        }
-        autoUpdateRowSub = autoUpdateRow.findViewWithTag("subtitle")
-        aboutGroup.addView(autoUpdateRow)
         settingsContainer.addView(aboutGroup)
 
         outer.addView(statusContainer)
@@ -589,6 +552,7 @@ class MainActivity : AppCompatActivity() {
         showTab(0)
 
         val allSettings = vertical(0)
+        allSettings.addView(SettingsExtras(this).build())
         for (section in listOf(statusContainer, dictationContainer, settingsContainer)) {
             outer.removeView(section)
             section.visibility = View.VISIBLE
@@ -1607,12 +1571,12 @@ class MainActivity : AppCompatActivity() {
             toast(getString(R.string.backup_nothing_to_choose))
             return
         }
-        val selected = items.map { it.first }.toMutableSet()
+        val selected = items.map { it.first }.filterNot { it.startsWith("secret:") }.toMutableSet()
         val boxes = mutableListOf<CheckBox>()
         var syncing = false
         val selectAll = CheckBox(this).apply {
             text = getString(R.string.backup_select_all)
-            isChecked = true
+            isChecked = selected.size == items.size
             setOnCheckedChangeListener { _, checked ->
                 if (syncing) return@setOnCheckedChangeListener
                 syncing = true
@@ -1624,7 +1588,7 @@ class MainActivity : AppCompatActivity() {
         items.forEach { (id, label) ->
             val box = CheckBox(this).apply {
                 text = label
-                isChecked = true
+                isChecked = id in selected
                 setOnCheckedChangeListener { _, checked ->
                     if (checked) selected.add(id) else selected.remove(id)
                     if (!syncing) {
@@ -1807,4 +1771,6 @@ class MainActivity : AppCompatActivity() {
         private const val DOT_RED = 0xFFEF4444.toInt()
     }
 }
+
+
 

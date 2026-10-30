@@ -890,7 +890,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                 val directory = java.io.File(filesDir, "recordings").apply { mkdirs() }
                 val file = java.io.File(directory, "${java.util.UUID.randomUUID()}.wav")
                 file.writeBytes(WavWriter.encode(pcm))
-                RetentionPolicy.sweepAudio(directory, retentionDays, System.currentTimeMillis())
+                RetentionPolicy.sweepAudio(directory, prefs().getInt("audio_retention_days", 0), System.currentTimeMillis())
             } catch (_: Exception) { toast("Couldn’t save optional audio; transcription continues") }
         }
 

@@ -19,3 +19,5 @@ RED observed locally for missing InsightCalculator/RetentionPolicy and ProviderC
 All 8 standalone Kotlin/JUnit component tests passed: provider URL safety/normalization, language mapping, Unicode counts, saved-time calculation, and retention. Full Android integration remains pending.
 
 Integrated four-screen native navigation and SQLite history repository. Added instrumentation checks for Unicode, exact-once events, deletion independence, timestamp-tie pagination, and expiry. Device execution pending. Ruling: native SQLite integration will be validated by instrumentation rather than JVM Android stubs; unlike pure components, these tests were added alongside implementation and are not yet claimed passed.
+
+Settings implemented: URL/model/key with connection test, language profiles, appearance, retention, typing speed, history clear and statistics reset. Scheduled expiry worker added; warm light/dark colors set. API keys excluded by default in backup selection. Removed updater UI/install permission. Release shrinking enabled with JNI keep rules. History detail now offers cleanup retry without incrementing counters.

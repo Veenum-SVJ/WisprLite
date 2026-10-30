@@ -80,6 +80,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             "Home" -> {
                 cursor = null; lastDay = ""
                 content.addView(text("Your words, ready to use", 20f))
+                content.addView(button(DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title) { show("Settings") })
                 content.addView(button(if (prefs.getBoolean("use_post_processing", false)) "AI Cleanup" else "Direct transcription") {
                     prefs.edit().putBoolean("use_post_processing", !prefs.getBoolean("use_post_processing", false)).apply(); show("Home")
                 })
@@ -110,15 +111,35 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         }
     }
     private fun detail(record: DictationRecord) {
+        var dialog: AlertDialog? = null
         val layout = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16),0,dp(16),0) }
         layout.addView(text("Original\n${record.original}"))
         record.cleaned?.let { layout.addView(text("Cleaned\n$it")) }
         layout.addView(button("Copy original") { copy(record.original) })
         record.cleaned?.let { cleaned -> layout.addView(button("Copy cleaned") { copy(cleaned) }) }
-        AlertDialog.Builder(activity).setTitle("Transcript").setView(ScrollView(activity).apply { addView(layout) })
+        layout.addView(button("Retry AI cleanup") { dialog?.dismiss(); retryCleanup(record) })
+        dialog = AlertDialog.Builder(activity).setTitle("Transcript").setView(ScrollView(activity).apply { addView(layout) })
             .setNegativeButton("Close", null).setNeutralButton("Delete") { _, _ ->
                 query({ it.delete(record.id) }) { show("Home") }
-            }.show()
+            }.create()
+        dialog.show()
+    }
+    private fun retryCleanup(record: DictationRecord) {
+        val config = CleanupProviderConfig.fromPreferences(prefs.getString("cleanup_provider", null),
+            prefs.getString("cleanup_base_url", null), prefs.getString("cleanup_model", null))
+        val key = if (config.provider == CleanupProviderConfig.Provider.GROQ) SecureKeyStorage.groqApiKey(activity) else SecureKeyStorage.cleanupApiKey(activity)
+        if (key.isBlank()) { Toast.makeText(activity, "Configure a cleanup API key in Settings", Toast.LENGTH_LONG).show(); return }
+        Toast.makeText(activity, "Sending transcript text for cleanup…", Toast.LENGTH_SHORT).show()
+        val prompt = PostProcessor.effectivePrompt(prefs.getString("custom_instructions", "").orEmpty(), Dictionary.load(prefs))
+        PostProcessor.process(record.original, prompt, key, config) { result ->
+            val cleaned = result.text?.trim()
+            activity.runOnUiThread {
+                if (activity.isDestroyed) return@runOnUiThread
+                if (cleaned.isNullOrBlank() || cleaned == "EMPTY" || PostProcessor.looksGenerated(record.original, cleaned)) {
+                    Toast.makeText(activity, "Cleanup failed or changed your words. Original text is preserved.", Toast.LENGTH_LONG).show()
+                } else query({ it.updateCleanup(record.id, cleaned) }) { show("Home"); detail(record.copy(cleaned = cleaned)) }
+            }
+        }
     }
     private fun copy(value: String) {
         val clip = ClipData.newPlainText("WisprLite transcript", value)

@@ -38,6 +38,8 @@ Core behavior:
 - Keep the speaker's register: casual stays casual, formal stays formal. Never make it more formal, more casual, longer, or more polished than spoken.
 - Restore standard accents or diacritics when the intended word is clear.
 - Preserve mixed-language text exactly as mixed.
+- Preserve Nigerian Pidgin grammar and expressions; never standardize them into English.
+- Preserve Yoruba characters ẹ, ọ, ṣ and full tone marks when supported by the recognized words. Never invent missing speech.
 - Preserve commands, file paths, flags, identifiers, acronyms, and vocabulary terms exactly.
 - Do not introduce a name that was not spoken.
 Self-corrections are strict:
@@ -218,3 +220,4 @@ Output hygiene:
         })
     }
 }
+

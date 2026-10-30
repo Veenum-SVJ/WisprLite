@@ -93,7 +93,10 @@ object TranscriberClient {
             override fun onResponse(call: Call, response: Response) {
                 response.use {
                     if (!it.isSuccessful) callback(Result(null, "Transcription provider returned HTTP ${it.code}"))
-                    else callback(parseResponse(it.body?.string() ?: ""))
+                    else {
+                        val parsed = parseResponse(it.body?.string() ?: "")
+                        callback(if (parsed.text == null) Result(null, "Invalid transcription response") else parsed)
+                    }
                 }
             }
         })
