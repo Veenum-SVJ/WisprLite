@@ -52,7 +52,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseProps.isNotEmpty()) signingConfigs.getByName("release") else null
         }
     }
 

@@ -6,6 +6,7 @@ import java.net.URI
 data class ProviderConfig(
     val baseUrl: String = "https://api.groq.com/openai/v1",
     val model: String = "whisper-large-v3",
+    val recognitionHint: String = "",
 ) {
     fun transcriptionUrl(): URI {
         require(model.isNotBlank()) { "Transcription model is required" }

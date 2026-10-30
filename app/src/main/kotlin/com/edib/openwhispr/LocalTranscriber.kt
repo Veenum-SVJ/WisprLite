@@ -28,6 +28,11 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
     }
 
     companion object {
+        fun isModelComplete(directory: File): Boolean = try {
+            directory.isDirectory && directory.listFiles().orEmpty().any { it.name.endsWith(".onnx") && it.length() > 0 } &&
+                directory.listFiles().orEmpty().filter { it.name.endsWith(".onnx") || it.name == "tokens.txt" }.all { it.length() > 0 } &&
+                detectModelConfig(directory) != null
+        } catch (_: Exception) { false }
         private const val TAG = "LocalTranscriber"
         private const val HOTWORDS_SCORE = 2.0f
         private const val MAX_ACTIVE_PATHS = 4
@@ -52,11 +57,12 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
         fun availableModels(ctx: Context): List<String> {
             val modelsDir = File(ctx.filesDir, "models")
             if (!modelsDir.exists()) return emptyList()
-            return modelsDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
+            return MODEL_CATALOG.filter { ModelDownloader.isInstalled(ctx, it) }.map { it.archive }
         }
 
         /** [language] is a Whisper code for multilingual models; "" auto-detects. */
         fun create(ctx: Context, modelName: String, language: String = ""): LocalTranscriber? {
+            if (MODEL_CATALOG.none { it.archive == modelName }) return null
             val modelDir = File(ctx.filesDir, "models/$modelName")
             if (!modelDir.exists()) {
                 Log.e(TAG, "Model directory is missing: $modelName")

@@ -6,6 +6,12 @@ enum class DictationLanguage(val title: String, val languageCode: String?) {
     YORUBA("Yorùbá", "yo"),
     PIDGIN("Nigerian Pidgin", null);
 
+    val recognitionHint: String get() = when (this) {
+        PIDGIN -> "Nigerian Pidgin: Abeg, I dey come. Na so e be. Make we go."
+        AUTO -> "English, Yorùbá, Nigerian Pidgin."
+        else -> ""
+    }
+
     companion object {
         fun fromSaved(value: String?): DictationLanguage = entries.firstOrNull { it.name == value } ?: AUTO
     }

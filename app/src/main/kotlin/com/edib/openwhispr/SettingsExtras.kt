@@ -22,10 +22,7 @@ class SettingsExtras(private val activity: MainActivity) {
             AlertDialog.Builder(activity).setTitle("Dictation language")
                 .setSingleChoiceItems(values.map { it.title }.toTypedArray(), values.indexOf(DictationLanguage.fromSaved(prefs.getString("language_profile", null)))) { dialog, index ->
                     val selected = values[index]
-                    prefs.edit().putString("language_profile", selected.name)
-                        .putStringSet(TranscriptionLanguages.PREF_KEY, selected.languageCode?.let { setOf(it) } ?: emptySet()).apply()
-                    WhisperAccessibilityService.instance?.reloadModel()
-                    dialog.dismiss(); activity.recreate()
+                    dialog.dismiss(); activity.selectLanguageProfile(selected)
                 }.setNegativeButton("Cancel", null).show()
         })
         addView(TextView(activity).apply { text = "Mixed/Auto preserves language switches. Pidgin is a recognition profile; accuracy depends on your model. Cloud cleanup sends transcript text, including with local speech recognition." })

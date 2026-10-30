@@ -1164,6 +1164,17 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    fun selectLanguageProfile(profile: DictationLanguage) {
+        prefs().edit().putString("language_profile", profile.name).apply()
+        val selected = profile.languageCode?.let { setOf(it) } ?: emptySet()
+        saveTranscriptionLanguages(selected)
+        if (selected.isEmpty() && prefs().getBoolean("use_local", true)) {
+            // Auto and Pidgin benefit from multilingual recognition, without claiming native Pidgin support.
+            suggestModelForLanguages(setOf("en", "yo"))
+        }
+        navigation?.refresh()
+    }
+
     private fun saveTranscriptionLanguages(selected: Set<String>) {
         prefs().edit().putStringSet(TranscriptionLanguages.PREF_KEY, selected.toSet()).apply()
         refresh()

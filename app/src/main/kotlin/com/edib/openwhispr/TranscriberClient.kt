@@ -68,7 +68,7 @@ object TranscriberClient {
             .addFormDataPart("model", config.model.trim())
             .addFormDataPart("file", "audio.wav", wavData.toRequestBody("audio/wav".toMediaType()))
         languages.singleOrNull()?.let { multipart.addFormDataPart("language", it) }
-        listOfNotNull(languageHint(languages), dictionaryPrompt(vocabulary).takeIf(String::isNotEmpty))
+        listOfNotNull(languageHint(languages), config.recognitionHint.takeIf(String::isNotBlank), dictionaryPrompt(vocabulary).takeIf(String::isNotEmpty))
             .takeIf { it.isNotEmpty() }
             ?.let { multipart.addFormDataPart("prompt", it.joinToString(" ")) }
         return Request.Builder()

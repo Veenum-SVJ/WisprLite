@@ -999,7 +999,8 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         playRecordingStoppedTone()
         val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",
-            prefs().getString("transcription_model", null) ?: "whisper-large-v3")
+            prefs().getString("transcription_model", null) ?: "whisper-large-v3",
+            DictationLanguage.fromSaved(prefs().getString("language_profile", null)).recognitionHint)
         TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
             if (!session.isCurrent(job)) return@transcribe
             if (result.text != null && result.text.isNotBlank()) {

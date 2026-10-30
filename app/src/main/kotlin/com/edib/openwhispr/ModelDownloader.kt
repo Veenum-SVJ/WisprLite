@@ -53,6 +53,7 @@ sealed class DownloadState {
 }
 
 object ModelDownloader {
+    private val activeDownloads = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     private const val BASE_URL =
         "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models"
     private val client = OkHttpClient.Builder()
@@ -62,24 +63,27 @@ object ModelDownloader {
         File(ctx.filesDir, "models/${model.archive}")
 
     fun isInstalled(ctx: Context, model: Model) =
-        modelDir(ctx, model).exists()
+        LocalTranscriber.isModelComplete(modelDir(ctx, model))
 
     /** Download and extract model. Callbacks fire on background thread. */
     fun download(ctx: Context, model: Model, onState: (DownloadState) -> Unit) {
+        if (!activeDownloads.add(model.archive)) { onState(DownloadState.Error("This model is already downloading")); return }
         val url = "$BASE_URL/${model.archive}.tar.bz2"
         val tmpFile = File(ctx.cacheDir, "${model.archive}.tar.bz2")
         val outDir = File(ctx.filesDir, "models")
 
         Thread {
             try {
+                require(ctx.filesDir.usableSpace > model.sizeMb * 2_000_000L) { "Not enough storage for this model" }
                 downloadFile(url, tmpFile, ctx.getString(R.string.empty_download_response), onState)
                 onState(DownloadState.Extracting)
-                extractTarBz2(tmpFile, outDir)
+                SafeModelArchive.install(tmpFile, outDir, model.archive, LocalTranscriber::isModelComplete)
                 onState(DownloadState.Done)
             } catch (e: Exception) {
                 onState(DownloadState.Error(e.message ?: ctx.getString(R.string.unknown_error)))
             } finally {
                 tmpFile.delete()
+                activeDownloads.remove(model.archive)
             }
         }.start()
     }
@@ -90,7 +94,7 @@ object ModelDownloader {
     private fun downloadFile(
         url: String, dest: File, emptyResponseMessage: String, onState: (DownloadState) -> Unit
     ) {
-        val response = client.newCall(Request.Builder().url(url).build()).execute()
+        client.newCall(Request.Builder().url(url).build()).execute().use { response ->
         if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
         val body = response.body ?: throw IOException(emptyResponseMessage)
         val total = body.contentLength()
@@ -108,24 +112,12 @@ object ModelDownloader {
                 }
             }
         }
+        require(total < 0 || downloaded == total) { "Incomplete model download" }
+        }
     }
 
     /** Extract tar.bz2 to outDir. Validates paths to prevent traversal. */
     fun extractTarBz2(archive: File, outDir: File) {
-        outDir.mkdirs()
-        val bzIn = BZip2CompressorInputStream(BufferedInputStream(FileInputStream(archive)))
-        TarArchiveInputStream(bzIn).use { tar ->
-            generateSequence { tar.nextEntry }.forEach { entry ->
-                val dest = File(outDir, entry.name)
-                require(dest.canonicalPath.startsWith(outDir.canonicalPath)) {
-                    "Path traversal: ${entry.name}"
-                }
-                if (entry.isDirectory) dest.mkdirs()
-                else {
-                    dest.parentFile?.mkdirs()
-                    FileOutputStream(dest).use { tar.copyTo(it) }
-                }
-            }
-        }
+        SafeModelArchive.extract(archive, outDir)
     }
 }
