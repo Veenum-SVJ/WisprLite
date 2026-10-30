@@ -17,6 +17,15 @@ android {
     compileSdk = 35
 
     signingConfigs {
+        getByName("debug") {
+            val developmentKey = rootProject.file(".tools/wisprlite-debug.keystore")
+            if (developmentKey.exists()) {
+                storeFile = developmentKey
+                storePassword = "android"
+                keyAlias = "AndroidDebugKey"
+                keyPassword = "android"
+            }
+        }
         create("release") {
             if (releaseProps.isNotEmpty()) {
                 storeFile = rootProject.file(releaseProps.getProperty("storeFile"))

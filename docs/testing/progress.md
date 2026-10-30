@@ -23,3 +23,5 @@ Integrated four-screen native navigation and SQLite history repository. Added in
 Settings implemented: URL/model/key with connection test, language profiles, appearance, retention, typing speed, history clear and statistics reset. Scheduled expiry worker added; warm light/dark colors set. API keys excluded by default in backup selection. Removed updater UI/install permission. Release shrinking enabled with JNI keep rules. History detail now offers cleanup retry without incrementing counters.
 
 CI run 41133306324 on 991c0d7 passed testDebugUnitTest, assembleDebug and lintDebug (BUILD SUCCESSFUL). Latest settings revision still running. Official platform/build-tools/ADB archives all checksum verified; extracting locally. Extended CI to compile instrumentation tests and validate release shrinking/lint.
+
+Redmi debug install and Home/drawer smoke checks passed. A newer CI APK could not replace it because ephemeral runners generated different debug keys. Added persistent development signing via encrypted GitHub Actions secret; key remains outside Git. Full requirements review started.

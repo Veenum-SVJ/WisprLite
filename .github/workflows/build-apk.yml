@@ -16,6 +16,12 @@ jobs:
           packages: platform-tools
       - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - run: chmod +x gradlew
+      - name: Restore persistent development signing key
+        env:
+          DEVELOPMENT_KEY: ${{ secrets.WISPRLITE_DEBUG_KEYSTORE }}
+        run: |
+          mkdir -p .tools
+          printf '%s' "$DEVELOPMENT_KEY" | base64 --decode > .tools/wisprlite-debug.keystore
       - run: ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug assembleRelease lintRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
