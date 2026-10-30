@@ -13,3 +13,7 @@ GitHub OAuth restored; public repository https://github.com/Veenum-SVJ/WisprLite
 Task 2/3/4 test preparation: added ProviderConfigTest, InsightCalculatorTest, RetentionPolicyTest. Production types intentionally absent until RED is observed. SDK licenses accepted and build-tools installation started. Initial Gradle process remains live resolving dependencies.
 
 CI baseline failure diagnosed: setup-android defaults request removed SDK package 'tools'. Configure packages: platform-tools explicitly; no product-code failure observed yet.
+
+RED observed locally for missing InsightCalculator/RetentionPolicy and ProviderConfig/DictationLanguage; CI run 41131992999 independently reached the same missing-class failures. Implemented pure insight calculation and scoped audio retention; initial 5 tests passed. Added reusable scripts/test-pure.ps1 for component checks while SDK resolves.
+
+All 8 standalone Kotlin/JUnit component tests passed: provider URL safety/normalization, language mapping, Unicode counts, saved-time calculation, and retention. Full Android integration remains pending.
