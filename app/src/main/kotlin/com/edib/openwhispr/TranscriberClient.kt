@@ -60,17 +60,19 @@ object TranscriberClient {
         apiKey: String,
         vocabulary: List<String>,
         languages: Set<String> = emptySet(),
+        config: ProviderConfig = ProviderConfig(),
     ): Request {
+        require(apiKey.isNotBlank()) { "Transcription API key is required" }
         val multipart = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("model", TRANSCRIPTION_MODEL)
+            .addFormDataPart("model", config.model.trim())
             .addFormDataPart("file", "audio.wav", wavData.toRequestBody("audio/wav".toMediaType()))
         languages.singleOrNull()?.let { multipart.addFormDataPart("language", it) }
         listOfNotNull(languageHint(languages), dictionaryPrompt(vocabulary).takeIf(String::isNotEmpty))
             .takeIf { it.isNotEmpty() }
             ?.let { multipart.addFormDataPart("prompt", it.joinToString(" ")) }
         return Request.Builder()
-            .url(TRANSCRIPTION_URL)
+            .url(config.transcriptionUrl().toString())
             .header("Authorization", "Bearer $apiKey")
             .post(multipart.build())
             .build()
@@ -81,12 +83,19 @@ object TranscriberClient {
         apiKey: String,
         vocabulary: List<String> = emptyList(),
         languages: Set<String> = emptySet(),
+        config: ProviderConfig = ProviderConfig(),
         callback: (Result) -> Unit,
     ) {
-        client.newCall(transcriptionRequest(wavData, apiKey, vocabulary, languages)).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) = callback(Result(null, e.message))
-            override fun onResponse(call: Call, response: Response) =
-                callback(parseResponse(response.body?.string() ?: ""))
+        val request = try { transcriptionRequest(wavData, apiKey, vocabulary, languages, config) }
+            catch (_: IllegalArgumentException) { callback(Result(null, "Check your transcription URL, model, and API key")); return }
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) = callback(Result(null, "Unable to reach transcription provider"))
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (!it.isSuccessful) callback(Result(null, "Transcription provider returned HTTP ${it.code}"))
+                    else callback(parseResponse(it.body?.string() ?: ""))
+                }
+            }
         })
     }
 }

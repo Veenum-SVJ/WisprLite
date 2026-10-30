@@ -43,6 +43,7 @@ import kotlin.concurrent.thread
 import kotlin.math.abs
 
 class WhisperAccessibilityService : AccessibilityService() {
+    private var speakingMillis = 0L
 
     companion object {
         var instance: WhisperAccessibilityService? = null
@@ -879,8 +880,19 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         val pcm = pcmStream?.toByteArray() ?: ByteArray(0)
         pcmStream = null
+        speakingMillis = pcm.size * 1000L / (SAMPLE_RATE * 2L)
 
         if (pcm.isEmpty() || peakAmplitude(pcm) < SILENCE_PEAK) { reset(getString(R.string.no_audio_captured)); return }
+
+        val retentionDays = prefs().getInt("audio_retention_days", 0)
+        if (retentionDays > 0) thread {
+            try {
+                val directory = java.io.File(filesDir, "recordings").apply { mkdirs() }
+                val file = java.io.File(directory, "${java.util.UUID.randomUUID()}.wav")
+                file.writeBytes(WavWriter.encode(pcm))
+                RetentionPolicy.sweepAudio(directory, retentionDays, System.currentTimeMillis())
+            } catch (_: Exception) { toast("Couldn’t save optional audio; transcription continues") }
+        }
 
         val useLocal = prefs().getBoolean("use_local", true)
         val local = localTranscriber
@@ -954,7 +966,9 @@ class WhisperAccessibilityService : AccessibilityService() {
         if (apiKey.isBlank()) { reset(getString(R.string.set_groq_key)); return }
 
         playRecordingStoppedTone()
-        TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs())) { result ->
+        val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",
+            prefs().getString("transcription_model", null) ?: "whisper-large-v3")
+        TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
             if (result.text != null && result.text.isNotBlank()) {
                 handleTranscriptionResult(result.text)
             } else {
@@ -975,7 +989,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             return
         }
 
-        val voiceCommandsEnabled = prefs().getBoolean("voice_commands_enabled", false)
+        val voiceCommandsEnabled = false // WisprLite preserves dictation instead of executing voice transformations.
         if (voiceCommandsEnabled) {
             val trigger = prefs().getString("command_trigger_phrase", getString(R.string.default_trigger_phrase))
                 ?: getString(R.string.default_trigger_phrase)
@@ -992,6 +1006,11 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
 
         val usePostProcessing = prefs().getBoolean("use_post_processing", false)
+        val historyId = java.util.UUID.randomUUID().toString()
+        try {
+            HistoryRepository(this).use { it.saveSuccessful(DictationRecord(historyId, System.currentTimeMillis(),
+                text, null, speakingMillis, if (usePostProcessing) "AI Cleanup" else "Direct")) }
+        } catch (_: Exception) { toast("Couldn’t save transcript history; your dictation is still available") }
         val cleanupConfig = CleanupProviderConfig.fromPreferences(
             prefs().getString("cleanup_provider", null),
             prefs().getString("cleanup_base_url", null),
@@ -1028,6 +1047,10 @@ class WhisperAccessibilityService : AccessibilityService() {
                         Log.i(TAG, "Cleanup output rejected (not a cleanup of the transcript); using raw text")
                         if (injectText(text)) showFeedback(getString(R.string.cleanup_skipped_kept_words), 3000)
                     } else if (!cleaned.isNullOrBlank()) {
+                        thread {
+                            try { HistoryRepository(this).use { it.updateCleanup(historyId, cleaned) } }
+                            catch (_: Exception) { toast("Couldn’t save cleaned text to history") }
+                        }
                         injectText(cleaned)
                     } else {
                         // [privacy] injectText only shows its feedback when it falls back

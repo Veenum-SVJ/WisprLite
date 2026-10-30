@@ -17,3 +17,5 @@ CI baseline failure diagnosed: setup-android defaults request removed SDK packag
 RED observed locally for missing InsightCalculator/RetentionPolicy and ProviderConfig/DictationLanguage; CI run 41131992999 independently reached the same missing-class failures. Implemented pure insight calculation and scoped audio retention; initial 5 tests passed. Added reusable scripts/test-pure.ps1 for component checks while SDK resolves.
 
 All 8 standalone Kotlin/JUnit component tests passed: provider URL safety/normalization, language mapping, Unicode counts, saved-time calculation, and retention. Full Android integration remains pending.
+
+Integrated four-screen native navigation and SQLite history repository. Added instrumentation checks for Unicode, exact-once events, deletion independence, timestamp-tie pagination, and expiry. Device execution pending. Ruling: native SQLite integration will be validated by instrumentation rather than JVM Android stubs; unlike pure components, these tests were added alongside implementation and are not yet claimed passed.

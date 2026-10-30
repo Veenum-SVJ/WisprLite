@@ -31,6 +31,7 @@ import com.google.android.material.tabs.TabLayout
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
+    private var navigation: WisprNavigation? = null
 
     private lateinit var statusSubtitle: TextView
     // [ui] Status row dot + tap-to-fix target, and the cloud switch's subtitle.
@@ -127,7 +128,7 @@ class MainActivity : AppCompatActivity() {
         // default, including for existing installs), so the app makes no
         // request to GitHub unless the user enables it or taps "Check for
         // updates".
-        if (prefs().getBoolean("auto_update_check", false)) checkForUpdate()
+        // WisprLite updates are distributed through GitHub releases, never installed in-app.
 
         val outer = vertical(0, 0)
 
@@ -144,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) }
         })
         header.addView(TextView(this).apply {
-            text = "OpenWispr"
+            text = "WisprLite"
             textSize = 32f
         })
         outer.addView(header)
@@ -320,7 +321,7 @@ class MainActivity : AppCompatActivity() {
         postGroup.addView(customInstructionsRow)
         dictationContainer.addView(postGroup)
 
-        dictationContainer.addView(sectionHeader(getString(R.string.voice_commands)))
+        // Voice-command transformations omitted from the minimal interface.
         val voiceGroup = group()
 
         val isVoiceCommands = prefs().getBoolean("voice_commands_enabled", false)
@@ -350,7 +351,7 @@ class MainActivity : AppCompatActivity() {
         voiceCommandsDetailContainer.addView(examplesRow)
 
         voiceGroup.addView(voiceCommandsDetailContainer)
-        dictationContainer.addView(voiceGroup)
+        voiceGroup.visibility = View.GONE
 
         // ================= Settings tab =================
 
@@ -587,10 +588,14 @@ class MainActivity : AppCompatActivity() {
         outer.addView(settingsContainer)
         showTab(0)
 
-        setContentView(ScrollView(this).apply {
-            setBackgroundColor(attrColor(android.R.attr.colorBackground))
-            addView(outer)
-        })
+        val allSettings = vertical(0)
+        for (section in listOf(statusContainer, dictationContainer, settingsContainer)) {
+            outer.removeView(section)
+            section.visibility = View.VISIBLE
+            allSettings.addView(section)
+        }
+        navigation = WisprNavigation(this, allSettings)
+        setContentView(navigation!!.build())
 
         if (!hasPerm(Manifest.permission.RECORD_AUDIO)) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
@@ -599,7 +604,8 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume(); refresh() }
+    override fun onResume() { super.onResume(); refresh(); navigation?.refresh() }
+    override fun onDestroy() { navigation?.close(); super.onDestroy() }
     override fun onRequestPermissionsResult(c: Int, p: Array<String>, r: IntArray) {
         super.onRequestPermissionsResult(c, p, r); refresh()
     }
@@ -1801,3 +1807,4 @@ class MainActivity : AppCompatActivity() {
         private const val DOT_RED = 0xFFEF4444.toInt()
     }
 }
+

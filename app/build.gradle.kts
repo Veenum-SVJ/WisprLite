@@ -31,6 +31,7 @@ android {
         applicationId = "com.veenum.wisprlite"
         minSdk = 30
         targetSdk = 35
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 1
         versionName = "0.1.0"
 
@@ -63,7 +64,10 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
     implementation("org.apache.commons:commons-compress:1.27.1")
 
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }
+
 
