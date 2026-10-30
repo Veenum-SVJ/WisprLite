@@ -11,3 +11,5 @@ JDK 17 found. Android SDK and ADB not found on PATH or default Android directory
 GitHub OAuth restored; public repository https://github.com/Veenum-SVJ/WisprLite created and foundation pushed (713aa1a). Gradle 8.13 downloaded. Official Android command-line tools downloaded and extracted; SDK components installing. ProviderConfigTest added before production implementation; RED execution pending toolchain.
 
 Task 2/3/4 test preparation: added ProviderConfigTest, InsightCalculatorTest, RetentionPolicyTest. Production types intentionally absent until RED is observed. SDK licenses accepted and build-tools installation started. Initial Gradle process remains live resolving dependencies.
+
+CI baseline failure diagnosed: setup-android defaults request removed SDK package 'tools'. Configure packages: platform-tools explicitly; no product-code failure observed yet.
