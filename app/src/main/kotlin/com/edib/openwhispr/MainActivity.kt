@@ -358,6 +358,9 @@ class MainActivity : AppCompatActivity() {
 
         // ================= Settings tab =================
 
+        val keyRow = settingsRow("Groq cleanup API key", "Optional Groq key override") { promptApiKey() }
+        keyRowSub = keyRow.findViewWithTag("subtitle")
+        settingsContainer.addView(group().apply { addView(keyRow) })
         settingsContainer.addView(sectionHeader(getString(R.string.bubble_size_section)))
         val bubbleSizePanel = vertical(dp(24), dp(8))
         val bubbleSizeLabel = TextView(this).apply {

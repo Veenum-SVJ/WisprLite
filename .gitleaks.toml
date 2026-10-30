@@ -13,8 +13,14 @@ keywords = ["gsk_"]
 [[rules]]
 id = "signing-password"
 description = "Android signing password literal in source"
-regex = '''(storePassword|keyPassword)\s*=\s*"[^"\s]{4,}"'''
+regex = '''(storePassword|keyPassword)\s*=\s*"([^"\s]{4,})"'''
+secretGroup = 2
 keywords = ["storepassword", "keypassword"]
+
+[[rules.allowlists]]
+description = "Only Android's public development-key password"
+regexTarget = "secret"
+regexes = ['''^android$''']
 
 [allowlist]
 description = "Placeholders and docs"

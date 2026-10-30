@@ -17,3 +17,11 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 - Installed WisprLite and its test APK on the Redmi after approved removal of the temporary-key installation.
 - AndroidJUnitRunner: OK (3 tests). Verified isolated transcription/Groq credentials, Unicode text persistence, exact-once counters across cleanup and history deletion, timestamp-tie pagination, and expiry independent of counters.
 - CI run 41137216341 for 66e4986 passed the expanded unit/debug/instrumentation-assembly/lint/release checks. Physical instrumentation does not by itself verify microphone capture, model accuracy, or cloud providers.
+
+## Offline engine regression and result
+- First real model run correctly exposed the inherited filename mismatch: Base uses base-encoder/base-decoder/base-tokens, not unprefixed names. Added fixtures and fixed detection; also reject catalog/architecture mismatches.
+- Rerun on Redmi: OK (1 test), real sherpa-onnx multilingual Whisper Base decoding a synthetic English WAV.
+- Fixture: 8.055 seconds. Model loading plus processing: 8,131 ms. Output: 'Hello Whisper Light. This is a short English dictation test. Please send the document tomorrow morning.'
+- First installation/extraction plus test took 226.465 seconds; this is not steady-state inference latency.
+- Subsequent Activity launch reproduced a missing keyRowSub initialization. Restored the Groq cleanup-key row and added a startup/drawer instrumentation regression; verification pending.
+- No Yoruba, Pidgin, mixed-language accuracy or Pixel 6 result is implied by this English synthetic test.
