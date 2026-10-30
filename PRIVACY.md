@@ -1,47 +1,21 @@
-# Privacy Policy for OpenWhispr
+# Privacy — WisprLite
 
-OpenWhispr is an Android dictation app that records speech, transcribes it, and inserts the result into text fields across apps.
+WisprLite records speech only after you start dictation using its floating microphone button. The Accessibility Service identifies a focused text field and inserts the result. It does not upload the field's surrounding text for transcription or cleanup.
 
-## Data handling
+## Local and cloud processing
+Local speech recognition processes audio on the phone. If a compatible local model is unavailable, dictation is refused; there is no automatic cloud fallback. Known speech-model packs download from the sherpa-onnx GitHub releases.
 
-OpenWhispr supports two transcription modes.
+Cloud speech recognition sends recorded audio directly to the HTTPS transcription provider you configure. Optional AI Cleanup sends transcript text directly to the configured cleanup provider, including when speech recognition itself is local. Provider privacy policies, charges and retention rules apply. A connection test queries the provider's model list using your key.
 
-### Local mode
+## Storage
+Text history is stored in an app-private SQLite database, with original and optional cleaned text. History is kept until deleted by default, or expires after the period selected in Settings. Usage counters contain timestamps, word counts and speaking durations; deleting history does not reset these counters. Reset statistics separately.
 
-In local mode, audio is processed on-device using local speech recognition models. Audio does not leave the device. If no local model is available, OpenWhispr shows a message instead of sending the audio to the cloud. If optional cleanup or voice commands are enabled, the transcribed text (not the audio) is sent to Groq's chat API.
+Audio retention is off by default. Without retention, recording bytes are held for processing and are not saved as audio files. If enabled, WAV files are saved in app-private storage for 1, 7 or 30 days. Expiry runs at startup/settings changes and in daily background work; Android may defer scheduled work. Clear-text audio is not included in settings exports.
 
-### Cloud mode
+API keys are encrypted using Android Keystore-backed storage. Transcription and cleanup credentials are kept separately. Settings exports exclude keys by default; explicitly selected keys are included only in passphrase-encrypted backups. Automatic Android app backup is disabled.
 
-In cloud mode, recorded audio is sent directly from the device to Groq's transcription API to generate text.
+## Clipboard and permissions
+When inserting text, the app may place it on the clipboard. On supported Android versions the clip is marked sensitive. The microphone, accessibility, notification and battery-management permissions support dictation and its background availability. You can pause the service or revoke permissions in Android Settings.
 
-If optional cleanup is enabled, the transcribed text is also sent directly from the device to Groq's chat API to improve punctuation, capitalization, and clarity.
-
-## API keys
-
-If you use cloud features, your Groq API key is stored locally on your device in app storage and used to authenticate requests sent directly to Groq.
-
-I do not operate a relay server for these requests.
-
-## Accessibility Service
-
-OpenWhispr uses Android Accessibility Service only to identify the currently focused text field and insert dictated text after you explicitly interact with the floating overlay button.
-
-OpenWhispr is not designed to monitor browsing, collect screen content for analytics, or perform background automation.
-
-## Clipboard
-
-To insert text, OpenWhispr places the dictated text on the clipboard and pastes it; if insertion fails, the text stays there for you to paste. It is marked as sensitive, so Android 13+ hides it in the clipboard preview and keyboards that honour this flag keep it out of their clipboard suggestions.
-
-## Update checks
-
-By default, OpenWhispr only contacts GitHub (`api.github.com`) to look for a new version when you tap "Check for updates". If you turn on "Check for updates automatically", it also checks when the app opens, at most once every 12 hours. These requests carry no personal data, but like any web request they reveal your IP address to GitHub.
-
-## Data collection
-
-I do not run a backend for OpenWhispr and do not collect user accounts, analytics, or uploaded recordings myself.
-
-Third-party services you choose to use, such as Groq, may process data according to their own terms and privacy policies.
-
-## Contact
-
-For questions about privacy, open an issue at: https://github.com/EdiBianco/OpenWhispr
+## Services
+WisprLite has no account, analytics service, transcript sync or relay backend. Source and updates are available from https://github.com/Veenum-SVJ/WisprLite. The app does not install APK updates itself.

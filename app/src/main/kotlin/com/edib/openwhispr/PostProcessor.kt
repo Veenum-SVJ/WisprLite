@@ -194,14 +194,15 @@ Output hygiene:
         apiKey: String,
         config: CleanupProviderConfig,
         callback: (Result) -> Unit,
-    ) {
+    ): Call? {
         val request = try {
             cleanupRequest(text, prompt, apiKey, config)
         } catch (e: IllegalArgumentException) {
             callback(Result(null, e.message ?: "Invalid cleanup configuration"))
-            return
+            return null
         }
-        client.newCall(request).enqueue(object : Callback {
+        val call = client.newCall(request)
+        call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 callback(Result(null, e.message))
             }
@@ -218,6 +219,7 @@ Output hygiene:
                 callback(parsed.copy(text = stripTranscriptTags(parsed.text)))
             }
         })
+        return call
     }
 }
 

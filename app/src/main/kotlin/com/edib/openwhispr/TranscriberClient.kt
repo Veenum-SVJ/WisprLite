@@ -85,10 +85,11 @@ object TranscriberClient {
         languages: Set<String> = emptySet(),
         config: ProviderConfig = ProviderConfig(),
         callback: (Result) -> Unit,
-    ) {
+    ): Call? {
         val request = try { transcriptionRequest(wavData, apiKey, vocabulary, languages, config) }
-            catch (_: IllegalArgumentException) { callback(Result(null, "Check your transcription URL, model, and API key")); return }
-        client.newCall(request).enqueue(object : Callback {
+            catch (_: IllegalArgumentException) { callback(Result(null, "Check your transcription URL, model, and API key")); return null }
+        val call = client.newCall(request)
+        call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) = callback(Result(null, "Unable to reach transcription provider"))
             override fun onResponse(call: Call, response: Response) {
                 response.use {
@@ -100,5 +101,6 @@ object TranscriberClient {
                 }
             }
         })
+        return call
     }
 }

@@ -48,6 +48,8 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var recordingJob = 0L
     @Volatile private var serviceAlive = true
     private val modelLock = Any()
+    private var transcriptionCall: okhttp3.Call? = null
+    private var cleanupCall: okhttp3.Call? = null
 
     companion object {
         var instance: WhisperAccessibilityService? = null
@@ -142,6 +144,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private val screenH get() = resources.displayMetrics.heightPixels
 
     override fun onServiceConnected() {
+        cancelRecording()
         serviceAlive = true
         instance = this
         try {
@@ -175,6 +178,8 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun cancelRecording() {
         session.cancel()
+        transcriptionCall?.cancel(); transcriptionCall = null
+        cleanupCall?.cancel(); cleanupCall = null
         state = State.IDLE
         val recorder = audioRecord
         audioRecord = null
@@ -1011,7 +1016,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",
             prefs().getString("transcription_model", null) ?: "whisper-large-v3",
             DictationLanguage.fromSaved(prefs().getString("language_profile", null)).recognitionHint)
-        TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
+        transcriptionCall = TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
             if (!session.isCurrent(job)) return@transcribe
             if (result.text != null && result.text.isNotBlank()) {
                 handleTranscriptionResult(result.text, job)
@@ -1081,7 +1086,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             val vocabulary = Dictionary.load(prefs())
             val prompt = PostProcessor.effectivePrompt(customInstructions, vocabulary)
 
-            PostProcessor.process(text, prompt, apiKey, cleanupConfig) { result ->
+            cleanupCall = PostProcessor.process(text, prompt, apiKey, cleanupConfig) { result ->
                 handler.post {
                     if (!session.isCurrent(job)) return@post
                     val cleaned = result.text?.trim()
@@ -1224,6 +1229,7 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun goIdle() {
         session.cancel()
+        transcriptionCall = null; cleanupCall = null
         state = State.IDLE
         setBusy(false)
         setRecordingLook(false) // [ui]
