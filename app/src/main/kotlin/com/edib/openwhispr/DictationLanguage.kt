@@ -11,6 +11,11 @@ enum class DictationLanguage(val title: String, val languageCode: String?) {
         AUTO -> "English, Yorùbá, Nigerian Pidgin."
         else -> ""
     }
+    fun acceptsModel(languages: Set<String>): Boolean = when (this) {
+        ENGLISH -> "en" in languages
+        YORUBA -> "yo" in languages
+        AUTO, PIDGIN -> languages.containsAll(setOf("en", "yo"))
+    }
 
     companion object {
         fun fromSaved(value: String?): DictationLanguage = entries.firstOrNull { it.name == value } ?: AUTO

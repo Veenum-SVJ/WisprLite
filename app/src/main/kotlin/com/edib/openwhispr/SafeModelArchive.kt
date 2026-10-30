@@ -21,7 +21,8 @@ object SafeModelArchive {
                 require(total <= 4_294_967_296L) { "Model archive exceeds size limit" }
                 if (entry.isDirectory) require(destination.mkdirs() || destination.isDirectory)
                 else {
-                    require(destination.parentFile.mkdirs() || destination.parentFile.isDirectory)
+                    val parent = requireNotNull(destination.parentFile)
+                    require(parent.mkdirs() || parent.isDirectory)
                     destination.outputStream().use { output -> tar.copyTo(output) }
                     require(destination.length() == entry.size) { "Incomplete model file" }
                 }

@@ -31,7 +31,7 @@ private val WHISPER_LANGUAGES = TranscriptionLanguages.CODES.toSet()
 
 val MODEL_CATALOG = listOf(
     Model("Parakeet 110M", "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
-        100, R.string.model_quality_best_value, ModelArchitecture.NEMO_CTC, recommended = true),
+        100, R.string.model_quality_best_value, ModelArchitecture.NEMO_CTC),
     Model("Whisper Base", "sherpa-onnx-whisper-base.en",
         199, R.string.model_quality_stars, ModelArchitecture.WHISPER),
     Model("Parakeet 0.6B", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
@@ -40,7 +40,7 @@ val MODEL_CATALOG = listOf(
     Model("Moonshine Tiny", "sherpa-onnx-moonshine-tiny-en-int8",
         103, R.string.model_quality_fast, ModelArchitecture.MOONSHINE),
     Model("Whisper Base (multilingual)", "sherpa-onnx-whisper-base",
-        207, R.string.model_quality_stars, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES),
+        207, R.string.model_quality_stars, ModelArchitecture.WHISPER, recommended = true, languages = WHISPER_LANGUAGES),
     Model("Whisper Small (multilingual)", "sherpa-onnx-whisper-small",
         639, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES),
 )

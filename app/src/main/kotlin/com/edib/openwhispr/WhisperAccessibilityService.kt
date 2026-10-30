@@ -247,6 +247,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         if (!serviceAlive) return@synchronized
         localTranscriber?.close()
         localTranscriber = null
+        if (!prefs().getBoolean("use_local", true)) return@synchronized
         // A corrupted/incompatible model file or a native (sherpa-onnx)
         // load failure here must not be allowed to crash the process --
         // that takes the whole accessibility service down with it.
@@ -263,10 +264,16 @@ class WhisperAccessibilityService : AccessibilityService() {
                 return@synchronized
             }
             var attempted = false
+            val profile = DictationLanguage.fromSaved(prefs().getString("language_profile", null))
             val modelName = prefs().getString("model_name", "") ?: ""
+            val selectedModel = MODEL_CATALOG.firstOrNull { it.archive == modelName }
+            if (selectedModel != null && !profile.acceptsModel(selectedModel.languages)) {
+                localModelError = "This model does not cover your selected language. Choose a compatible model in Settings."
+                return@synchronized
+            }
             if (modelName.isBlank()) {
                 // Auto-detect first available model
-                val models = LocalTranscriber.availableModels(this)
+                val models = LocalTranscriber.availableModels(this).filter { name -> MODEL_CATALOG.any { it.archive == name && profile.acceptsModel(it.languages) } }
                 if (models.isNotEmpty()) {
                     Log.i(TAG, "Auto-detected model: ${models.first()}")
                     attempted = true
@@ -860,6 +867,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         } catch (_: RuntimeException) { toast(getString(R.string.audio_permission_denied)); return }
 
         pcmStream = ByteArrayOutputStream()
+        if (prefs().getBoolean("recording_vibration", false)) overlayView?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
         try { audioRecord!!.startRecording() } catch (_: RuntimeException) {
             cancelRecording(); reset("Couldn’t start microphone recording"); return
         }
@@ -910,6 +918,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         audioRecord = null
 
         val pcm = pcmStream?.toByteArray() ?: ByteArray(0)
+        if (prefs().getBoolean("recording_vibration", false)) overlayView?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
         pcmStream = null
         speakingMillis = pcm.size * 1000L / (SAMPLE_RATE * 2L)
 
@@ -982,6 +991,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     }
 
     private fun playRecordingStoppedTone() {
+        if (!prefs().getBoolean("recording_sound", true)) return
         try {
             if (stopTone?.startTone(ToneGenerator.TONE_PROP_BEEP, 150) == false) {
                 Log.w(TAG, "Recording stop tone did not start")

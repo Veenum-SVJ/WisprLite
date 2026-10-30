@@ -274,6 +274,7 @@ class MainActivity : AppCompatActivity() {
             val newCloud = !cloudSwitch.isChecked
             prefs().edit().putBoolean("use_local", !newCloud).apply()
             cloudSwitch.isChecked = newCloud
+            WhisperAccessibilityService.instance?.reloadModel()
             refresh()
         }
         cloudRowSub = cloudRow.findViewWithTag("subtitle")
@@ -558,7 +559,7 @@ class MainActivity : AppCompatActivity() {
             section.visibility = View.VISIBLE
             allSettings.addView(section)
         }
-        navigation = WisprNavigation(this, allSettings)
+        navigation = WisprNavigation(this, allSettings, savedInstanceState)
         setContentView(navigation!!.build())
 
         if (!hasPerm(Manifest.permission.RECORD_AUDIO)) {
@@ -570,11 +571,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() { super.onResume(); refresh(); navigation?.refresh() }
     override fun onDestroy() { navigation?.close(); super.onDestroy() }
+    override fun onSaveInstanceState(outState: Bundle) { navigation?.saveState(outState); super.onSaveInstanceState(outState) }
     override fun onRequestPermissionsResult(c: Int, p: Array<String>, r: IntArray) {
         super.onRequestPermissionsResult(c, p, r); refresh()
     }
 
     private fun showTab(index: Int) {
+        if (navigation != null) {
+            statusContainer.visibility = View.VISIBLE
+            dictationContainer.visibility = View.VISIBLE
+            settingsContainer.visibility = View.VISIBLE
+            navigation?.openSettings()
+            return
+        }
         statusContainer.visibility = if (index == 0) View.VISIBLE else View.GONE
         dictationContainer.visibility = if (index == 1) View.VISIBLE else View.GONE
         settingsContainer.visibility = if (index == 2) View.VISIBLE else View.GONE
@@ -737,8 +746,10 @@ class MainActivity : AppCompatActivity() {
         val cleanupApiKey = if (cleanupConfig.provider == CleanupProviderConfig.Provider.GROQ)
             groqApiKey else SecureKeyStorage.cleanupApiKey(this)
         val hasGroqKey = groqApiKey.isNotBlank()
+        val hasTranscriptionKey = SecureKeyStorage.transcriptionApiKey(this).isNotBlank()
         val hasCleanupKey = cleanupApiKey.isNotBlank()
-        val hasModel = LocalTranscriber.availableModels(this).isNotEmpty()
+        val profile = DictationLanguage.fromSaved(prefs().getString("language_profile", null))
+        val hasModel = MODEL_CATALOG.any { profile.acceptsModel(it.languages) && ModelDownloader.isInstalled(this, it) }
         val unrestricted = isIgnoringBatteryOptimizations()
 
         audioRowSub.text = if (audio) getString(R.string.granted) else getString(R.string.tap_grant_permission)
@@ -805,7 +816,7 @@ class MainActivity : AppCompatActivity() {
 
         // Ready logic
         val localReady = useLocal && hasModel
-        val cloudReady = !useLocal && hasGroqKey
+        val cloudReady = !useLocal && hasTranscriptionKey
         val postReady = !usePostProcessing || hasCleanupKey
         val ready = audio && acc && (localReady || cloudReady) && postReady
 
@@ -813,7 +824,7 @@ class MainActivity : AppCompatActivity() {
             !audio -> getString(R.string.status_missing_audio) to null
             !acc -> getString(R.string.status_missing_accessibility) to null
             useLocal && !hasModel -> getString(R.string.status_missing_model) to { tabLayout.getTabAt(1)?.select(); Unit }
-            !useLocal && !hasGroqKey -> getString(R.string.status_missing_key) to { tabLayout.getTabAt(2)?.select(); Unit }
+            !useLocal && !hasTranscriptionKey -> getString(R.string.status_missing_key) to { navigation?.openSettings(); Unit }
             usePostProcessing && !hasCleanupKey -> getString(R.string.status_missing_cleanup_key) to { tabLayout.getTabAt(2)?.select(); Unit }
             else -> null to null
         }

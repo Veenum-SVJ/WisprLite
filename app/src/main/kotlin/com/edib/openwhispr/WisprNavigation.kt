@@ -14,14 +14,15 @@ import java.util.Date
 import java.util.concurrent.Executors
 
 /** Small native navigation shell: no web runtime or additional UI framework. */
-class WisprNavigation(private val activity: MainActivity, private val settings: View) {
+class WisprNavigation(private val activity: MainActivity, private val settings: View, savedState: android.os.Bundle? = null) {
     private val worker = Executors.newSingleThreadExecutor()
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
     private val frame = FrameLayout(activity)
     private val body = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
     private val title = TextView(activity).apply { textSize = 24f }
     private val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
-    private var destination = "Home"
+    private var destination = savedState?.getString("destination") ?: "Home"
+    private var dictionaryDraft: String? = savedState?.getString("dictionary_draft")
     private var generation = 0
     private var cursor: HistoryCursor? = null
     private var lastDay = ""
@@ -29,7 +30,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     private fun text(value: String, size: Float = 16f) = TextView(activity).apply {
         text = value; textSize = size; setPadding(dp(12), dp(12), dp(12), dp(12))
     }
-    private fun button(label: String, action: () -> Unit) = Button(activity).apply {
+    private fun button(label: String, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity).apply {
         text = label; isAllCaps = false; setOnClickListener { action() }
     }
     private fun <T> query(action: (HistoryRepository) -> T, result: (T) -> Unit) {
@@ -52,17 +53,24 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         body.addView(header)
         body.addView(ScrollView(activity).apply { addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(body, FrameLayout.LayoutParams(-1, -1))
-        show("Home")
+        show(destination)
         return frame
     }
     fun refresh() { show(destination) }
+    fun openSettings() { show("Settings") }
+    fun saveState(state: android.os.Bundle) {
+        state.putString("destination", destination)
+        state.putString("dictionary_draft", dictionaryDraft)
+    }
     fun close() { generation++; worker.shutdown() }
     private fun drawer() {
         val cover = FrameLayout(activity).apply { setBackgroundColor(0x66000000) }
         cover.setOnClickListener { frame.removeView(cover) }
         val panel = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(40), dp(16), dp(20))
-            setBackgroundColor(activity.getColor(if (activity.resources.configuration.uiMode and 48 == 32) android.R.color.background_dark else android.R.color.background_light))
+            val background = android.util.TypedValue()
+            activity.theme.resolveAttribute(android.R.attr.colorBackground, background, true)
+            setBackgroundColor(background.data)
             isClickable = true
         }
         panel.addView(text("WisprLite", 26f))
@@ -158,7 +166,12 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         content.addView(text("Help recognition with names and phrases. One per line; optional aliases after |. This does not train a model."))
         val input = EditText(activity).apply {
             hint = "Canonical phrase | pronunciation, alias"; minLines = 8; gravity = Gravity.TOP
-            setText(Dictionary.load(prefs).joinToString("\n"))
+            setText(dictionaryDraft ?: Dictionary.load(prefs).joinToString("\n"))
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { }
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { dictionaryDraft = s?.toString() }
+                override fun afterTextChanged(s: android.text.Editable?) { }
+            })
         }
         content.addView(input)
         content.addView(button("Save dictionary") {

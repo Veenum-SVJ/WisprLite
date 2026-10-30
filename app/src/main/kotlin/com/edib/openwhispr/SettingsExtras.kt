@@ -26,6 +26,19 @@ class SettingsExtras(private val activity: MainActivity) {
                 }.setNegativeButton("Cancel", null).show()
         })
         addView(TextView(activity).apply { text = "Mixed/Auto preserves language switches. Pidgin is a recognition profile; accuracy depends on your model. Cloud cleanup sends transcript text, including with local speech recognition." })
+        addView(TextView(activity).apply { text = "Pidgin hints apply to cloud recognition. Offline Pidgin accuracy depends on the multilingual model; it is not a separately supported Whisper language." })
+        for ((key, label, default) in listOf(Triple("recording_sound", "Recording stop sound", true), Triple("recording_vibration", "Recording vibration", false))) {
+            addView(com.google.android.material.materialswitch.MaterialSwitch(activity).apply {
+                text = label; isChecked = prefs.getBoolean(key, default)
+                setOnCheckedChangeListener { _, checked -> prefs.edit().putBoolean(key, checked).apply() }
+            })
+        }
+        val storage = TextView(activity).apply { text = "Model storage: calculating…" }
+        addView(storage)
+        thread {
+            val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            activity.runOnUiThread { if (!activity.isDestroyed) storage.text = "Model storage: ${android.text.format.Formatter.formatFileSize(activity, bytes)}" }
+        }
         addView(row("Appearance · light, dark or system") {
             choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) {
                 AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1))
