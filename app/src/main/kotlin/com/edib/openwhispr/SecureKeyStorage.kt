@@ -16,6 +16,7 @@ object SecureKeyStorage {
     private const val KEY_ALIAS = "openwhispr_api_key_encryption"
     private const val GROQ_KEY = "groq_api_key"
     private const val CLEANUP_KEY = "cleanup_api_key"
+    private const val TRANSCRIPTION_KEY = "transcription_api_key"
     private const val LEGACY_GROQ_KEY = "api_key"
     private const val AES_GCM_TAG_BITS = 128
     private val lock = Any()
@@ -47,6 +48,17 @@ object SecureKeyStorage {
     fun cleanupApiKey(context: Context): String = synchronized(lock) {
         securePrefs(context).getString(CLEANUP_KEY, null)?.let { decrypt(it) } ?: ""
     }
+
+    fun transcriptionApiKey(context: Context): String = synchronized(lock) {
+        val encrypted = securePrefs(context).getString(TRANSCRIPTION_KEY, null)
+        if (encrypted != null) return@synchronized decrypt(encrypted).orEmpty()
+        val root = context.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
+            .getString("transcription_base_url", "https://api.groq.com/openai/v1").orEmpty()
+        val host = try { java.net.URI(root).host } catch (_: Exception) { null }
+        if (host.equals("api.groq.com", true)) groqApiKey(context) else ""
+    }
+
+    fun saveTranscriptionApiKey(context: Context, value: String) = save(context, TRANSCRIPTION_KEY, value)
 
     fun saveGroqApiKey(context: Context, value: String) = save(context, GROQ_KEY, value)
 

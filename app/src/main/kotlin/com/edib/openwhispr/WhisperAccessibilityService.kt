@@ -44,6 +44,10 @@ import kotlin.math.abs
 
 class WhisperAccessibilityService : AccessibilityService() {
     private var speakingMillis = 0L
+    private val session = DictationSession()
+    private var recordingJob = 0L
+    @Volatile private var serviceAlive = true
+    private val modelLock = Any()
 
     companion object {
         var instance: WhisperAccessibilityService? = null
@@ -92,7 +96,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    private var state = State.IDLE
+    @Volatile private var state = State.IDLE
     private var overlayView: FrameLayout? = null
     private var overlayShown = false
 
@@ -138,6 +142,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private val screenH get() = resources.displayMetrics.heightPixels
 
     override fun onServiceConnected() {
+        serviceAlive = true
         instance = this
         try {
             stopTone?.release()
@@ -166,9 +171,23 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    override fun onInterrupt() {}
+    override fun onInterrupt() { cancelRecording(); goIdle() }
+
+    private fun cancelRecording() {
+        session.cancel()
+        state = State.IDLE
+        val recorder = audioRecord
+        audioRecord = null
+        try { recorder?.stop() } catch (_: RuntimeException) { }
+        try { recorder?.release() } catch (_: RuntimeException) { }
+        pcmStream = null
+    }
 
     override fun onDestroy() {
+        serviceAlive = false
+        cancelRecording()
+        handler.removeCallbacksAndMessages(null)
+        thread { synchronized(modelLock) { localTranscriber?.close(); localTranscriber = null } }
         instance = null
         removePositionPreview()
         stopTone?.release()
@@ -224,7 +243,10 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun initLocalModel() {
+    private fun initLocalModel() = synchronized(modelLock) {
+        if (!serviceAlive) return@synchronized
+        localTranscriber?.close()
+        localTranscriber = null
         // A corrupted/incompatible model file or a native (sherpa-onnx)
         // load failure here must not be allowed to crash the process --
         // that takes the whole accessibility service down with it.
@@ -238,7 +260,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             if (!LocalTranscriber.nativeEngineAvailable) {
                 localTranscriber = null
                 localModelError = "This build doesn't include the on-device speech engine"
-                return
+                return@synchronized
             }
             var attempted = false
             val modelName = prefs().getString("model_name", "") ?: ""
@@ -366,7 +388,7 @@ class WhisperAccessibilityService : AccessibilityService() {
      * toggled, so an already-idle overlay hides/shows immediately instead
      * of waiting for the next focus event or poll tick. */
     fun refreshMasterEnabled() {
-        handler.post { updateOverlayVisibility() }
+        handler.post { if (!masterEnabled()) { cancelRecording(); goIdle() }; updateOverlayVisibility() }
     }
 
     /** Shows the overlay at its target alpha immediately. No fade-in: an
@@ -815,6 +837,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     }
 
     private fun startRecording() {
+        if (!serviceAlive || !masterEnabled()) return
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
             != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             toast(getString(R.string.grant_audio_permission)); return
@@ -834,10 +857,16 @@ class WhisperAccessibilityService : AccessibilityService() {
                 MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufSize
             )
-        } catch (_: SecurityException) { toast(getString(R.string.audio_permission_denied)); return }
+        } catch (_: RuntimeException) { toast(getString(R.string.audio_permission_denied)); return }
 
         pcmStream = ByteArrayOutputStream()
-        audioRecord!!.startRecording()
+        try { audioRecord!!.startRecording() } catch (_: RuntimeException) {
+            cancelRecording(); reset("Couldn’t start microphone recording"); return
+        }
+        recordingJob = session.begin()
+        val job = recordingJob
+        val recorder = audioRecord!!
+        val stream = pcmStream!!
         state = State.RECORDING
         setBusy(false)
         setRecordingLook(true) // [ui]
@@ -847,10 +876,11 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         thread {
             val buf = ByteArray(bufSize)
-            while (state == State.RECORDING) {
-                val n = audioRecord?.read(buf, 0, buf.size) ?: break
+            while (state == State.RECORDING && session.isCurrent(job)) {
+                val n = try { recorder.read(buf, 0, buf.size) } catch (_: RuntimeException) { break }
                 if (n > 0) {
-                    pcmStream?.write(buf, 0, n)
+                    if (!session.isCurrent(job) || state != State.RECORDING) break
+                    stream.write(buf, 0, n)
                     // [ui] Peak of this buffer (16-bit little-endian PCM),
                     // only read for the overlay's voice-reactive size.
                     var peak = 0
@@ -868,14 +898,15 @@ class WhisperAccessibilityService : AccessibilityService() {
     }
 
     private fun stopAndTranscribe() {
+        val job = recordingJob
         state = State.TRANSCRIBING
         setRecordingLook(false) // [ui] white bars + the existing spinner ring
         setIcon(R.drawable.ic_mic)
         setBusy(true)
         updateOverlayVisibility()
 
-        audioRecord?.stop()
-        audioRecord?.release()
+        try { audioRecord?.stop() } catch (_: RuntimeException) { }
+        try { audioRecord?.release() } catch (_: RuntimeException) { }
         audioRecord = null
 
         val pcm = pcmStream?.toByteArray() ?: ByteArray(0)
@@ -901,11 +932,11 @@ class WhisperAccessibilityService : AccessibilityService() {
         // missing/unloaded model sent the recording to Groq without notice.
         // Now the audio is discarded and the user is told why.
         if (useLocal && local != null) {
-            transcribeLocal(pcm, local)
+            transcribeLocal(pcm, local, job)
         } else if (useLocal) {
             reset(localUnavailableMessage())
         } else {
-            transcribeApi(pcm)
+            transcribeApi(pcm, job)
         }
     }
 
@@ -921,7 +952,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         return peak
     }
 
-    private fun transcribeLocal(pcm: ByteArray, transcriber: LocalTranscriber) {
+    private fun transcribeLocal(pcm: ByteArray, transcriber: LocalTranscriber, job: Long) {
         playRecordingStoppedTone()
         thread {
             try {
@@ -938,10 +969,11 @@ class WhisperAccessibilityService : AccessibilityService() {
                 val ms = System.currentTimeMillis() - t0
                 Log.i(TAG, "Local transcription: ${ms}ms, ${samples.size / SAMPLE_RATE}s audio")
 
-                handleTranscriptionResult(text)
+                if (session.isCurrent(job)) handleTranscriptionResult(text, job)
             } catch (e: Exception) {
                 Log.e(TAG, "Local transcription failed", e)
                 handler.post {
+                    if (!session.isCurrent(job)) return@post
                     toast(getString(R.string.local_transcription_error, e.message ?: getString(R.string.unknown_error)))
                     goIdle()
                 }
@@ -960,19 +992,21 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun transcribeApi(pcm: ByteArray) {
+    private fun transcribeApi(pcm: ByteArray, job: Long) {
         val wav = WavWriter.encode(pcm)
-        val apiKey = SecureKeyStorage.groqApiKey(this)
+        val apiKey = SecureKeyStorage.transcriptionApiKey(this)
         if (apiKey.isBlank()) { reset(getString(R.string.set_groq_key)); return }
 
         playRecordingStoppedTone()
         val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",
             prefs().getString("transcription_model", null) ?: "whisper-large-v3")
         TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
+            if (!session.isCurrent(job)) return@transcribe
             if (result.text != null && result.text.isNotBlank()) {
-                handleTranscriptionResult(result.text)
+                handleTranscriptionResult(result.text, job)
             } else {
                 handler.post {
+                    if (!session.isCurrent(job)) return@post
                     toast(getString(R.string.transcription_error, result.error ?: getString(R.string.empty_transcript)))
                     goIdle()
                 }
@@ -980,9 +1014,11 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun handleTranscriptionResult(text: String?) {
+    private fun handleTranscriptionResult(text: String?, job: Long) {
+        if (!session.isCurrent(job) || !serviceAlive) return
         if (text.isNullOrBlank()) {
             handler.post {
+                if (!session.isCurrent(job)) return@post
                 toast(getString(R.string.no_speech_detected))
                 goIdle()
             }
@@ -1022,6 +1058,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         if (usePostProcessing) {
             if (apiKey.isBlank()) {
                 handler.post {
+                    if (!session.isCurrent(job)) return@post
                     toast(getString(R.string.cleanup_needs_key))
                     injectText(text)
                     goIdle()
@@ -1035,6 +1072,7 @@ class WhisperAccessibilityService : AccessibilityService() {
 
             PostProcessor.process(text, prompt, apiKey, cleanupConfig) { result ->
                 handler.post {
+                    if (!session.isCurrent(job)) return@post
                     val cleaned = result.text?.trim()
                     if (cleaned == "EMPTY") {
                         // Model correctly identified filler-only/no-speech audio;
@@ -1065,6 +1103,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             }
         } else {
             handler.post {
+                if (!session.isCurrent(job)) return@post
                 injectText(text)
                 goIdle()
             }
@@ -1078,7 +1117,7 @@ class WhisperAccessibilityService : AccessibilityService() {
      * before the trigger phrase) the command runs on that text instead, and
      * the result is inserted like normal dictation. */
     private fun handleVoiceCommand(instruction: String, dictated: String? = null) {
-        val apiKey = SecureKeyStorage.groqApiKey(this)
+        val apiKey = SecureKeyStorage.transcriptionApiKey(this)
         if (apiKey.isBlank()) {
             handler.post {
                 toast(getString(R.string.voice_commands_need_key))
@@ -1173,6 +1212,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     }
 
     private fun goIdle() {
+        session.cancel()
         state = State.IDLE
         setBusy(false)
         setRecordingLook(false) // [ui]
@@ -1194,6 +1234,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         feedback: String? = getString(R.string.copied_to_clipboard),
         feedbackDurationMs: Long = 2000
     ): Boolean {
+        if (!serviceAlive || !masterEnabled()) return false
         copyToClipboard(text)
 
         val candidates = findInjectionCandidates()
@@ -1360,3 +1401,4 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun prefs() = getSharedPreferences("openwhispr", MODE_PRIVATE)
     private fun toast(msg: String) { handler.post { Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() } }
 }
+

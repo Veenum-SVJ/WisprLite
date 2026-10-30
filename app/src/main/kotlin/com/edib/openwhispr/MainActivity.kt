@@ -1560,6 +1560,7 @@ class MainActivity : AppCompatActivity() {
     private fun currentSnapshot(): SettingsBackup.Snapshot = SettingsBackup.Snapshot(
         prefs = prefs().all.entries.mapNotNull { (key, value) -> value?.let { key to it } }.toMap(),
         secrets = mapOf(
+            "transcription_api_key" to SecureKeyStorage.transcriptionApiKey(this),
             "groq_api_key" to SecureKeyStorage.groqApiKey(this),
             "cleanup_api_key" to SecureKeyStorage.cleanupApiKey(this),
         ),
@@ -1734,6 +1735,9 @@ class MainActivity : AppCompatActivity() {
         }
         editor.putBoolean("welcome_done", true)
         check(editor.commit())
+        if (secretItemId("transcription_api_key") in chosen) {
+            SecureKeyStorage.saveTranscriptionApiKey(this, snapshot.secrets["transcription_api_key"].orEmpty())
+        }
         if (secretItemId("groq_api_key") in chosen) {
             SecureKeyStorage.saveGroqApiKey(this, snapshot.secrets["groq_api_key"].orEmpty())
         }

@@ -6,7 +6,7 @@ try {
     $testCp = ((Get-ChildItem $gradleLib -Recurse -File | Where-Object { $_.Name -match '^(kotlin-stdlib|junit-4|hamcrest)' }).FullName -join ';')
     $sourceRoot = 'app/src/main/kotlin/com/edib/openwhispr'
     $testRoot = 'app/src/test/kotlin/com/edib/openwhispr'
-    $names = @('ProviderConfig', 'InsightCalculator', 'RetentionPolicy')
+    $names = @('ProviderConfig', 'InsightCalculator', 'RetentionPolicy', 'DictationSession')
     $sources = @("$sourceRoot/DictationLanguage.kt") + @($names | ForEach-Object { "$sourceRoot/$_.kt"; "$testRoot/${_}Test.kt" })
     New-Item -ItemType Directory -Force .tools/pure-tests | Out-Null
     & java '-Dfile.encoding=UTF-8' -cp "$gradleLib/*;$gradleLib/plugins/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath $testCp -d .tools/pure-tests @sources
@@ -15,3 +15,4 @@ try {
     & java '-Dfile.encoding=UTF-8' -cp ".tools/pure-tests;$testCp" org.junit.runner.JUnitCore @tests
     if ($LASTEXITCODE -ne 0) { throw 'JUnit failed' }
 } finally { Pop-Location }
+

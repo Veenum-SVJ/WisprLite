@@ -8,9 +8,11 @@ import java.io.File
 class HotwordConfigurationException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /** Local on-device transcription via sherpa-onnx. */
-class LocalTranscriber private constructor(private val recognizer: OfflineRecognizer) {
+class LocalTranscriber private constructor(private val recognizer: OfflineRecognizer) : java.io.Closeable {
+    private var closed = false
 
-    fun transcribe(samples: FloatArray, sampleRate: Int = 16000): String {
+    @Synchronized fun transcribe(samples: FloatArray, sampleRate: Int = 16000): String {
+        check(!closed) { "Speech engine is closed" }
         val stream = recognizer.createStream()
         return try {
             stream.acceptWaveform(samples, sampleRate)
@@ -19,6 +21,10 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
         } finally {
             stream.release()
         }
+    }
+
+    @Synchronized override fun close() {
+        if (!closed) { closed = true; recognizer.release() }
     }
 
     companion object {

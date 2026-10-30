@@ -82,7 +82,7 @@ class SettingsExtras(private val activity: MainActivity) {
         }
         val url = field("HTTPS API base URL", prefs.getString("transcription_base_url", "https://api.groq.com/openai/v1").orEmpty())
         val model = field("Speech model name", prefs.getString("transcription_model", "whisper-large-v3").orEmpty())
-        val key = field("API key", SecureKeyStorage.groqApiKey(activity), true)
+        val key = field("API key", SecureKeyStorage.transcriptionApiKey(activity), true)
         fields.addView(row("Test connection (queries model list)") {
             val config = ProviderConfig(url.text.toString(), model.text.toString())
             try {
@@ -103,10 +103,11 @@ class SettingsExtras(private val activity: MainActivity) {
         dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
             try {
                 ProviderConfig(url.text.toString(), model.text.toString()).transcriptionUrl()
-                SecureKeyStorage.saveGroqApiKey(activity, key.text.toString().trim())
+                SecureKeyStorage.saveTranscriptionApiKey(activity, key.text.toString().trim())
                 prefs.edit().putString("transcription_base_url", url.text.toString().trim()).putString("transcription_model", model.text.toString().trim()).apply()
                 dialog.dismiss()
             } catch (_: Exception) { url.error = "Enter a valid HTTPS URL and model" }
         } }; dialog.show()
     }
 }
+

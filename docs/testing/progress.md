@@ -25,3 +25,7 @@ Settings implemented: URL/model/key with connection test, language profiles, app
 CI run 41133306324 on 991c0d7 passed testDebugUnitTest, assembleDebug and lintDebug (BUILD SUCCESSFUL). Latest settings revision still running. Official platform/build-tools/ADB archives all checksum verified; extracting locally. Extended CI to compile instrumentation tests and validate release shrinking/lint.
 
 Redmi debug install and Home/drawer smoke checks passed. A newer CI APK could not replace it because ephemeral runners generated different debug keys. Added persistent development signing via encrypted GitHub Actions secret; key remains outside Git. Full requirements review started.
+
+Fresh review found credential-slot sharing between custom transcription and Groq cleanup. Separated the generic transcription key from the Groq cleanup key; added host-restricted legacy fallback. Credential-isolation device test and backup integration still pending. Review also identified service destruction/callback cancellation issues to fix before cloud/microphone testing.
+
+Review fixes: separate provider credentials and encrypted-backup slot; service cancellation token, recorder stop/release on interrupt/destroy/pause, guarded late callbacks, synchronized native engine close/reload. DictationSession RED observed then full 9 pure tests GREEN. Credential isolation instrumentation test added (pending execution). Release R8 failure diagnosed as 512MB heap exhaustion; set 2GB heap and two workers. Local full review build running.
