@@ -5,6 +5,20 @@ import org.junit.Test
 
 class TranscriberClientTest {
 
+    @Test fun `routes transcription to configured provider and model`() {
+        val request = TranscriberClient.transcriptionRequest(byteArrayOf(1), "key", emptyList(),
+            config = ProviderConfig("https://example.com/v1", "custom-speech"))
+        assertEquals("https://example.com/v1/audio/transcriptions", request.url.toString())
+        val body = request.body as okhttp3.MultipartBody
+        assertEquals("custom-speech", partContent(body.parts.first { it.hasDispositionName("model") }))
+    }
+
+    @Test fun `rejects missing transcription credentials`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            TranscriberClient.transcriptionRequest(byteArrayOf(1), " ", emptyList())
+        }
+    }
+
     @Test fun `parses success response`() {
         val r = TranscriberClient.parseResponse("""{"text": "Hello world"}""")
         assertEquals("Hello world", r.text)
