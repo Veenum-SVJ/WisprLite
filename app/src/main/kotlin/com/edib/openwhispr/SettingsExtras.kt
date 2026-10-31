@@ -13,26 +13,18 @@ class SettingsExtras(private val activity: MainActivity) {
     private fun message(value: String) = activity.runOnUiThread { Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun heading(label: String) = TextView(activity).apply {
-        text = label; textSize = 14f; setTypeface(typeface, android.graphics.Typeface.BOLD)
+        text = label; textSize = 13f; setTypeface(typeface, android.graphics.Typeface.BOLD)
         setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
-        setPadding(dp(8), dp(20), dp(8), dp(10))
+        setPadding(dp(2), dp(20), dp(2), dp(10))
     }
-    private fun row(label: String, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity, null,
-        com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-        text = label; textSize = 16f; isAllCaps = false
-        gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
-        cornerRadius = dp(12); minHeight = dp(52)
-        setPadding(dp(16), dp(10), dp(16), dp(10))
-        layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
-        setOnClickListener { action() }
-    }
+    private fun row(label: String, action: () -> Unit) = ModernUi.settingRow(activity, label, action)
     fun build(): View = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
         addView(heading("Speech and language"))
-        addView(row("Transcription provider · URL, model and key") { provider() })
         addView(row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
             activity.showLanguageProfilePicker()
         })
+        addView(row("Transcription provider · URL, model and key") { provider() })
         addView(row("Language help") {
             AlertDialog.Builder(activity).setTitle("Choosing a language")
                 .setMessage("Mixed/Auto lets the model detect the language and can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints where a separate Pidgin code is unavailable. Recognition and tone-mark accuracy depend on your model.")

@@ -53,6 +53,16 @@ class AppearanceIntegrationTest {
                         descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
                     }
                     instrumentation.waitForIdleSync()
+                    val drawerDeadline = android.os.SystemClock.uptimeMillis() + 5_000
+                    var drawerSettled = false
+                    while (!drawerSettled && android.os.SystemClock.uptimeMillis() < drawerDeadline) {
+                        scenario.onActivity { activity ->
+                            drawerSettled = activity.window.decorView.findViewWithTag<View>("navigation-panel")
+                                ?.let { it.width > 0 && it.translationX <= 1f } == true
+                        }
+                        if (!drawerSettled) Thread.sleep(30)
+                    }
+                    assertTrue("Drawer animation did not settle before capture", drawerSettled)
                     scenario.onActivity { activity ->
                         val root = activity.window.decorView
                         val bitmap = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)

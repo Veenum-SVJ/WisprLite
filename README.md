@@ -3,21 +3,21 @@
 A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
 ## Screens
-- Home: local text history, original/cleaned text, copy/delete, cleanup retry, Direct/Cleanup mode.
+- Home: inline text history, original/cleaned selection, copy/delete and cleanup actions, expandable long transcripts, Direct/Cleanup mode.
 - Insights: recordings, words, speaking duration and estimated typing time saved.
 - Dictionary: custom words, names and pronunciation aliases.
 - Settings: providers, offline models, language profiles, appearance, recording feedback, retention and encrypted settings backup.
 
-Use the top-left menu to navigate; Settings is anchored at the bottom. Warm light/dark themes follow the system by default.
+Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Warm light/dark themes follow the system by default.
 
 ## Setup
 Install an APK, grant microphone access and enable the WisprLite Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
 
 Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. API endpoints must support OpenAI-compatible multipart audio transcription. Cleanup can use a separate provider/key/model. Cloud cleanup sends text even when speech recognition is offline.
 
-Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin uses English-based recognition and cloud Pidgin vocabulary hints; it is not a separately supported base Whisper language. Auto detection can misidentify short phrases: choose English, Yorùbá or Pidgin explicitly using the Home language control. Both generic Base and Small failed our real Yoruba accuracy/diacritic trials; neither is recommended as a verified Yoruba solution. Desktop Q5 model files cannot be imported into the Android runtime.
+Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin uses English-based recognition and cloud Pidgin vocabulary hints; it is not a separately supported base Whisper language. Auto detection can misidentify short phrases: choose English, Yorùbá or Pidgin explicitly using Language at the top of Settings. Both generic Base and Small failed our real Yoruba accuracy/diacritic trials; neither is recommended as a verified Yoruba solution. Desktop Q5 model files cannot be imported into the Android runtime.
 
-Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
+Tap the floating bubble to start/stop, or hold to record and release to transcribe. Drag it freely to position it. Settings provides a live bubble-size preview. Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
 
 ## Development
 Requires JDK 17, Android SDK platform 35 and build-tools 35.0.0. Set sdk.dir in an untracked local.properties file.

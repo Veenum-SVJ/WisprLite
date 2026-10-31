@@ -12,5 +12,10 @@
     <color name="tertiary_container">#FFDEA6</color>
     <color name="on_tertiary_container">#271900</color>
     <color name="app_background">#FAF7F2</color>
+    <color name="panel">#FFFFFF</color>
+    <color name="panel_muted">#EEF3F0</color>
+    <color name="ink">#193330</color>
+    <color name="ink_muted">#5B706B</color>
+    <color name="panel_outline">#D7E2DC</color>
 </resources>
 

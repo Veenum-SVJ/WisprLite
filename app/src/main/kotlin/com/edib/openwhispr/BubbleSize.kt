@@ -11,7 +11,7 @@ object BubbleSize {
 
     const val BUTTON_DP = 44
     const val RING_DP = 56
-    const val PADDING_DP = 10
+    const val PADDING_DP = 0
     const val MIN_TOUCH_TARGET_DP = 48
     private const val TAP_THRESHOLD_DP = 10
     private const val FEEDBACK_OFFSET_DP = 64

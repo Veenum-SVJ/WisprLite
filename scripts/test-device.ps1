@@ -85,6 +85,7 @@ try {
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
     Run-Suite 'light-and-dark-appearance' 'com.edib.openwhispr.AppearanceIntegrationTest' 'activity'
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
+    Run-Suite 'bubble-size-preview-and-layout' 'com.edib.openwhispr.BubblePreviewIntegrationTest' 'activity'
     Run-Suite 'backup-picker-cancel' 'com.edib.openwhispr.BackupPickerIntegrationTest#cancellingDocumentPickerDiscardsPendingPassphraseAndSnapshot' 'activity'
     Run-Suite 'backup-picker-roundtrip' 'com.edib.openwhispr.BackupPickerIntegrationTest#exportedDocumentCanBeSelectedAndRestoredThroughAndroidPicker' 'activity'
     Run-Suite 'clipboard-fallback' 'com.edib.openwhispr.ClipboardFallbackIntegrationTest' 'service-activity'

@@ -29,7 +29,7 @@ class BubbleSizeTest {
 
         assertEquals(44, dimensions.buttonDp)
         assertEquals(56, dimensions.ringDp)
-        assertEquals(10, dimensions.paddingDp)
+        assertEquals(0, dimensions.paddingDp)
         assertEquals(10, dimensions.tapThresholdDp)
         assertEquals(64, dimensions.feedbackOffsetDp)
     }
@@ -41,7 +41,7 @@ class BubbleSizeTest {
 
         assertEquals(40, minimum.buttonDp)
         assertEquals(50, minimum.ringDp)
-        assertEquals(9, minimum.paddingDp)
+        assertEquals(0, minimum.paddingDp)
         assertEquals(66, maximum.buttonDp)
         assertEquals(84, maximum.ringDp)
         assertTrue(minimum.ringDp >= BubbleSize.MIN_TOUCH_TARGET_DP)

@@ -53,9 +53,10 @@ class StartupNavigationTest {
                 val deadline = System.currentTimeMillis() + 5_000
                 while (!insightsLoaded && System.currentTimeMillis() < deadline) {
                     scenario.onActivity { activity ->
-                        insightsLoaded = descendants(activity.window.decorView).filterIsInstance<TextView>().any {
-                            it.text.toString().startsWith("All time\n${totals.words} words · ${totals.recordings} recordings\n")
-                        }
+                        val panel = activity.window.decorView.findViewWithTag<View>("insights_All time")
+                        val labels = panel?.let { descendants(it).filterIsInstance<TextView>().map { view -> view.text.toString() } }.orEmpty()
+                        insightsLoaded = totals.words.toString() in labels && "words" in labels &&
+                            "${totals.recordings} recordings" in labels
                     }
                     if (!insightsLoaded) Thread.sleep(100)
                 }

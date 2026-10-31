@@ -29,24 +29,24 @@ internal class DottedVoiceDrawable : Drawable(), Runnable {
         canvas.translate(bounds.left.toFloat(), bounds.top.toFloat())
         canvas.scale(bounds.width() / 24f, bounds.height() / 24f)
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1.1f
-        canvas.drawCircle(12f, 12f, 10.8f, paint)
+        paint.strokeWidth = 0.9f
+        canvas.drawCircle(12f, 12f, 11.25f, paint)
         paint.style = Paint.Style.FILL
         if (processing) {
             val moving = ValueAnimator.areAnimatorsEnabled()
             val phase = if (moving) (SystemClock.uptimeMillis() / 120 % 8).toInt() else 0
             for (index in 0 until 8) {
                 val angle = index * Math.PI / 4 - Math.PI / 2
-                canvas.drawCircle(12f + cos(angle).toFloat() * 4.8f, 12f + sin(angle).toFloat() * 4.8f,
-                    if (index == phase) 1.15f else 0.65f, paint)
+                canvas.drawCircle(12f + cos(angle).toFloat() * 6.5f, 12f + sin(angle).toFloat() * 6.5f,
+                    if (index == phase) 1.4f else 0.9f, paint)
             }
             if (moving && isVisible) scheduleSelf(this, SystemClock.uptimeMillis() + 80)
         } else {
             val pattern = intArrayOf(2, 4, 5, 3, 2)
             for (column in pattern.indices) {
                 val rows = if (recording) 1 + (voiceLevel * (pattern[column] - 1)).toInt() else pattern[column]
-                for (row in 0 until rows) canvas.drawCircle(6.4f + column * 2.8f,
-                    12f + (row - (rows - 1) / 2f) * 2.5f, 0.85f, paint)
+                for (row in 0 until rows) canvas.drawCircle(4.4f + column * 3.8f,
+                    12f + (row - (rows - 1) / 2f) * 3.4f, 1.05f, paint)
             }
         }
         canvas.restoreToCount(save)

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.OpenWhispr" parent="Theme.Material3Expressive.DayNight.NoActionBar">
+        <item name="colorOnSurface">@color/ink</item>
+        <item name="colorOnSurfaceVariant">@color/ink_muted</item>
+        <item name="colorOutline">@color/ink_muted</item>
+        <item name="colorOutlineVariant">@color/panel_outline</item>
+        <item name="colorSurfaceContainer">@color/panel</item>
+        <item name="colorSurfaceContainerLow">@color/panel</item>
+        <item name="colorSurfaceContainerHigh">@color/panel_muted</item>
+        <item name="colorSurfaceContainerHighest">@color/panel_muted</item>
         <item name="android:colorBackground">@color/app_background</item>
         <item name="colorSurface">@color/app_background</item>
         <!-- Accent Colors -->

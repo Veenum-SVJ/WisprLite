@@ -1,0 +1,13 @@
+# WisprLite modern tool UI
+
+Approved direction: a native Android tool with stronger identity, crisp panels, compact controls and an original circular dotted-voice mark. Use the installed UI/UX Pro Max guidance for hierarchy, typography, native touch targets, contrast and motion. Keep the existing Home, Insights, Dictionary and Settings destinations; preserve provider, model, history and retention functionality. No additional UI framework, font download or icon-pack dependency.
+
+The header and drawer carry the WisprLite mark and wordmark. Panels use clear text hierarchy and restrained teal accents, with native sans-serif medium headings and regular body text. The user selected the Signal icon family: transcript panels for Home, dotted columns for Insights, a dotted-page Dictionary and adjustment sliders for Settings. Custom icons are native vectors. The circular logo has no inner ImageView padding; the larger white ring lies near the outside edge and the dot pattern occupies more of the circle.
+
+Startup uses WisprLite's new circular artwork on a theme-aware teal background. The inherited OpenWhispr bar animation and fixed black splash are removed. Keep legal upstream attribution in the repository and bundled licenses.
+
+Home no longer has a language picker. Language is the first action at the top of Settings. The existing direct/cleanup mode control remains available. History cards have quiet inline copy, cleanup and delete actions. Tapping long text expands it in the same card rather than opening a detail/options dialog. Original and cleaned versions remain available inline; copy always uses the full selected version, regardless of the shortened preview. Cleanup retries do not duplicate statistics and do not move the user away from Settings when they finish there.
+
+Settings has an always-visible sample bubble immediately beside the size slider. It grows/shrinks during adjustment and shows the same circular artwork at the corresponding visible button size. Only user changes persist the setting and resize the floating bubble; programmatic preview checks preserve the saved value. The removed height and left-side controls remain absent; free placement persists from dragging.
+
+The drawer is anchored on the right and enters from that side, respecting disabled system animations. Native touch targets remain at least 48dp. Text contrast checks for panel text, muted text and selected controls pass in both themes. Device checks cover original/cleaned Unicode copying without a popup, full long-text expansion, right-side drawer bounds, Settings language ordering and rendered preview growth. Recognition accuracy and MIUI background recovery remain separate acceptance items.

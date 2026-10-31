@@ -101,10 +101,7 @@ class MainActivity : AppCompatActivity() {
             window.decorView.post { showWelcome() }
         }
 
-        // [ui] Android 12+ drops the splash as soon as the first frame is
-        // drawn, which would cut the icon animation short on a fast phone.
-        // Wait for whatever is left of it (at most 1s), then fade out.
-        // The splash itself is the Theme.OpenWhispr.Launch theme.
+        // Keep the native WisprLite splash brief; the static brand mark needs no animation delay.
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             splashScreen.setOnExitAnimationListener { splash ->
                 val start = splash.iconAnimationStart?.toEpochMilli()
@@ -347,6 +344,24 @@ class MainActivity : AppCompatActivity() {
         }
         bubbleSizePanel.addView(selectedBubbleSize)
 
+        val bubblePreview = ImageView(this).apply {
+            tag = "bubble-size-preview"
+            setImageResource(R.drawable.ic_app_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xEE245E5D.toInt()) }
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        fun updateBubblePreview(percent: Int) {
+            val size = dp(BubbleSize.dimensions(percent).buttonDp)
+            bubblePreview.layoutParams = FrameLayout.LayoutParams(size, size, Gravity.CENTER)
+        }
+        val previewStage = FrameLayout(this).apply {
+            background = ModernUi.surface(this@MainActivity, muted = true)
+            addView(bubblePreview)
+        }
+        bubbleSizePanel.addView(previewStage, LinearLayout.LayoutParams(LP_MATCH, dp(104)).apply { topMargin = dp(8); bottomMargin = dp(8) })
+        updateBubblePreview(currentBubbleSizePercent())
+
         bubbleSizeLabel.id = View.generateViewId()
         val bubbleSizeSlider = Slider(this).apply {
             id = View.generateViewId()
@@ -360,11 +375,12 @@ class MainActivity : AppCompatActivity() {
         }
         bubbleSizeLabel.labelFor = bubbleSizeSlider.id
         bubbleSizeSlider.addOnChangeListener { slider, value, fromUser ->
+            val percent = BubbleSize.sliderPercent(value.toInt())
+            updateBubblePreview(percent)
+            selectedBubbleSize.text = localizedBubbleLabel(percent)
+            slider.contentDescription = "${getString(R.string.bubble_size_accessibility)}, ${localizedBubbleDescription(percent)}"
             if (fromUser) {
-                val percent = BubbleSize.sliderPercent(value.toInt())
                 prefs().edit().putInt(BubbleSize.PREFERENCE_KEY, percent).apply()
-                selectedBubbleSize.text = localizedBubbleLabel(percent)
-                slider.contentDescription = "${getString(R.string.bubble_size_accessibility)}, ${localizedBubbleDescription(percent)}"
                 WhisperAccessibilityService.instance?.refreshBubbleSize()
             }
         }

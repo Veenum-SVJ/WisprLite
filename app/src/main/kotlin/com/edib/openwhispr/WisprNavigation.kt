@@ -19,7 +19,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
     private val frame = FrameLayout(activity)
     private val body = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
-    private val title = TextView(activity).apply { textSize = 24f }
+    private val title = ModernUi.label(activity, "Home", 28f, strong = true).apply { setPadding(dp(20), dp(14), dp(20), dp(10)) }
     private val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
     private var destination = savedState?.getString("destination") ?: "Home"
     private var dictionaryDraft: String? = savedState?.getString("dictionary_draft")
@@ -27,6 +27,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     private var cursor: HistoryCursor? = null
     private var lastDay = ""
     private var drawerOverlay: View? = null
+    private val cleanupPending = mutableSetOf<String>()
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun text(value: String, size: Float = 16f) = TextView(activity).apply {
         text = value; textSize = size; setPadding(dp(12), dp(12), dp(12), dp(12))
@@ -52,7 +53,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
-        content.setPadding(dp(16), dp(4), dp(16), dp(20))
+        content.setPadding(dp(20), dp(4), dp(20), dp(24))
         activity.onBackPressedDispatcher.addCallback(activity, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (closeDrawer()) return
@@ -62,16 +63,23 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             }
         })
         val header = LinearLayout(activity).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(16), dp(8))
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(20), dp(8), dp(12), dp(8))
+            addView(ModernUi.logo(activity))
+            addView(ModernUi.label(activity, "WisprLite", 19f, strong = true),
+                LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(10) })
             addView(com.google.android.material.button.MaterialButton(activity).apply {
-                text = "☰"; textSize = 22f; contentDescription = "Open navigation"
+                contentDescription = "Open navigation"
                 backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
-                setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
-                setPadding(0, 0, 0, 0); setOnClickListener { drawer() }
-            }, LinearLayout.LayoutParams(dp(48), dp(56)))
-            addView(title)
+                elevation = 0f; stateListAnimator = null
+                icon = androidx.core.content.ContextCompat.getDrawable(activity, R.drawable.ic_ui_menu)
+                iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink))
+                iconPadding = 0; iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+                setPadding(dp(12), 0, dp(12), 0); minWidth = 0
+                setOnClickListener { drawer() }
+            }, LinearLayout.LayoutParams(dp(48), dp(48)))
         }
         body.addView(header)
+        body.addView(title)
         body.addView(ScrollView(activity).apply { addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(body, FrameLayout.LayoutParams(-1, -1))
         show(destination)
@@ -95,18 +103,46 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         drawerOverlay = cover
         cover.setOnClickListener { closeDrawer() }
         val panel = LinearLayout(activity).apply {
+            tag = "navigation-panel"
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(40), dp(16), dp(20))
             val background = android.util.TypedValue()
             activity.theme.resolveAttribute(android.R.attr.colorBackground, background, true)
             setBackgroundColor(background.data)
             isClickable = true
         }
-        panel.addView(text("WisprLite", 26f))
-        for (name in listOf("Home", "Insights", "Dictionary")) panel.addView(button(name) { closeDrawer(); show(name) })
+        panel.addView(LinearLayout(activity).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(ModernUi.logo(activity, 36))
+            addView(ModernUi.label(activity, "WisprLite", 22f, strong = true), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(12) })
+            setPadding(dp(8), 0, dp(8), dp(28))
+        })
+        val icons = mapOf("Home" to R.drawable.ic_ui_home, "Insights" to R.drawable.ic_ui_insights,
+            "Dictionary" to R.drawable.ic_ui_dictionary, "Settings" to R.drawable.ic_ui_settings)
+        fun navigationRow(name: String) = com.google.android.material.button.MaterialButton(activity).apply {
+            text = name; isAllCaps = false; textSize = 16f
+            elevation = 0f; stateListAnimator = null
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL; cornerRadius = dp(12)
+            icon = androidx.core.content.ContextCompat.getDrawable(activity, icons.getValue(name))
+            iconPadding = dp(14); iconSize = dp(22)
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            setTextColor(ModernUi.color(activity, if (destination == name) R.color.primary else R.color.ink))
+            iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.primary))
+            backgroundTintList = android.content.res.ColorStateList.valueOf(if (destination == name)
+                ModernUi.color(activity, R.color.primary_container) else android.graphics.Color.TRANSPARENT)
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
+            minHeight = dp(52)
+            setOnClickListener { closeDrawer(); show(name) }
+        }
+        for (name in listOf("Home", "Insights", "Dictionary")) panel.addView(navigationRow(name))
         panel.addView(View(activity), LinearLayout.LayoutParams(1, 0, 1f))
-        panel.addView(button("Settings") { closeDrawer(); show("Settings") })
-        cover.addView(panel, FrameLayout.LayoutParams(dp(280), -1, Gravity.START))
+        panel.addView(navigationRow("Settings"))
+        cover.addView(panel, FrameLayout.LayoutParams(dp(280), -1, Gravity.END))
         frame.addView(cover, FrameLayout.LayoutParams(-1, -1))
+        if (android.animation.ValueAnimator.areAnimatorsEnabled()) {
+            panel.translationX = dp(280).toFloat()
+            panel.animate().translationX(0f).setDuration(220)
+                .setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+        }
     }
     private fun show(name: String) {
         destination = name; generation++; title.text = name
@@ -118,12 +154,13 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 val controls = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL }
                 fun control(label: String, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity, null,
                     com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = label; textSize = 14f; isAllCaps = false; minHeight = dp(48)
+                    text = label; textSize = 13f; isAllCaps = false; minHeight = dp(48)
+                    cornerRadius = dp(12); insetTop = 0; insetBottom = 0
+                    setPadding(dp(10), dp(8), dp(10), dp(8))
+                    backgroundTintList = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.panel))
+                    strokeColor = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.panel_outline))
                     setOnClickListener { action() }
                 }
-                controls.addView(control(DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title) {
-                    activity.showLanguageProfilePicker()
-                }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(8) })
                 val cleanupEnabled = prefs.getBoolean("use_post_processing", false)
                 val cleanupReady = cleanupConfigured()
                 val cleanupLabel = if (!cleanupEnabled) "Direct transcription" else if (cleanupReady) "AI Cleanup" else "Cleanup · needs key"
@@ -136,7 +173,8 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                     } else {
                         prefs.edit().putBoolean("use_post_processing", !cleanupEnabled).apply(); show("Home")
                     }
-                }, LinearLayout.LayoutParams(0, -2, 1f))
+                }, LinearLayout.LayoutParams(-2, -2))
+                controls.gravity = Gravity.END
                 content.addView(controls)
                 page()
             }
@@ -151,23 +189,9 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             for (record in records) {
                 val day = java.time.Instant.ofEpochMilli(record.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
                 val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }
-                if (label != lastDay) { content.addView(text(label, 18f)); lastDay = label }
-                val preview = (record.cleaned ?: record.original).take(220)
-                val resultLabel = when {
-                    record.cleaned != null -> "AI cleaned"
-                    record.mode == "AI Cleanup" -> "Original · cleanup not applied"
-                    else -> "Direct"
-                }
-                val row = com.google.android.material.button.MaterialButton(activity, null,
-                    com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = "${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt))} · $resultLabel\n$preview"
-                    isAllCaps = false
-                    gravity = Gravity.START or Gravity.CENTER_VERTICAL
-                    cornerRadius = dp(12)
-                    setPadding(dp(16), dp(12), dp(16), dp(12))
-                    setOnClickListener { detail(record) }
-                }
-                content.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+                if (label != lastDay) { content.addView(ModernUi.label(activity, label, 14f, strong = true, muted = true).apply { setPadding(0, dp(22), 0, dp(12)) }); lastDay = label }
+                val row = transcriptCard(record)
+                content.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
             }
             records.lastOrNull()?.let { cursor = HistoryCursor(it.createdAt, it.id) }
             if (records.size == 40) {
@@ -177,34 +201,105 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             }
         }
     }
-    private fun detail(record: DictationRecord) {
-        var dialog: AlertDialog? = null
-        val layout = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16),0,dp(16),0) }
-        layout.addView(text("Original\n${record.original}"))
-        record.cleaned?.let { layout.addView(text("Cleaned\n$it")) }
-        layout.addView(button("Copy original") { copy(record.original) })
-        record.cleaned?.let { cleaned -> layout.addView(button("Copy cleaned") { copy(cleaned) }) }
-        layout.addView(button("Retry AI cleanup") { dialog?.dismiss(); retryCleanup(record) })
-        dialog = AlertDialog.Builder(activity).setTitle("Transcript").setView(ScrollView(activity).apply { addView(layout) })
-            .setNegativeButton("Close", null).setNeutralButton("Delete") { _, _ ->
-                query({ it.delete(record.id) }) { show("Home") }
-            }.create()
-        dialog.show()
+    private fun transcriptCard(record: DictationRecord): View {
+        var showingOriginal = record.cleaned == null
+        var expanded = false
+        fun currentText() = if (showingOriginal) record.original else record.cleaned.orEmpty()
+        val row = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            tag = "transcript-card-${record.id}"
+            background = ModernUi.surface(activity)
+            setPadding(dp(14), dp(8), dp(14), dp(12))
+        }
+        val words = ModernUi.label(activity, currentText().take(220), 16f).apply {
+            tag = "transcript-text"; maxLines = 5; ellipsize = android.text.TextUtils.TruncateAt.END
+            setPadding(dp(2), dp(6), dp(2), 0)
+        }
+        val more = button("Read more") { }.apply {
+            minHeight = dp(48); textSize = 12f; cornerRadius = dp(10)
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            setTextColor(ModernUi.color(activity, R.color.primary))
+            elevation = 0f; stateListAnimator = null
+            visibility = View.GONE
+        }
+        fun truncated(): Boolean = currentText().length > 220 || words.layout?.let { it.lineCount > 0 && it.getEllipsisCount(it.lineCount - 1) > 0 } == true
+        fun refreshExpansion() {
+            words.text = if (expanded) currentText() else currentText().take(220)
+            words.maxLines = if (expanded) Int.MAX_VALUE else 5
+            words.ellipsize = if (expanded) null else android.text.TextUtils.TruncateAt.END
+            more.text = if (expanded) "Show less" else "Read more"
+            more.visibility = if (expanded || truncated()) View.VISIBLE else View.GONE
+        }
+        more.setOnClickListener { expanded = !expanded; refreshExpansion() }
+        row.isFocusable = true
+        row.setOnClickListener { if (expanded || truncated()) { expanded = !expanded; refreshExpansion() } }
+        val header = LinearLayout(activity).apply { gravity = Gravity.CENTER_VERTICAL }
+        val metadata = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(ModernUi.label(activity, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt)), 12f, muted = true))
+        }
+        val status = ModernUi.label(activity, if (record.cleaned != null) "AI cleaned" else if (record.mode == "AI Cleanup") "Original" else "Direct", 12f, muted = true)
+        if (record.cleaned != null) {
+            status.minimumHeight = dp(48)
+            status.gravity = Gravity.CENTER_VERTICAL
+            status.contentDescription = "Show original transcript"
+            status.setTextColor(ModernUi.color(activity, R.color.primary))
+            status.isFocusable = true
+            status.setOnClickListener {
+                showingOriginal = !showingOriginal
+                status.text = if (showingOriginal) "Original" else "AI cleaned"
+                status.contentDescription = if (showingOriginal) "Show cleaned transcript" else "Show original transcript"
+                expanded = false; refreshExpansion()
+            }
+        }
+        metadata.addView(status)
+        header.addView(metadata, LinearLayout.LayoutParams(0, -2, 1f))
+        fun action(description: String, iconResource: Int, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity).apply {
+            contentDescription = description
+            icon = androidx.core.content.ContextCompat.getDrawable(activity, iconResource)
+            iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
+            iconSize = dp(20); iconPadding = 0
+            iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
+            backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            cornerRadius = dp(24); elevation = 0f; stateListAnimator = null
+            minWidth = 0; setPadding(dp(12), 0, dp(12), 0)
+            androidx.appcompat.widget.TooltipCompat.setTooltipText(this, description)
+            setOnClickListener { action() }
+        }
+        header.addView(action("Copy transcript", R.drawable.ic_ui_copy) { copy(currentText()) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        lateinit var cleanupAction: com.google.android.material.button.MaterialButton
+        cleanupAction = action("Clean up transcript", R.drawable.ic_ui_cleanup) {
+            cleanupAction.isEnabled = false; cleanupAction.alpha = 0.38f
+            retryCleanup(record) { cleanupAction.isEnabled = true; cleanupAction.alpha = 1f }
+        }
+        cleanupAction.isEnabled = record.id !in cleanupPending
+        cleanupAction.alpha = if (cleanupAction.isEnabled) 1f else 0.38f
+        header.addView(cleanupAction, LinearLayout.LayoutParams(dp(48), dp(48)))
+        header.addView(action("Delete transcript", R.drawable.ic_ui_delete) { query({ it.delete(record.id) }) { show("Home") } }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        row.addView(header)
+        row.addView(words)
+        row.addView(more, LinearLayout.LayoutParams(-2, -2))
+        words.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            more.visibility = if (expanded || truncated()) View.VISIBLE else View.GONE
+        }
+        return row
     }
-    private fun retryCleanup(record: DictationRecord) {
+    private fun retryCleanup(record: DictationRecord, finished: () -> Unit = {}) {
         val config = CleanupProviderConfig.fromPreferences(prefs.getString("cleanup_provider", null),
             prefs.getString("cleanup_base_url", null), prefs.getString("cleanup_model", null))
         val key = if (config.provider == CleanupProviderConfig.Provider.GROQ) SecureKeyStorage.groqApiKey(activity) else SecureKeyStorage.cleanupApiKey(activity)
-        if (key.isBlank()) { Toast.makeText(activity, "Configure a cleanup API key in Settings", Toast.LENGTH_LONG).show(); return }
+        if (key.isBlank()) { finished(); Toast.makeText(activity, "Configure a cleanup API key in Settings", Toast.LENGTH_LONG).show(); return }
+        if (!cleanupPending.add(record.id)) { finished(); return }
         Toast.makeText(activity, "Sending transcript text for cleanup…", Toast.LENGTH_SHORT).show()
         val prompt = PostProcessor.effectivePrompt(prefs.getString("custom_instructions", "").orEmpty(), Dictionary.load(prefs))
         PostProcessor.process(record.original, prompt, key, config) { result ->
             val cleaned = result.text?.trim()
             activity.runOnUiThread {
+                cleanupPending.remove(record.id); finished()
                 if (activity.isDestroyed) return@runOnUiThread
                 if (cleaned.isNullOrBlank() || cleaned == "EMPTY" || PostProcessor.looksGenerated(record.original, cleaned)) {
                     Toast.makeText(activity, "Cleanup failed or changed your words. Original text is preserved.", Toast.LENGTH_LONG).show()
-                } else query({ it.updateCleanup(record.id, cleaned) }) { show("Home"); detail(record.copy(cleaned = cleaned)) }
+                } else query({ it.updateCleanup(record.id, cleaned) }) { if (destination == "Home") show("Home") }
             }
         }
     }
@@ -224,13 +319,31 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         val periods = listOf("Today" to LocalDate.now(), "Last 7 days" to LocalDate.now().minusDays(6), "All time" to null)
         for ((label, date) in periods) query({ it.totals(date?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli() ?: 0) }) { totals ->
             val saved = InsightCalculator.savedSeconds(totals.words.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), totals.speakingMillis, prefs.getInt("typing_wpm", 40).coerceAtLeast(1))
-            content.addView(text("$label\n${totals.words} words · ${totals.recordings} recordings\n${totals.speakingMillis / 60000} min speaking · ${saved.toInt() / 60} min estimated saved", 18f))
+            val panel = LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL; background = ModernUi.surface(activity)
+                tag = "insights_$label"; setPadding(dp(18), dp(16), dp(18), dp(16))
+                addView(ModernUi.label(activity, label, 14f, strong = true, muted = true))
+                addView(LinearLayout(activity).apply {
+                    gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(10), 0, dp(14))
+                    addView(LinearLayout(activity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(ModernUi.label(activity, "${totals.words}", 34f, strong = true))
+                        addView(ModernUi.label(activity, "words", 13f, muted = true))
+                    }, LinearLayout.LayoutParams(0, -2, 1f))
+                    addView(ModernUi.label(activity, "${totals.recordings} recordings", 15f, strong = true))
+                })
+                addView(ModernUi.label(activity, "${totals.speakingMillis / 60000} min speaking     ${saved.toInt() / 60} min estimated saved", 13f, muted = true))
+            }
+            content.addView(panel, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
         }
     }
     private fun dictionary() {
         content.addView(text("Help recognition with names and phrases. One per line; optional aliases after |. This does not train a model."))
         val input = EditText(activity).apply {
             hint = "Canonical phrase | pronunciation, alias"; minLines = 8; gravity = Gravity.TOP
+            background = ModernUi.surface(activity); setPadding(dp(16), dp(14), dp(16), dp(14))
+            setTextColor(ModernUi.color(activity, R.color.ink)); setHintTextColor(ModernUi.color(activity, R.color.ink_muted))
+            textSize = 16f
             setText(dictionaryDraft ?: Dictionary.load(prefs).joinToString("\n"))
             addTextChangedListener(object : android.text.TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { }
