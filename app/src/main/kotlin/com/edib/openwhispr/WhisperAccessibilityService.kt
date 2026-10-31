@@ -1048,22 +1048,6 @@ class WhisperAccessibilityService : AccessibilityService() {
             return
         }
 
-        val voiceCommandsEnabled = false // WisprLite preserves dictation instead of executing voice transformations.
-        if (voiceCommandsEnabled) {
-            val trigger = prefs().getString("command_trigger_phrase", getString(R.string.default_trigger_phrase))
-                ?: getString(R.string.default_trigger_phrase)
-            val instruction = CommandProcessor.extractCommand(text, trigger)
-            if (instruction != null) {
-                handleVoiceCommand(instruction)
-                return
-            }
-            val trailing = CommandProcessor.extractTrailingCommand(text, trigger)
-            if (trailing != null) {
-                handleVoiceCommand(trailing.instruction, trailing.content)
-                return
-            }
-        }
-
         val usePostProcessing = prefs().getBoolean("use_post_processing", false)
         val historyId = java.util.UUID.randomUUID().toString()
         try {
@@ -1133,102 +1117,6 @@ class WhisperAccessibilityService : AccessibilityService() {
                 goIdle()
             }
         }
-    }
-
-    /** Handles a "Whisper Command" voice command: reads whatever's in the
-     * focused field (if anything), sends it plus the spoken instruction to
-     * CommandProcessor's whitelisted-transformation prompt, and replaces the
-     * field's entire content with the result. With [dictated] (text spoken
-     * before the trigger phrase) the command runs on that text instead, and
-     * the result is inserted like normal dictation. */
-    private fun handleVoiceCommand(instruction: String, dictated: String? = null) {
-        val apiKey = SecureKeyStorage.transcriptionApiKey(this)
-        if (apiKey.isBlank()) {
-            handler.post {
-                toast(getString(R.string.voice_commands_need_key))
-                goIdle()
-            }
-            return
-        }
-        if (instruction.isBlank()) {
-            handler.post {
-                toast(getString(R.string.no_command_after_trigger))
-                goIdle()
-            }
-            return
-        }
-
-        val fieldText = dictated ?: currentFieldText()
-
-        CommandProcessor.process(fieldText, instruction, apiKey) { result ->
-            handler.post {
-                val out = result.text?.trim()
-                when {
-                    out.isNullOrBlank() ->
-                        toast(getString(R.string.command_failed, result.error ?: getString(R.string.empty_response)))
-                    out == CommandProcessor.UNSUPPORTED ->
-                        toast(getString(R.string.command_not_recognized))
-                    dictated != null ->
-                        if (injectText(out)) showFeedback(getString(R.string.command_applied), 2000)
-                    else -> replaceFieldText(out)
-                }
-                goIdle()
-            }
-        }
-    }
-
-    /** Best-effort read of whatever text is already in the focused field,
-     * for voice commands that operate on existing content ("summarize
-     * this") rather than freshly dictated content. */
-    private fun currentFieldText(): String {
-        val candidates = findInjectionCandidates()
-        return try {
-            candidates.firstOrNull()?.text?.toString().orEmpty()
-        } finally {
-            candidates.forEach { it.recycle() }
-        }
-    }
-
-    /** Like injectText, but replaces the focused field's entire content
-     * instead of inserting at the cursor/selection -- used by voice
-     * commands, which transform the whole field rather than append to it. */
-    private fun replaceFieldText(text: String) {
-        val candidates = findInjectionCandidates()
-        var replaced = false
-        try {
-            for (candidate in candidates) {
-                if (tryReplaceEntireNode(candidate, text)) {
-                    replaced = true
-                    break
-                }
-            }
-        } finally {
-            candidates.forEach { it.recycle() }
-        }
-
-        // [privacy] Replacement uses ACTION_SET_TEXT (no clipboard), so the
-        // clipboard is only used as the fallback when it fails.
-        if (!replaced) copyToClipboard(text)
-        Log.i(TAG, if (replaced) "Command replace succeeded" else "Command replace failed; clipboard fallback only")
-        showFeedback(
-            getString(if (replaced) R.string.command_applied else R.string.replace_failed_clipboard),
-            if (replaced) 2000 else 3000
-        )
-    }
-
-    private fun tryReplaceEntireNode(node: AccessibilityNodeInfo, text: String): Boolean {
-        logNode("Trying full replace on node", node)
-        node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-
-        if (node.isEditable || node.className?.toString()?.contains("EditText") == true) {
-            val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            }
-            val setTextOk = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-            Log.i(TAG, "Full-replace ACTION_SET_TEXT => $setTextOk")
-            if (setTextOk) return true
-        }
-        return false
     }
 
     private fun reset(msg: String) {

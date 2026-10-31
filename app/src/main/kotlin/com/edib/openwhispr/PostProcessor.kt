@@ -217,7 +217,7 @@ Output hygiene:
                     callback(Result(null, "HTTP ${response.code}"))
                     return
                 }
-                // [cleanup] parseResponse is shared with CommandProcessor, so
+                // Parse only the provider response;
                 // the tag stripping happens here rather than inside it.
                 val parsed = parseResponse(responseBody)
                 callback(parsed.copy(text = stripTranscriptTags(parsed.text)))

@@ -65,7 +65,7 @@ Files: existing LocalTranscriber.kt, ModelDownloader.kt, WhisperAccessibilitySer
 - [x] Keep known model packs and advertise actual supported languages; verify multilingual Base/Small artifacts before listing them.
 - [x] Test interrupted/corrupt downloads, insufficient storage, missing active model, repeated taps, and local mode with no network.
 - [ ] Preserve focused-field insertion and clipboard fallback; verify permissions denied/revoked and background process recovery.
-- [ ] Remove unused voice-command and updater UI/dependencies only after confirming no dictation coupling; run regression suite and commit.
+- [x] Remove unused voice-command and updater UI/dependencies only after confirming no dictation coupling; run regression suite and commit.
 
 ## Task 7: Release and physical-device validation
 Files: app/build.gradle.kts; CI workflow; docs/testing/device-report.md.
