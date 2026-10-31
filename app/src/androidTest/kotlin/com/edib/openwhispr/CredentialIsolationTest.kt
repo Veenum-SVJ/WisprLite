@@ -9,6 +9,34 @@ import android.content.Context
 
 @RunWith(AndroidJUnit4::class)
 class CredentialIsolationTest {
+    @Test fun encryptedBackupRoundTripRestoresIndependentKeysOnDevice() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext.createDeviceProtectedStorageContext()
+        val file = java.io.File(context.cacheDir, "wisprlite-backup-test.owb")
+        val passphrase = "synthetic backup test passphrase"
+        val snapshot = SettingsBackup.Snapshot(
+            mapOf("language_profile" to "YORUBA", "dictionary" to "Ṣọlá\nẸ káàárọ̀", "typing_wpm" to 40),
+            mapOf("transcription_api_key" to "synthetic-transcription", "groq_api_key" to "synthetic-groq", "cleanup_api_key" to "synthetic-cleanup"))
+        try {
+            file.writeText(SettingsBackup.encrypt(snapshot, passphrase))
+            assertFalse(file.readText().contains("synthetic-transcription"))
+            assertFalse(file.readText().contains("Ṣọlá"))
+            assertThrows(SettingsBackup.BackupException::class.java) { SettingsBackup.decrypt(file.readText(), "incorrect passphrase") }
+            val restored = SettingsBackup.decrypt(file.readText(), passphrase)
+            assertEquals(snapshot, restored)
+            SecureKeyStorage.saveTranscriptionApiKey(context, restored.secrets.getValue("transcription_api_key"))
+            SecureKeyStorage.saveGroqApiKey(context, restored.secrets.getValue("groq_api_key"))
+            SecureKeyStorage.saveCleanupApiKey(context, restored.secrets.getValue("cleanup_api_key"))
+            assertEquals("synthetic-transcription", SecureKeyStorage.transcriptionApiKey(context))
+            assertEquals("synthetic-groq", SecureKeyStorage.groqApiKey(context))
+            assertEquals("synthetic-cleanup", SecureKeyStorage.cleanupApiKey(context))
+        } finally {
+            file.delete()
+            SecureKeyStorage.saveTranscriptionApiKey(context, "")
+            SecureKeyStorage.saveGroqApiKey(context, "")
+            SecureKeyStorage.saveCleanupApiKey(context, "")
+            context.getSharedPreferences("openwhispr", Context.MODE_PRIVATE).edit().clear().commit()
+        }
+    }
     @Test fun customTranscriptionKeyNeverBecomesGroqCleanupKey() {
         // Separate device-protected test preferences: normal app settings remain untouched.
         val context = InstrumentationRegistry.getInstrumentation().targetContext.createDeviceProtectedStorageContext()

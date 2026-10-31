@@ -37,3 +37,13 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 
 - Extended startup regression to navigate to Dictionary, enter unsaved Yoruba Unicode text, recreate the Activity, assert destination and exact draft survive, and return Home with Back. Redmi result: OK (1 test), 20.019s; test APK rebuilt before execution. No dictionary changes were saved.
 - User supplied Pidgin/Yoruba accuracy phrases; recorded in language-corpus.md as references only, with real pronunciation testing still pending.
+
+## Microphone, cross-app and backup integration
+- ServiceLifecycleIntegrationTest on Redmi: OK (1 test), 11.34s. Test invokes the production start-recording path, verifies Android AudioRecord is recording, interrupts after 250ms, asserts recorder/PCM references cleared and state IDLE, and confirms successful-recording counters unchanged. Capture is cancelled, never uploaded.
+- Same test invokes production insertion into the separate com.veenum.wisprlite.test EditText and verifies actual field contents include Yoruba Unicode and Pidgin wording. This proves the insertion path, not a complete floating-button-to-speech-to-field gesture.
+- CredentialIsolationTest rerun: OK (2 tests), 5.612s. Includes encrypted file round trip with Android crypto, wrong-passphrase rejection, exact Unicode settings round trip and three independent keys re-encrypted through Android Keystore. Synthetic device-protected test state only; normal settings/credentials untouched. Full system-document-picker UI round trip remains untested.
+
+## Optimized APK runtime sample before inset fix
+- Installed a copy of the production release APK re-signed with the existing development certificate, allowing an in-place update without clearing WisprLite data. Production-signed original retained separately.
+- Verified release flags omit DEBUGGABLE, Home renders, cold launch TotalTime 1294ms; foreground idle PSS 75212KB, RSS 203723KB, swap PSS 1232KB. Single snapshot with local engine inactive, not an inference or background benchmark.
+- At font scale 1.5, Home content remained readable, but visual inspection exposed status-bar/header overlap on Android 15. Fixing system-bar/cutout insets and adding history-row margins; these changes require new build and device confirmation. Original font scale 0.9 restored.

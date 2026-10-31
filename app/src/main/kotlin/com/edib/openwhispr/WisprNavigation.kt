@@ -46,6 +46,13 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         }
     }
     fun build(): View {
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(frame) { view, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars() or
+                androidx.core.view.WindowInsetsCompat.Type.displayCutout())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        content.setPadding(dp(16), dp(4), dp(16), dp(20))
         activity.onBackPressedDispatcher.addCallback(activity, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (closeDrawer()) return
@@ -55,7 +62,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             }
         })
         val header = LinearLayout(activity).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(24), dp(16), dp(8))
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(16), dp(8))
             addView(button("☰") { drawer() }.apply { contentDescription = "Open navigation" }, LinearLayout.LayoutParams(dp(64), dp(56)))
             addView(title)
         }
@@ -124,7 +131,16 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }
                 if (label != lastDay) { content.addView(text(label, 18f)); lastDay = label }
                 val preview = (record.cleaned ?: record.original).take(220)
-                content.addView(button("${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt))} · ${record.mode}\n$preview") { detail(record) })
+                val row = com.google.android.material.button.MaterialButton(activity, null,
+                    com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = "${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt))} · ${record.mode}\n$preview"
+                    isAllCaps = false
+                    gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                    cornerRadius = dp(12)
+                    setPadding(dp(16), dp(12), dp(16), dp(12))
+                    setOnClickListener { detail(record) }
+                }
+                content.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
             }
             records.lastOrNull()?.let { cursor = HistoryCursor(it.createdAt, it.id) }
             if (records.size == 40) {
