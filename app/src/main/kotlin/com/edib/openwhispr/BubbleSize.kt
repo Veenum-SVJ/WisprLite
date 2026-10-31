@@ -26,6 +26,18 @@ object BubbleSize {
 
     data class Position(val x: Int, val y: Int)
 
+    const val X_FRACTION_KEY = "overlay_x_fraction"
+    const val Y_FRACTION_KEY = "overlay_y_fraction"
+
+    fun freePosition(xFraction: Float, yFraction: Float, screenWidth: Int, screenHeight: Int, ringSize: Int, margin: Int): Position {
+        fun coordinate(fraction: Float, length: Int): Int = margin +
+            (maxOf(0, length - ringSize - 2 * margin) * (if (fraction.isFinite()) fraction.coerceIn(0f, 1f) else 0.5f)).roundToInt()
+        return clampPosition(coordinate(xFraction, screenWidth), coordinate(yFraction, screenHeight), screenWidth, screenHeight, ringSize, margin)
+    }
+
+    fun fraction(coordinate: Int, length: Int, ringSize: Int, margin: Int): Float =
+        ((coordinate - margin).toFloat() / maxOf(1, length - ringSize - 2 * margin)).coerceIn(0f, 1f)
+
     fun preferencePercent(value: Int?): Int =
         if (value != null && value in MIN_PERCENT..MAX_PERCENT &&
             (value - MIN_PERCENT) % STEP_PERCENT == 0

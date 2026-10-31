@@ -5,6 +5,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BubbleSizeTest {
+    @Test fun `free position retains interior placement and adapts to a new screen size`() {
+        val position = BubbleSize.freePosition(0.3f, 0.4f, 1080, 2400, 56, 8)
+        assertEquals(310, position.x)
+        assertEquals(939, position.y)
+        val restored = BubbleSize.freePosition(BubbleSize.fraction(position.x, 1080, 56, 8),
+            BubbleSize.fraction(position.y, 2400, 56, 8), 1080, 2400, 56, 8)
+        assertEquals(position, restored)
+        assertEquals(BubbleSize.Position(8, 232), BubbleSize.freePosition(-1f, 2f, 200, 300, 60, 8))
+        assertTrue(BubbleSize.freePosition(Float.NaN, Float.POSITIVE_INFINITY, 20, 20, 56, 8).x >= 8)
+    }
     @Test
     fun `missing and invalid preferences use standard size`() {
         assertEquals(BubbleSize.DEFAULT_PERCENT, BubbleSize.preferencePercent(null))

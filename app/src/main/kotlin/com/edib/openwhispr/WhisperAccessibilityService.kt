@@ -81,10 +81,10 @@ class WhisperAccessibilityService : AccessibilityService() {
         private const val NOTIF_CHANNEL_ID = "openwhispr_service"
         private const val NOTIF_ID = 1
 
-        private const val COLOR_IDLE = 0xDD1C1C1E.toInt()
+        private const val COLOR_IDLE = 0xEE245E5D.toInt()
         // [ui] Soft red for the recording state (logo tint + outline);
         // replaces the old solid red / grey button colours.
-        private const val COLOR_REC_ACCENT = 0xFFFF6B6B.toInt()
+        private const val COLOR_REC_ACCENT = 0xFF82C7BF.toInt()
         private const val COLOR_FEEDBACK_BG = 0xEE1C1C1E.toInt()
         private const val COLOR_RING = 0xFFE8EAED.toInt()
     }
@@ -111,6 +111,8 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var accessibilityFocusSignal = false
     private var imeVisibleSignal = false
     private var button: ImageView? = null
+    private val dottedLogo = DottedVoiceDrawable()
+    private var cancelBubblePress: (() -> Unit)? = null
     // [ui] Smoothed recording level for the voice-reactive overlay (main thread).
     private var audioLevel = 0f
     private var spinner: ProgressBar? = null
@@ -177,6 +179,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     override fun onInterrupt() { cancelRecording(); goIdle() }
 
     private fun cancelRecording() {
+        cancelBubblePress?.invoke()
         session.cancel()
         transcriptionCall?.cancel(); transcriptionCall = null
         cleanupCall?.cancel(); cleanupCall = null
@@ -496,12 +499,15 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** The bubble's home position from the Settings slider and side switch. */
-    private fun savedHomePosition(ringSize: Int): BubbleSize.Position = BubbleSize.positionFor(
-        prefs().getInt(BubbleSize.POSITION_PERCENT_KEY, BubbleSize.DEFAULT_POSITION_PERCENT),
-        prefs().getBoolean(BubbleSize.ON_LEFT_KEY, false),
-        screenW, screenH, ringSize, (MARGIN_DP * dp).toInt()
-    )
+    /** Fractions preserve the free position across screen sizes; old side/height settings are a fallback. */
+    private fun savedHomePosition(ringSize: Int): BubbleSize.Position {
+        val margin = (MARGIN_DP * dp).toInt()
+        if (prefs().contains(BubbleSize.X_FRACTION_KEY) && prefs().contains(BubbleSize.Y_FRACTION_KEY))
+            return BubbleSize.freePosition(prefs().getFloat(BubbleSize.X_FRACTION_KEY, 1f),
+                prefs().getFloat(BubbleSize.Y_FRACTION_KEY, 0.5f), screenW, screenH, ringSize, margin)
+        return BubbleSize.positionFor(prefs().getInt(BubbleSize.POSITION_PERCENT_KEY, BubbleSize.DEFAULT_POSITION_PERCENT),
+            prefs().getBoolean(BubbleSize.ON_LEFT_KEY, false), screenW, screenH, ringSize, margin)
+    }
 
     /** Moves the bubble to its saved home position and drops the preview. */
     fun refreshPosition() {
@@ -607,7 +613,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
 
         val img = ImageView(this).apply {
-            setImageResource(R.drawable.ic_app_logo)
+            setImageDrawable(dottedLogo)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(pad, pad, pad, pad)
             background = circle(COLOR_IDLE)
@@ -647,49 +653,52 @@ class WhisperAccessibilityService : AccessibilityService() {
         var startX = 0; var startY = 0
         var touchX = 0f; var touchY = 0f
 
+        val gesture = BubbleGesture(BubbleSize.dimensions(currentBubbleSizePercent()).tapThresholdDp * dp)
+        val beginHold = Runnable {
+            if (serviceAlive && state == State.IDLE && gesture.hold()) {
+                startRecording()
+                if (state == State.RECORDING && prefs().getBoolean("recording_vibration", false)) overlay.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+            }
+        }
+        cancelBubblePress = { handler.removeCallbacks(beginHold); gesture.cancel(); Unit }
         overlay.setOnTouchListener { v, ev ->
-            when (ev.action) {
+            when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     startX = params.x; startY = params.y
                     touchX = ev.rawX; touchY = ev.rawY
+                    gesture.down(state == State.IDLE)
+                    handler.postDelayed(beginHold, 350)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    val position = BubbleSize.clampPosition(
-                        startX + (ev.rawX - touchX).toInt(),
-                        startY + (ev.rawY - touchY).toInt(),
-                        screenW,
-                        screenH,
-                        params.width,
-                        margin
-                    )
-                    params.x = position.x
-                    params.y = position.y
-                    wm.updateViewLayout(v, params)
-                    feedbackLayoutParams?.let {
-                        positionFeedback(it, params)
-                        wm.updateViewLayout(feedbackView, it)
+                    if (gesture.move(abs(ev.rawX - touchX) + abs(ev.rawY - touchY))) {
+                        handler.removeCallbacks(beginHold)
+                        val position = BubbleSize.clampPosition(startX + (ev.rawX - touchX).toInt(),
+                            startY + (ev.rawY - touchY).toInt(), screenW, screenH, params.width, margin)
+                        params.x = position.x; params.y = position.y
+                        wm.updateViewLayout(v, params)
+                        feedbackLayoutParams?.let { positionFeedback(it, params); feedbackView?.let { view -> wm.updateViewLayout(view, it) } }
                     }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    val moved = abs(ev.rawX - touchX) + abs(ev.rawY - touchY)
-                    if (moved < BubbleSize.dimensions(currentBubbleSizePercent()).tapThresholdDp * dp) {
-                        v.performClick()
-                    } else {
-                        params.x = BubbleSize.snappedX(params.x, params.width, screenW, margin)
-                        params.y = BubbleSize.clampPosition(
-                            params.x, params.y, screenW, screenH, params.width, margin
-                        ).y
-                        wm.updateViewLayout(v, params)
-                        feedbackLayoutParams?.let {
-                            positionFeedback(it, params)
-                            wm.updateViewLayout(feedbackView, it)
-                        }
+                    handler.removeCallbacks(beginHold)
+                    when (gesture.up()) {
+                        BubbleGesture.Release.TAP -> v.performClick()
+                        BubbleGesture.Release.STOP_HOLD -> if (state == State.RECORDING) stopAndTranscribe()
+                        BubbleGesture.Release.SAVE_POSITION -> prefs().edit()
+                            .putFloat(BubbleSize.X_FRACTION_KEY, BubbleSize.fraction(params.x, screenW, params.width, margin))
+                            .putFloat(BubbleSize.Y_FRACTION_KEY, BubbleSize.fraction(params.y, screenH, params.width, margin)).apply()
+                        BubbleGesture.Release.NONE -> {}
                     }
                     true
                 }
-                else -> false
+                MotionEvent.ACTION_CANCEL -> {
+                    handler.removeCallbacks(beginHold)
+                    if (gesture.cancel() && state == State.RECORDING) { cancelRecording(); goIdle() }
+                    true
+                }
+                else -> true
             }
         }
 
@@ -765,6 +774,8 @@ class WhisperAccessibilityService : AccessibilityService() {
                            else circle(COLOR_IDLE)
             b.imageTintList = if (recording) ColorStateList.valueOf(COLOR_REC_ACCENT) else null
             audioLevel = 0f
+            dottedLogo.recording = recording
+            dottedLogo.voiceLevel = 0f
             b.animate().cancel()
             b.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
         }
@@ -773,12 +784,13 @@ class WhisperAccessibilityService : AccessibilityService() {
     /** Swaps the overlay's icon: the app logo while idle, the mic glyph
      * while recording/transcribing. */
     private fun setIcon(res: Int) {
-        handler.post { button?.setImageResource(res) }
+        handler.post { dottedLogo.recording = state == State.RECORDING; button?.setImageDrawable(dottedLogo) }
     }
 
     private fun setBusy(visible: Boolean) {
         handler.post {
-            spinner?.visibility = if (visible) View.VISIBLE else View.GONE
+            spinner?.visibility = View.GONE
+            dottedLogo.processing = visible
         }
     }
 
@@ -833,9 +845,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun onAudioLevel(level: Float) {
         if (state != State.RECORDING) return
         audioLevel = maxOf(level, audioLevel * 0.85f)
-        val scale = 1f + 0.15f * audioLevel
-        button?.scaleX = scale
-        button?.scaleY = scale
+        dottedLogo.voiceLevel = audioLevel
     }
 
     // --- State machine ---

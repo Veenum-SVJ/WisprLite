@@ -89,6 +89,7 @@ try {
     Run-Suite 'backup-picker-roundtrip' 'com.edib.openwhispr.BackupPickerIntegrationTest#exportedDocumentCanBeSelectedAndRestoredThroughAndroidPicker' 'activity'
     Run-Suite 'clipboard-fallback' 'com.edib.openwhispr.ClipboardFallbackIntegrationTest' 'service-activity'
     Run-Suite 'model-availability' 'com.edib.openwhispr.ModelAvailabilityIntegrationTest' 'service'
+    Run-Suite 'bubble-gestures-and-placement' 'com.edib.openwhispr.BubbleInteractionIntegrationTest' 'service'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
     Run-Suite 'web-composer-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service-web'
     Write-Output "Device checks passed. Logs: $logs"

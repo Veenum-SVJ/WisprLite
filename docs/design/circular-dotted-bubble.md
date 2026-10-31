@@ -1,0 +1,9 @@
+# Circular dotted-voice bubble — approved visual and interaction changes
+
+User chose soft teal, an original dotted voice-wave mark inside a circle (no speech-bubble tail and no W mark), microphone-volume-responsive dots, and a distinct processing animation. Both tap-toggle and hold-to-record remain on the same bubble. Hold release stops capture and transcribes; interrupted/cancelled holds must discard capture. Immediate movement means drag, not recording.
+
+Settings retain Bubble size only. Remove Bubble height and Show on the left. Dragging may place the bubble anywhere within visible screen bounds, including interior positions; no forced edge snap. Persist both coordinates as proportions so placement survives restart/screen changes. Preserve legacy height/side values only as a migration fallback until a new free position is saved.
+
+Use native vectors/custom drawing, no bitmap animation or additional UI framework. Update launcher/app mark consistently, use the approved soft teal in light/dark themes, and respect system animation settings. Keep all existing Home/Insights/Dictionary/Settings functionality. Do not confuse this cosmetic pass with resolution of Yoruba recognition or MIUI process recovery.
+
+Implementation choices: hold threshold 350ms; dragging before that threshold suppresses holding. Movement during an active hold does not move the bubble. Pointer cancellation cancels recording rather than sending audio. Keep placement clamped on resize; saved normalized coordinates support changed screen dimensions when restored. Verify gesture transitions in unit tests and real service listener instrumentation; visually inspect the circular mark on Redmi.
