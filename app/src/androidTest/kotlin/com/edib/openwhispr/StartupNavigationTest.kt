@@ -3,6 +3,7 @@ package com.edib.openwhispr
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.EditText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -33,6 +34,17 @@ class StartupNavigationTest {
                     for (label in listOf("Home", "Insights", "Dictionary", "Settings")) assertTrue(label, label in labels)
                     activity.onBackPressedDispatcher.onBackPressed()
                     assertFalse(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Settings" })
+                    descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
+                    descendants(root).filterIsInstance<TextView>().single { it.text.toString() == "Dictionary" }.performClick()
+                    descendants(root).filterIsInstance<EditText>().single().setText("Ṣọlá | Shola\nẸ káàárọ̀")
+                }
+                scenario.recreate()
+                scenario.onActivity { activity ->
+                    val root = activity.window.decorView
+                    assertEquals("Ṣọlá | Shola\nẸ káàárọ̀", descendants(root).filterIsInstance<EditText>().single().text.toString())
+                    assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Dictionary" })
+                    activity.onBackPressedDispatcher.onBackPressed()
+                    assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Home" })
                 }
             }
         } finally {

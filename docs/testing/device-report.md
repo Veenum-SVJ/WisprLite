@@ -34,3 +34,6 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 - Release certificate SHA-256: a4d82dabfecb078968554f19d625b95bc1cc3499b3289189617cffff17e7e13b. Private signing material remains ignored locally.
 - Physical microphone/insertion attempt from the previous session has no surviving result artifact and is NOT counted as passed. Cross-app, retention, rotation/large-font, release runtime and language/device coverage remain open.
 - Test prerequisites: grant RECORD_AUDIO and POST_NOTIFICATIONS using ADB before StartupNavigationTest. This test no longer executes redundant shell permission commands inside its own instrumentation process.
+
+- Extended startup regression to navigate to Dictionary, enter unsaved Yoruba Unicode text, recreate the Activity, assert destination and exact draft survive, and return Home with Back. Redmi result: OK (1 test), 20.019s; test APK rebuilt before execution. No dictionary changes were saved.
+- User supplied Pidgin/Yoruba accuracy phrases; recorded in language-corpus.md as references only, with real pronunciation testing still pending.
