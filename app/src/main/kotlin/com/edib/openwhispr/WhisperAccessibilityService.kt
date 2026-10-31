@@ -1027,7 +1027,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun transcribeApi(pcm: ByteArray, job: Long) {
         val wav = WavWriter.encode(pcm)
         val apiKey = SecureKeyStorage.transcriptionApiKey(this)
-        if (apiKey.isBlank()) { reset(getString(R.string.set_groq_key)); return }
+        if (apiKey.isBlank()) { reset("Add your transcription API key in Settings"); return }
 
         playRecordingStoppedTone()
         val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",

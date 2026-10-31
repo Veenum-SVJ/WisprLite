@@ -42,7 +42,8 @@ internal object ModernUi {
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     fun settingsIcon(label: String): Int = when {
-        label.startsWith("Transcription") -> R.drawable.ic_ui_provider
+        label.startsWith("Transcription") || label.startsWith("Test connection") -> R.drawable.ic_ui_provider
+        label.startsWith("Language help") -> R.drawable.ic_ui_info
         label.startsWith("Language") -> R.drawable.ic_ui_globe
         label.startsWith("Appearance") -> R.drawable.ic_ui_appearance
         label.startsWith("Clear") -> R.drawable.ic_ui_delete

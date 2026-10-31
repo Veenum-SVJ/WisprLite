@@ -105,6 +105,10 @@ class SettingsExtras(private val activity: MainActivity) {
         val url = field("HTTPS API base URL", prefs.getString("transcription_base_url", "https://api.groq.com/openai/v1").orEmpty())
         val model = field("Speech model name", prefs.getString("transcription_model", "whisper-large-v3").orEmpty())
         val key = field("API key", SecureKeyStorage.transcriptionApiKey(activity), true)
+        fields.addView(ModernUi.label(activity,
+            "Use an HTTPS OpenAI-compatible speech-to-text service and a speech model. Example: Groq base URL https://api.groq.com/openai/v1 with model whisper-large-v3-turbo. Enter the key issued by the same provider.", 13f, muted = true).apply {
+            setPadding(dp(4), dp(12), dp(4), dp(12))
+        })
         fields.addView(row("Test connection (queries model list)") {
             val config = ProviderConfig(url.text.toString(), model.text.toString())
             try {

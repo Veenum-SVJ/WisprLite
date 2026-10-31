@@ -519,16 +519,16 @@ class MainActivity : AppCompatActivity() {
             buttonTintList = ColorStateList.valueOf(attrColor(androidx.appcompat.R.attr.colorPrimary))
         }
         val dlBtn = MaterialButton(this, null, com.google.android.material.R.attr.materialIconButtonStyle).apply {
-            text = "↓"
+            icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_ui_download)
+            iconTint = ColorStateList.valueOf(ModernUi.color(this@MainActivity, R.color.primary))
             contentDescription = getString(R.string.download_model, model.name)
-            textSize = 18f
             setTextColor(attrColor(androidx.appcompat.R.attr.colorPrimary))
         }
 
         val delBtn = MaterialButton(this, null, com.google.android.material.R.attr.materialIconButtonStyle).apply {
-            text = "✕"
+            icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_ui_delete)
+            iconTint = ColorStateList.valueOf(ModernUi.color(this@MainActivity, R.color.ink_muted))
             contentDescription = getString(R.string.delete_model, model.name)
-            textSize = 16f
             setTextColor(attrColor(android.R.attr.textColorSecondary))
             visibility = View.GONE
             setOnClickListener { confirmDeleteModel(model) }
@@ -549,15 +549,24 @@ class MainActivity : AppCompatActivity() {
             addView(radio)
         }
 
+        val brand = ImageView(this).apply {
+            setImageResource(model.brandLogo)
+            contentDescription = "${model.publisher} model family"
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(3), dp(3), dp(3), dp(3))
+            background = GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(Color.WHITE) }
+            layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply { marginEnd = dp(12) }
+        }
         val row = settingsRow(
-            if (model.recommended) model.name else model.name,
-            getString(R.string.model_specs, getString(model.qualityResId), model.sizeMb),
-            rightContainer
+            model.name,
+            modelSummary(model, false),
+            rightContainer,
+            brand
         ) {
             onModelAction(model)
         }
 
-        val textContainer = row.getChildAt(0) as LinearLayout
+        val textContainer = row.findViewWithTag<TextView>("subtitle").parent as LinearLayout
         textContainer.addView(progress)
 
         modelRows[model.archive] = ModelRowViews(
@@ -582,8 +591,9 @@ class MainActivity : AppCompatActivity() {
         views.progress.isIndeterminate = false
         views.subtitle.text = getString(R.string.download_starting)
 
-        ModelDownloader.download(this, model) { state ->
+        ModelDownloader.download(applicationContext, model) { state ->
             runOnUiThread {
+                if (isDestroyed || isFinishing) return@runOnUiThread
                 when (state) {
                     is DownloadState.Downloading -> {
                         views.progress.progress = (state.progress * 100).toInt()
@@ -630,15 +640,21 @@ class MainActivity : AppCompatActivity() {
         views.delBtn.visibility = if (installed && !active) View.VISIBLE else View.GONE
 
         if (views.progress.visibility == View.GONE) {
-            val specs = getString(R.string.model_specs, getString(model.qualityResId), model.sizeMb)
-            val needed = TranscriptionLanguages.saved(prefs())
-            views.subtitle.text = if (needed.isEmpty()) specs else {
-                val missing = needed - model.languages
-                val coverage = if (missing.isEmpty()) getString(R.string.model_covers_languages)
-                    else getString(R.string.model_missing_languages, missing.joinToString { TranscriptionLanguages.displayName(it) })
-                "$specs\n$coverage"
-            }
+            val specs = modelSummary(model, installed)
+            val missing = TranscriptionLanguages.saved(prefs()) - model.languages
+            views.subtitle.text = if (missing.isEmpty()) specs else specs + "\n" +
+                getString(R.string.model_missing_languages, missing.joinToString { TranscriptionLanguages.displayName(it) })
         }
+    }
+
+    private fun modelSummary(model: Model, installed: Boolean): String {
+        val download = android.text.format.Formatter.formatShortFileSize(this, model.downloadBytes)
+        val languages = if (model.languages == setOf("en")) "English only" else "Multilingual"
+        val stored = if (installed) {
+            val bytes = ModelDownloader.modelDir(this, model).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            "\nOn device ${android.text.format.Formatter.formatShortFileSize(this, bytes)}"
+        } else ""
+        return "Download $download\n$languages$stored"
     }
 
     private fun confirmDeleteModel(model: Model) {

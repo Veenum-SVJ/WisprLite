@@ -41,11 +41,15 @@ class ModelDownloaderTest {
     }
 
     @Test fun `catalog has expected structure and only the Parakeet transducer supports hotwords`() {
-        assertEquals(6, MODEL_CATALOG.size)
+        val archives = MODEL_CATALOG.map { it.archive }
+        assertEquals("Catalog entries must remain unique", archives.size, archives.toSet().size)
+        assertTrue("Small multilingual option is required", "sherpa-onnx-whisper-tiny" in archives)
+        assertTrue("Small English-only option is required", "sherpa-onnx-whisper-tiny.en" in archives)
         assertTrue(MODEL_CATALOG.filter { it.architecture == ModelArchitecture.WHISPER && !it.archive.endsWith(".en") }.all { "yo" in it.languages })
         assertTrue(MODEL_CATALOG.any { it.recommended })
         assertTrue(MODEL_CATALOG.all { it.archive.startsWith("sherpa-onnx-") })
-        assertTrue(MODEL_CATALOG.all { it.sizeMb > 0 })
+        assertTrue(MODEL_CATALOG.all { it.sizeMb > 0 && it.downloadBytes > 0 })
+        assertTrue(MODEL_CATALOG.filter { it.archive.contains("whisper-tiny") }.all { it.downloadBytes < 120_000_000L })
         assertEquals(
             listOf("sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"),
             MODEL_CATALOG.filter { it.hotwordModelingUnit != null }.map { it.archive },

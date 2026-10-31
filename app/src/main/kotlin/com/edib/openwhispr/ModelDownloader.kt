@@ -20,7 +20,19 @@ data class Model(
     val recommended: Boolean = false,
     /** Language codes the model transcribes. English-only models list just "en". */
     val languages: Set<String> = setOf("en"),
-)
+    val downloadBytes: Long = sizeMb * 1_000_000L,
+) {
+    val publisher: String get() = when (architecture) {
+        ModelArchitecture.WHISPER -> "OpenAI"
+        ModelArchitecture.NEMO_CTC, ModelArchitecture.NEMO_TRANSDUCER -> "NVIDIA"
+        ModelArchitecture.MOONSHINE -> "Moonshine"
+    }
+    val brandLogo: Int get() = when (architecture) {
+        ModelArchitecture.WHISPER -> R.drawable.model_brand_openai
+        ModelArchitecture.NEMO_CTC, ModelArchitecture.NEMO_TRANSDUCER -> R.drawable.model_brand_nvidia
+        ModelArchitecture.MOONSHINE -> R.drawable.model_brand_moonshine
+    }
+}
 
 private val PARAKEET_V3_LANGUAGES = setOf(
     "bg", "hr", "cs", "da", "nl", "en", "et", "fi", "fr", "de", "el", "hu", "it", "lv", "lt",
@@ -31,18 +43,25 @@ private val WHISPER_LANGUAGES = TranscriptionLanguages.CODES.toSet()
 
 val MODEL_CATALOG = listOf(
     Model("Parakeet 110M", "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
-        100, R.string.model_quality_best_value, ModelArchitecture.NEMO_CTC),
-    Model("Whisper Base", "sherpa-onnx-whisper-base.en",
-        199, R.string.model_quality_stars, ModelArchitecture.WHISPER),
+        105, R.string.model_quality_best_value, ModelArchitecture.NEMO_CTC, downloadBytes = 104337827),
+    Model("Whisper Base (English)", "sherpa-onnx-whisper-base.en",
+        209, R.string.model_quality_stars, ModelArchitecture.WHISPER, downloadBytes = 208576005),
     Model("Parakeet 0.6B", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
-        465, R.string.model_quality_best, ModelArchitecture.NEMO_TRANSDUCER, hotwordModelingUnit = "cjkchar",
-        languages = PARAKEET_V3_LANGUAGES),
+        488, R.string.model_quality_best, ModelArchitecture.NEMO_TRANSDUCER, hotwordModelingUnit = "cjkchar",
+        languages = PARAKEET_V3_LANGUAGES, downloadBytes = 487170055),
     Model("Moonshine Tiny", "sherpa-onnx-moonshine-tiny-en-int8",
-        103, R.string.model_quality_fast, ModelArchitecture.MOONSHINE),
+        108, R.string.model_quality_fast, ModelArchitecture.MOONSHINE, downloadBytes = 107600538),
     Model("Whisper Base (multilingual)", "sherpa-onnx-whisper-base",
-        207, R.string.model_quality_stars, ModelArchitecture.WHISPER, recommended = true, languages = WHISPER_LANGUAGES),
+        208, R.string.model_quality_stars, ModelArchitecture.WHISPER, recommended = true,
+        languages = WHISPER_LANGUAGES, downloadBytes = 207557382),
+    Model("Whisper Tiny (multilingual)", "sherpa-onnx-whisper-tiny",
+        117, R.string.model_quality_fast, ModelArchitecture.WHISPER,
+        languages = WHISPER_LANGUAGES, downloadBytes = 116204861),
+    Model("Whisper Tiny (English)", "sherpa-onnx-whisper-tiny.en",
+        119, R.string.model_quality_fast, ModelArchitecture.WHISPER, downloadBytes = 118071777),
     Model("Whisper Small (multilingual)", "sherpa-onnx-whisper-small",
-        639, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES),
+        640, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES,
+        downloadBytes = 639387718),
 )
 
 sealed class DownloadState {
@@ -67,7 +86,7 @@ object ModelDownloader {
 
     // Known packs contain float and int8 variants: peak usage includes the
     // compressed download plus staged extraction, not just the active weights.
-    internal fun minimumFreeBytes(model: Model): Long = model.sizeMb * 4_000_000L + 64L * 1024 * 1024
+    internal fun minimumFreeBytes(model: Model): Long = model.downloadBytes * 4L + 64L * 1024 * 1024
 
     /** Download and extract model. Callbacks fire on background thread. */
     fun download(ctx: Context, model: Model, onState: (DownloadState) -> Unit) {
@@ -84,7 +103,7 @@ object ModelDownloader {
                 }
                 downloadFile(url, tmpFile, ctx.getString(R.string.empty_download_response), onState)
                 onState(DownloadState.Extracting)
-                SafeModelArchive.install(tmpFile, outDir, model.archive, LocalTranscriber::isModelComplete)
+                installArchive(tmpFile, outDir, model)
                 onState(DownloadState.Done)
             } catch (e: Exception) {
                 onState(DownloadState.Error(e.message ?: ctx.getString(R.string.unknown_error)))
@@ -93,6 +112,16 @@ object ModelDownloader {
                 activeDownloads.remove(model.archive)
             }
         }.start()
+    }
+
+    internal fun installArchive(archive: File, modelsRoot: File, model: Model) {
+        SafeModelArchive.install(archive, modelsRoot, model.archive) { candidate ->
+            if (!LocalTranscriber.isModelComplete(candidate)) false
+            else {
+                if (model.architecture == ModelArchitecture.WHISPER) ModelStorage.compactQuantizedWhisperPack(candidate)
+                LocalTranscriber.isModelComplete(candidate)
+            }
+        }
     }
 
     fun delete(ctx: Context, model: Model) =

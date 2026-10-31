@@ -13,15 +13,20 @@ import java.nio.ByteOrder
 /** Provision the known model archive and synthetic WAV into app-private files before running. */
 @RunWith(AndroidJUnit4::class)
 class OfflineSpeechSmokeTest {
-    @Test fun multilingualWhisperTranscribesSyntheticEnglishOffline() {
+    @Test fun whisperTranscribesSyntheticEnglishOffline() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val modelName = InstrumentationRegistry.getArguments().getString("modelArchive") ?: "sherpa-onnx-whisper-base"
-        val model = MODEL_CATALOG.single { it.archive == modelName && it.architecture == ModelArchitecture.WHISPER && "yo" in it.languages }
-        val archive = File(context.filesDir, if (modelName == "sherpa-onnx-whisper-base") "speech-model-test.tar.bz2" else "speech-model-small-test.tar.bz2")
+        val model = MODEL_CATALOG.single { it.archive == modelName && it.architecture == ModelArchitecture.WHISPER }
+        val fixtureName = InstrumentationRegistry.getArguments().getString("modelFixture") ?: when (modelName) {
+            "sherpa-onnx-whisper-base" -> "speech-model-test.tar.bz2"
+            "sherpa-onnx-whisper-small" -> "speech-model-small-test.tar.bz2"
+            else -> "$modelName-test.tar.bz2"
+        }
+        val archive = File(context.filesDir, fixtureName)
         val audio = File(context.filesDir, "english-test.wav")
         assumeTrue("Requires explicitly provisioned synthetic speech and model fixture", audio.isFile && (ModelDownloader.isInstalled(context, model) || archive.isFile))
         if (!ModelDownloader.isInstalled(context, model)) {
-            SafeModelArchive.install(archive, File(context.filesDir, "models"), model.archive, LocalTranscriber::isModelComplete)
+            ModelDownloader.installArchive(archive, File(context.filesDir, "models"), model)
         }
         val bytes = audio.readBytes()
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
