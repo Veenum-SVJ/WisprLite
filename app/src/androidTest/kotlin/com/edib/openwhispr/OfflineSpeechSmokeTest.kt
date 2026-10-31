@@ -13,12 +13,13 @@ import java.nio.ByteOrder
 /** Provision the known model archive and synthetic WAV into app-private files before running. */
 @RunWith(AndroidJUnit4::class)
 class OfflineSpeechSmokeTest {
-    @Test fun multilingualBaseTranscribesSyntheticEnglishOffline() {
+    @Test fun multilingualWhisperTranscribesSyntheticEnglishOffline() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val archive = File(context.filesDir, "speech-model-test.tar.bz2")
+        val modelName = InstrumentationRegistry.getArguments().getString("modelArchive") ?: "sherpa-onnx-whisper-base"
+        val model = MODEL_CATALOG.single { it.archive == modelName && it.architecture == ModelArchitecture.WHISPER && "yo" in it.languages }
+        val archive = File(context.filesDir, if (modelName == "sherpa-onnx-whisper-base") "speech-model-test.tar.bz2" else "speech-model-small-test.tar.bz2")
         val audio = File(context.filesDir, "english-test.wav")
-        assumeTrue("Requires explicitly provisioned synthetic speech and model fixture", archive.isFile && audio.isFile)
-        val model = MODEL_CATALOG.single { it.archive == "sherpa-onnx-whisper-base" }
+        assumeTrue("Requires explicitly provisioned synthetic speech and model fixture", audio.isFile && (ModelDownloader.isInstalled(context, model) || archive.isFile))
         if (!ModelDownloader.isInstalled(context, model)) {
             SafeModelArchive.install(archive, File(context.filesDir, "models"), model.archive, LocalTranscriber::isModelComplete)
         }
@@ -49,7 +50,7 @@ class OfflineSpeechSmokeTest {
         val start = System.nanoTime()
         val transcript = requireNotNull(LocalTranscriber.create(context, model.archive, "en")).use { it.transcribe(samples) }
         val elapsedMs = (System.nanoTime() - start) / 1_000_000
-        println("Synthetic English / Whisper Base: ${samples.size / 16000.0}s audio, ${elapsedMs}ms processing; $transcript")
+        println("Synthetic English / ${model.name}: ${samples.size / 16000.0}s audio, ${elapsedMs}ms processing; $transcript")
         val normalized = transcript.lowercase(java.util.Locale.ROOT)
         assertTrue(transcript, normalized.contains("english"))
         assertTrue(transcript, normalized.contains("document"))

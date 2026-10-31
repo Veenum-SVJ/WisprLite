@@ -48,7 +48,7 @@ object ServiceWatchdog {
     class Check(context: Context, params: WorkerParameters) : Worker(context, params) {
         override fun doWork(): Result {
             val context = applicationContext
-            val paused = context.getSharedPreferences("openwispr", Context.MODE_PRIVATE)
+            val paused = context.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
                 .getBoolean("service_master_enabled", true).not()
             if (paused || !isEnabledInSettings(context)) return Result.success()
 

@@ -6,6 +6,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PostProcessorTest {
+    @Test
+    fun fullYorubaDiacriticsAreNotRejectedAsGeneratedContent() {
+        val cleaned = java.text.Normalizer.normalize(
+            "Ẹ káàárọ̀, ẹ ṣé, ẹ kú iṣẹ́. ".repeat(30), java.text.Normalizer.Form.NFD)
+        val raw = cleaned.replace(Regex("\\p{M}+"), "")
+        assertFalse(PostProcessor.looksGenerated(raw, cleaned))
+        val result = PostProcessor.parseResponse(org.json.JSONObject().put("choices", org.json.JSONArray().put(
+            org.json.JSONObject().put("message", org.json.JSONObject().put("content", cleaned)))).toString())
+        assertEquals(cleaned.trim(), result.text)
+    }
 
     @Test
     fun parseSuccess() {

@@ -36,8 +36,24 @@ class ServiceLifecycleIntegrationTest {
                 service.onInterrupt()
                 assertNull(recorderField.get(service))
                 assertNull(field("pcmStream").get(service))
-                assertEquals("IDLE", field("state").get(service).toString())
+                assertEquals("IDLE", field("state").get(service)?.toString())
             }
+            // Pausing must cancel a second live capture through the Settings switch path.
+            instrumentation.runOnMainSync {
+                service.javaClass.getDeclaredMethod("startRecording").apply { isAccessible = true }.invoke(service)
+                assertEquals(AudioRecord.RECORDSTATE_RECORDING, (recorderField.get(service) as AudioRecord).recordingState)
+            }
+            prefs.edit().putBoolean("service_master_enabled", false).commit()
+            service.refreshMasterEnabled()
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                assertNull(recorderField.get(service))
+                assertNull(field("pcmStream").get(service))
+                assertEquals("IDLE", field("state").get(service)?.toString())
+            }
+            prefs.edit().putBoolean("service_master_enabled", true).commit()
+            service.refreshMasterEnabled()
+            instrumentation.waitForIdleSync()
             assertEquals(before, HistoryRepository(context).use { it.totals(0).recordings })
             val phrase = "WisprLite insertion: Ṣọlá, how you dey?"
             var injected = false

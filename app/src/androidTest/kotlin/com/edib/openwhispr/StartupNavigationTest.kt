@@ -45,6 +45,32 @@ class StartupNavigationTest {
                     assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Dictionary" })
                     activity.onBackPressedDispatcher.onBackPressed()
                     assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Home" })
+                    descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
+                    descendants(root).filterIsInstance<TextView>().single { it.text.toString() == "Insights" }.performClick()
+                }
+                val totals = HistoryRepository(context).use { it.totals(0) }
+                var insightsLoaded = false
+                val deadline = System.currentTimeMillis() + 5_000
+                while (!insightsLoaded && System.currentTimeMillis() < deadline) {
+                    scenario.onActivity { activity ->
+                        insightsLoaded = descendants(activity.window.decorView).filterIsInstance<TextView>().any {
+                            it.text.toString().startsWith("All time\n${totals.words} words · ${totals.recordings} recordings\n")
+                        }
+                    }
+                    if (!insightsLoaded) Thread.sleep(100)
+                }
+                assertTrue("Insights did not render the persisted all-time totals", insightsLoaded)
+                scenario.onActivity { activity ->
+                    val root = activity.window.decorView
+                    descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
+                    descendants(root).filterIsInstance<TextView>().single { it.text.toString() == "Settings" }.performClick()
+                    val labels = descendants(root).filterIsInstance<TextView>().map { it.text.toString() }
+                    assertTrue(labels.any { it.startsWith("Transcription provider") })
+                    assertTrue(labels.any { it.startsWith("Appearance") })
+                    assertTrue(labels.any { it.startsWith("Keep audio") })
+                    assertTrue(labels.any { it.startsWith("Text history retention") })
+                    activity.onBackPressedDispatcher.onBackPressed()
+                    assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Home" })
                 }
             }
         } finally {

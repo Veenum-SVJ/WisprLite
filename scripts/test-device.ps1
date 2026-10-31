@@ -76,12 +76,22 @@ try {
     Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
     $sdk = [int](Invoke-Adb @('shell','getprop','ro.build.version.sdk') | Out-String).Trim()
     if ($sdk -ge 33) { Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.POST_NOTIFICATIONS') | Out-Null }
-    Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest' ''
+    Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest,com.edib.openwhispr.RetentionDeviceTest' ''
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
     Write-Output "Device checks passed. Logs: $logs"
     Write-Output 'Speech accuracy, real cloud providers, optional model fixtures and airplane-mode testing are separate checks.'
 } finally {
     Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
+    # Android marks an accessibility service disconnected after instrumentation force-stops
+    # its process. Reapply the enabled state through a real off/on transition.
+    if ($wasEnabled) {
+        # Explicit launch clears the package's force-stopped state before rebinding.
+        Invoke-Adb @('shell','am','start','-W','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
+        Set-OwnService $false
+    }
     Set-OwnService $wasEnabled
+    if ($wasEnabled) {
+        Invoke-Adb @('shell','am','start','-W','-n','com.veenum.wisprlite.test/com.edib.openwhispr.DictationTargetActivity') | Out-Null
+    }
 }

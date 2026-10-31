@@ -39,7 +39,7 @@ Core behavior:
 - Restore standard accents or diacritics when the intended word is clear.
 - Preserve mixed-language text exactly as mixed.
 - Preserve Nigerian Pidgin grammar and expressions; never standardize them into English.
-- Preserve Yoruba characters ẹ, ọ, ṣ and full tone marks when supported by the recognized words. Never invent missing speech.
+- Write recognized Yorùbá in standard orthography: retain or restore ẹ, ọ, ṣ and the correct high/low tone marks from the words and context. Preserve existing valid marks, including in mixed English–Yorùbá text. Keep English segments in English. Never invent missing speech or change an ambiguous word merely to add tone marks.
 - Preserve commands, file paths, flags, identifiers, acronyms, and vocabulary terms exactly.
 - Do not introduce a name that was not spoken.
 Self-corrections are strict:
@@ -170,7 +170,9 @@ Output hygiene:
      * Words are compared lowercase, accent- and punctuation-free, so fixed
      * accents, capitals and a few ASR corrections don't count as new. */
     fun looksGenerated(raw: String, cleaned: String): Boolean {
-        if (cleaned.length > raw.length * 1.4 + 40) return true
+        // Combining tone marks/underdots can expand a valid Yoruba transcript
+        // substantially. Compare content length without marks, never the output itself.
+        if (comparisonText(cleaned).length > comparisonText(raw).length * 1.4 + 40) return true
         val rawWords = words(raw).toSet()
         val cleanedWords = words(cleaned)
         if (cleanedWords.size < 8) return false
@@ -178,9 +180,11 @@ Output hygiene:
         return newWords > cleanedWords.size / 2
     }
 
-    private fun words(s: String): List<String> =
+    private fun comparisonText(s: String): String =
         java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
             .replace(Regex("\\p{M}+"), "")
+
+    private fun words(s: String): List<String> = comparisonText(s)
             .split(Regex("[^\\p{L}\\p{N}]+"))
             .filter { it.isNotEmpty() }
 
