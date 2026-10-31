@@ -90,3 +90,11 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 - Cloud provider/cleanup live calls and Pixel live Yoruba/Pidgin trials remain unverified. Generic Base/Small failed earlier user Yoruba quality trials on Redmi.
 
 Unused feature removal: full build/lint/release PASS (3m47s), remaining 95 unit tests PASS. Deleted 12 tests belonging to removed command/updater features. Fresh complete Pixel device runner 15/15 PASS, logs .tools/device-tests/20261031-105815. Release APK 36075391 bytes. Removed 786 lines including unreachable updater/migration/installer and disabled whole-field voice transformations; normal transcription, cleanup and encrypted backup remain.
+
+### Backup picker regression and Redmi handoff, 2026-10-31
+- User took Pixel and explicitly directed further testing to Redmi; only Redmi 50e64c4c7d76 targeted afterward. Updated app installed without clearing data.
+- Real Android picker cancellation reproduced retained pending passphrase/snapshot (RED). Cancellation now drops both references; activity destruction and incomplete export state also clear pending values before returning. No claim of overwriting immutable String memory.
+- Redmi cancellation test accounts for the filename keyboard consuming the first Back press. Initial combined direct instrumentation run: save/restore passed, cancellation assertion occurred before picker exit; retained as failed evidence, not counted as green. Final separate suites use established MIUI foreground harness.
+- Actual CreateDocument save and OpenDocument restore passed with synthetic Unicode preference `Ẹ káàárọ̀, Ṣọlá. How you dey?`, no secrets/recordings included. Restored test preference removed afterward; only the two exact synthetic exported files were removed through ADB.
+- Final Redmi complete runner: 17/17 PASS, logs .tools/device-tests/20261031-111017. Includes backup cancellation/roundtrip, model availability, long Unicode history, light/dark appearance, rotation, native/WebView insertion, microphone interruption and denial. Own service restored after tests.
+- Full product checks PASS 3m33s (95 unit tests, debug/test/release builds, debug/release lint); final expanded test APK plus debug lint PASS 47s. No live cloud request or new Yoruba quality success is implied.

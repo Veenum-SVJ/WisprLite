@@ -82,7 +82,10 @@ class MainActivity : AppCompatActivity() {
     private var pendingExport: SettingsBackup.Snapshot? = null
     private val createBackupLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
-    ) { uri -> if (uri != null) writeBackup(uri) }
+    ) { uri ->
+        if (uri != null) writeBackup(uri)
+        else { backupPassphrase = null; pendingExport = null }
+    }
     private val openBackupLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> if (uri != null) readBackup(uri) }
@@ -539,7 +542,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() { super.onResume(); refresh(); navigation?.refresh() }
-    override fun onDestroy() { navigation?.close(); super.onDestroy() }
+    override fun onDestroy() {
+        backupPassphrase = null
+        pendingExport = null
+        navigation?.close()
+        super.onDestroy()
+    }
     override fun onSaveInstanceState(outState: Bundle) { navigation?.saveState(outState); super.onSaveInstanceState(outState) }
     override fun onRequestPermissionsResult(c: Int, p: Array<String>, r: IntArray) {
         super.onRequestPermissionsResult(c, p, r); refresh()
@@ -1477,10 +1485,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun writeBackup(uri: Uri) {
-        val passphrase = backupPassphrase ?: return
-        val snapshot = pendingExport ?: return
+        val passphrase = backupPassphrase
+        val snapshot = pendingExport
         backupPassphrase = null
         pendingExport = null
+        if (passphrase == null || snapshot == null) return
         kotlin.concurrent.thread {
             try {
                 val file = SettingsBackup.encrypt(snapshot, passphrase)
