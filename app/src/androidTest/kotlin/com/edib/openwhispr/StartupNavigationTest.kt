@@ -1,7 +1,5 @@
 package com.edib.openwhispr
 
-import android.Manifest
-import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -21,10 +19,6 @@ class StartupNavigationTest {
     @Test fun homeStartsAndDrawerExposesRequiredDestinations() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        for (permission in listOfNotNull(Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= 33 })) {
-            instrumentation.uiAutomation.executeShellCommand("pm grant ${context.packageName} $permission").close()
-        }
         val prefs = context.getSharedPreferences("openwhispr", 0)
         val hadWelcome = prefs.contains("welcome_done")
         val welcome = prefs.getBoolean("welcome_done", false)

@@ -25,3 +25,12 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 - First installation/extraction plus test took 226.465 seconds; this is not steady-state inference latency.
 - Subsequent Activity launch reproduced a missing keyRowSub initialization. Restored the Groq cleanup-key row and added a startup/drawer instrumentation regression; verification pending.
 - No Yoruba, Pidgin, mixed-language accuracy or Pixel 6 result is implied by this English synthetic test.
+
+## Current verification (2026-10-31)
+- Source 604fa12 plus test-only permission-setup simplification: full local unit/debug/test-APK/lint/debug-and-release build PASS (3m52s), 103 unit tests, zero failures.
+- Redmi startup/drawer/back regression: OK (1 test). MIUI blocked the instrumentation background launch until ADB brought the matching MAIN/LAUNCHER intent with flags 0x10008000 to the foreground. No new startup exception occurred.
+- Separate rerun: HistoryRepositoryTest, CredentialIsolationTest and OfflineSpeechSmokeTest: OK (4 tests), 7.696s total. Includes real Base model inference; does not test the physical microphone.
+- Production-signed release APK: 36,044,061 bytes, signature verified by apksigner. SHA-256: 4F503BB655ACC22D2453A986107B0602FB1118ED3142D14D824947C0556E162F.
+- Release certificate SHA-256: a4d82dabfecb078968554f19d625b95bc1cc3499b3289189617cffff17e7e13b. Private signing material remains ignored locally.
+- Physical microphone/insertion attempt from the previous session has no surviving result artifact and is NOT counted as passed. Cross-app, retention, rotation/large-font, release runtime and language/device coverage remain open.
+- Test prerequisites: grant RECORD_AUDIO and POST_NOTIFICATIONS using ADB before StartupNavigationTest. This test no longer executes redundant shell permission commands inside its own instrumentation process.
