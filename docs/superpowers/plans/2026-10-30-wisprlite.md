@@ -58,7 +58,7 @@ Interfaces: screens consume repositories/configuration rather than network calls
 - [x] Build paginated date-grouped history, original/cleaned detail, copy/delete, loading/empty/error states.
 - [x] Add insights periods, dictionary editor reusing upstream parsing, and grouped settings per specification.
 - [x] Expose Direct/Cleanup selection and language selection, with clear local-audio/cloud-text behavior.
-- [ ] Exercise rotation, large font, dark mode, keyboard dialogs, accessibility labels, empty history, long transcripts, and Yoruba text; commit.
+- [x] Exercise rotation, large font, dark mode, keyboard dialogs, accessibility labels, empty history, long transcripts, and Yoruba text; commit.
 
 ## Task 6: Local models and cross-app reliability
 Files: existing LocalTranscriber.kt, ModelDownloader.kt, WhisperAccessibilityService.kt and tests.

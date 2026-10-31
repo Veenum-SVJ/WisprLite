@@ -45,12 +45,14 @@ function Run-Suite {
                 if ((Get-Content -LiteralPath $output -Raw -ErrorAction SilentlyContinue) -match 'com.edib.openwhispr') { break }
                 Start-Sleep -Milliseconds 200
             }
-            if ($Foreground -in @('service', 'service-web')) {
+            if ($Foreground -in @('service', 'service-web', 'service-activity')) {
                 Set-OwnService $false
                 Set-OwnService $true
+            }
+            if ($Foreground -in @('service', 'service-web')) {
                 $webComposer = if ($Foreground -eq 'service-web') { 'true' } else { 'false' }
                 Invoke-Adb @('shell','am','start','-W','-f','0x10008000','-n','com.veenum.wisprlite.test/com.edib.openwhispr.DictationTargetActivity','--ez','webComposer',$webComposer) | Out-Null
-            } else {
+            } elseif ($Foreground -ne 'service-activity' -or $needsForegroundLaunch) {
                 # MIUI may deny the instrumentation process's background activity launch.
                 Invoke-Adb @('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-f','0x10008000','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
             }
@@ -85,6 +87,7 @@ try {
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
     Run-Suite 'backup-picker-cancel' 'com.edib.openwhispr.BackupPickerIntegrationTest#cancellingDocumentPickerDiscardsPendingPassphraseAndSnapshot' 'activity'
     Run-Suite 'backup-picker-roundtrip' 'com.edib.openwhispr.BackupPickerIntegrationTest#exportedDocumentCanBeSelectedAndRestoredThroughAndroidPicker' 'activity'
+    Run-Suite 'clipboard-fallback' 'com.edib.openwhispr.ClipboardFallbackIntegrationTest' 'service-activity'
     Run-Suite 'model-availability' 'com.edib.openwhispr.ModelAvailabilityIntegrationTest' 'service'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
     Run-Suite 'web-composer-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service-web'
