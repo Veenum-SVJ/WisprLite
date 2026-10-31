@@ -9,6 +9,24 @@ import android.content.Context
 
 @RunWith(AndroidJUnit4::class)
 class CredentialIsolationTest {
+    @Test fun explicitLanguageProfileOverridesStaleLegacySelection() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext.createDeviceProtectedStorageContext()
+        val prefs = context.getSharedPreferences("language-profile-test", Context.MODE_PRIVATE)
+        try {
+            prefs.edit().putStringSet(TranscriptionLanguages.PREF_KEY, setOf("zh"))
+                .putString("language_profile", "YORUBA").commit()
+            assertEquals(setOf("yo"), TranscriptionLanguages.saved(prefs))
+            assertEquals("yo", TranscriptionLanguages.localWhisperLanguage(prefs))
+            prefs.edit().putString("language_profile", "PIDGIN").commit()
+            assertEquals(setOf("en"), TranscriptionLanguages.saved(prefs))
+            assertEquals("en", TranscriptionLanguages.localWhisperLanguage(prefs))
+            prefs.edit().putString("language_profile", "AUTO").commit()
+            assertTrue(TranscriptionLanguages.saved(prefs).isEmpty())
+            assertEquals("", TranscriptionLanguages.localWhisperLanguage(prefs))
+            prefs.edit().remove("language_profile").commit()
+            assertEquals(setOf("zh"), TranscriptionLanguages.saved(prefs))
+        } finally { prefs.edit().clear().commit() }
+    }
     @Test fun encryptedBackupRoundTripRestoresIndependentKeysOnDevice() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext.createDeviceProtectedStorageContext()
         val file = java.io.File(context.cacheDir, "wisprlite-backup-test.owb")

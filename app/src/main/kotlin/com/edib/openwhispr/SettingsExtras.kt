@@ -18,15 +18,10 @@ class SettingsExtras(private val activity: MainActivity) {
         orientation = LinearLayout.VERTICAL
         addView(row("Transcription provider · URL, model and key") { provider() })
         addView(row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
-            val values = DictationLanguage.entries
-            AlertDialog.Builder(activity).setTitle("Dictation language")
-                .setSingleChoiceItems(values.map { it.title }.toTypedArray(), values.indexOf(DictationLanguage.fromSaved(prefs.getString("language_profile", null)))) { dialog, index ->
-                    val selected = values[index]
-                    dialog.dismiss(); activity.selectLanguageProfile(selected)
-                }.setNegativeButton("Cancel", null).show()
+            activity.showLanguageProfilePicker()
         })
         addView(TextView(activity).apply { text = "Mixed/Auto preserves language switches. Pidgin is a recognition profile; accuracy depends on your model. Cloud cleanup sends transcript text, including with local speech recognition." })
-        addView(TextView(activity).apply { text = "Pidgin hints apply to cloud recognition. Offline Pidgin accuracy depends on the multilingual model; it is not a separately supported Whisper language." })
+        addView(TextView(activity).apply { text = "Auto can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints, because Whisper has no separate Pidgin code. Accuracy still depends on your model." })
         for ((key, label, default) in listOf(Triple("recording_sound", "Recording stop sound", true), Triple("recording_vibration", "Recording vibration", false))) {
             addView(com.google.android.material.materialswitch.MaterialSwitch(activity).apply {
                 text = label; isChecked = prefs.getBoolean(key, default)

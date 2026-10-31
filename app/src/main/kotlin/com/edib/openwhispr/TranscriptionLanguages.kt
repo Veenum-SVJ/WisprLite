@@ -21,8 +21,12 @@ object TranscriptionLanguages {
         Locale.forLanguageTag(code).getDisplayLanguage(locale).ifBlank { code }
 
     /** Saved selection; empty means Auto-detect. Unknown codes are dropped. */
-    fun saved(prefs: SharedPreferences): Set<String> =
-        prefs.getStringSet(PREF_KEY, emptySet()).orEmpty().filter { it in CODES }.toSet()
+    fun saved(prefs: SharedPreferences): Set<String> {
+        if (prefs.contains("language_profile")) {
+            return DictationLanguage.fromSaved(prefs.getString("language_profile", null)).languageCode?.let { setOf(it) } ?: emptySet()
+        }
+        return prefs.getStringSet(PREF_KEY, emptySet()).orEmpty().filter { it in CODES }.toSet()
+    }
 
     /** Language a local multilingual Whisper is loaded with: the single
      * selection, or "" for auto-detect (several or none). */

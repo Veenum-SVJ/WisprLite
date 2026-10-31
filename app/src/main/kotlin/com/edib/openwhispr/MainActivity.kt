@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity() {
         dictationContainer.addView(modelContainer)
 
         languageRow = settingsRow(getString(R.string.transcription_languages), "") {
-            promptTranscriptionLanguages()
+            showLanguageProfilePicker()
         }
         languageRowSub = languageRow.findViewWithTag("subtitle")
         // Language selection lives in the WisprLite settings controls.
@@ -1178,11 +1178,25 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    fun showLanguageProfilePicker() {
+        val values = DictationLanguage.entries
+        val selected = DictationLanguage.fromSaved(prefs().getString("language_profile", null))
+        val labels = values.map { profile -> when (profile) {
+            DictationLanguage.AUTO -> "Mixed / Auto · guesses the language"
+            DictationLanguage.PIDGIN -> "Nigerian Pidgin · English-based recognition"
+            else -> profile.title
+        } }.toTypedArray()
+        android.app.AlertDialog.Builder(this).setTitle("Dictation language")
+            .setSingleChoiceItems(labels, values.indexOf(selected)) { dialog, index ->
+                dialog.dismiss(); selectLanguageProfile(values[index])
+            }.setNegativeButton("Cancel", null).show()
+    }
+
     fun selectLanguageProfile(profile: DictationLanguage) {
         prefs().edit().putString("language_profile", profile.name).apply()
         val selected = profile.languageCode?.let { setOf(it) } ?: emptySet()
         saveTranscriptionLanguages(selected)
-        if (selected.isEmpty() && prefs().getBoolean("use_local", true)) {
+        if (profile in setOf(DictationLanguage.AUTO, DictationLanguage.PIDGIN) && prefs().getBoolean("use_local", true)) {
             // Auto and Pidgin benefit from multilingual recognition, without claiming native Pidgin support.
             suggestModelForLanguages(setOf("en", "yo"))
         }

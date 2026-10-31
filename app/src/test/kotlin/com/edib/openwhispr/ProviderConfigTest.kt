@@ -16,7 +16,7 @@ class ProviderConfigTest {
     }
     @Test fun `language profiles only force supported explicit codes`() {
         assertNull(DictationLanguage.AUTO.languageCode)
-        assertNull(DictationLanguage.PIDGIN.languageCode)
+        assertEquals("en", DictationLanguage.PIDGIN.languageCode)
         assertEquals("en", DictationLanguage.ENGLISH.languageCode)
         assertEquals("yo", DictationLanguage.YORUBA.languageCode)
     }

@@ -63,7 +63,12 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         })
         val header = LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(16), dp(8))
-            addView(button("☰") { drawer() }.apply { contentDescription = "Open navigation" }, LinearLayout.LayoutParams(dp(64), dp(56)))
+            addView(com.google.android.material.button.MaterialButton(activity).apply {
+                text = "☰"; textSize = 22f; contentDescription = "Open navigation"
+                backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+                setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
+                setPadding(0, 0, 0, 0); setOnClickListener { drawer() }
+            }, LinearLayout.LayoutParams(dp(48), dp(56)))
             addView(title)
         }
         body.addView(header)
@@ -110,12 +115,19 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         when (name) {
             "Home" -> {
                 cursor = null; lastDay = ""
-                content.addView(text("Your words, ready to use", 20f))
-                content.addView(button(DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title) { show("Settings") })
-                content.addView(button(if (prefs.getBoolean("use_post_processing", false)) "AI Cleanup" else "Direct transcription") {
+                val controls = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL }
+                fun control(label: String, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity, null,
+                    com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = label; textSize = 14f; isAllCaps = false; minHeight = dp(48)
+                    setOnClickListener { action() }
+                }
+                controls.addView(control(DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title) {
+                    activity.showLanguageProfilePicker()
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(8) })
+                controls.addView(control(if (prefs.getBoolean("use_post_processing", false)) "AI Cleanup" else "Direct transcription") {
                     prefs.edit().putBoolean("use_post_processing", !prefs.getBoolean("use_post_processing", false)).apply(); show("Home")
-                })
-                content.addView(text("Use the floating microphone while typing in another app. Setup and provider options are in Settings."))
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                content.addView(controls)
                 page()
             }
             "Insights" -> insights()
@@ -125,7 +137,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     }
     private fun page() {
         query({ it.listBefore(cursor) }) { records ->
-            if (records.isEmpty() && cursor == null) content.addView(text("No transcripts yet. Your successful dictations will appear here."))
+            if (records.isEmpty() && cursor == null) content.addView(text("No transcripts yet. Use the floating microphone while typing in another app. Your successful dictations will appear here. Setup and provider options are in Settings."))
             for (record in records) {
                 val day = java.time.Instant.ofEpochMilli(record.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
                 val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }

@@ -4,7 +4,9 @@ enum class DictationLanguage(val title: String, val languageCode: String?) {
     AUTO("Mixed / Auto", null),
     ENGLISH("English", "en"),
     YORUBA("Yorùbá", "yo"),
-    PIDGIN("Nigerian Pidgin", null);
+    // Whisper has no Pidgin code. Use its English decoder as a recognition hint
+    // instead of allowing unrelated language detection on short Pidgin speech.
+    PIDGIN("Nigerian Pidgin", "en");
 
     val recognitionHint: String get() = when (this) {
         PIDGIN -> "Nigerian Pidgin: Abeg, I dey come. Na so e be. Make we go."

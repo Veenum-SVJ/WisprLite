@@ -15,7 +15,7 @@ Install an APK, grant microphone access and enable the WisprLite Accessibility S
 
 Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. API endpoints must support OpenAI-compatible multipart audio transcription. Cleanup can use a separate provider/key/model. Cloud cleanup sends text even when speech recognition is offline.
 
-Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin has cloud recognition hints; it is not a separately supported base Whisper language. Multilingual Base is the starting recommendation for mixed-language testing, not a guarantee of Yoruba or Pidgin accuracy. Desktop Q5 model files cannot be imported into the Android runtime.
+Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin uses English-based recognition and cloud Pidgin vocabulary hints; it is not a separately supported base Whisper language. Auto detection can misidentify short phrases: choose English, Yorùbá or Pidgin explicitly using the Home language control. Multilingual Base is the starting recommendation for mixed-language testing, not a guarantee of Yoruba or Pidgin accuracy. Desktop Q5 model files cannot be imported into the Android runtime.
 
 Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
 
@@ -23,9 +23,10 @@ Audio saving is off by default. Text history and statistics stay on the device; 
 Requires JDK 17, Android SDK platform 35 and build-tools 35.0.0. Set sdk.dir in an untracked local.properties file.
 
     ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug assembleRelease lintRelease
-    ./gradlew connectedDebugAndroidTest
+    # After installing the debug APK and debug Android-test APK:
+    powershell -File scripts/test-device.ps1 -Serial YOUR_ADB_SERIAL
 
-Android 11/API 30 or newer and arm64 are targeted. Instrumentation tests currently run against a fresh test installation and exercise history/database behavior and credential isolation. Do not run database-reset tests against personal history you want to retain.
+Android 11/API 30 or newer and arm64 are targeted. The device script handles Redmi foreground-launch restrictions and the test helper field. Database and credential fixtures use isolated test storage; the service test briefly records and cancels microphone audio, then verifies cross-app insertion. It briefly revokes microphone permission to test denial, restores the grant, grants notification permission and restores whether WisprLite accessibility was enabled, preserving other services. It does not uninstall the app or clear personal history. Run it while no personal dictation is in progress. Real speech accuracy, cloud-provider credentials and airplane-mode checks are separate.
 
 Release code/resource shrinking is enabled. Without keystore.properties the release APK is unsigned. Debug builds use the persistent development keystore when available under .tools; CI restores it from an encrypted repository secret. Never distribute development signing material or commit API keys, recordings, keystores or signing passwords.
 
