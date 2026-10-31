@@ -57,3 +57,5 @@ Repeatable Windows device runner executed successfully on Redmi: permission deni
 Language-control full build PASS in 3m52s (before compact Home change). Home cosmetic pass now reduces the two full-width controls to one compact row, uses a plain menu button, and gives text history priority over repeated explanatory copy. Current compact-Home build/device visual check pending.
 
 Compact Home native device runner PASS: 8 tests, including explicit-profile precedence over stale Chinese legacy codes. Updated Home visually inspected on Redmi and Chinese-output Auto failure independently confirmed in app history (personal transcript/screenshots not committed). Manual picker UX confirmation pending. Plan checkboxes updated only for implementation/verification items supported by evidence; remaining acceptance checks stay open.
+
+110990e full local checks PASS in 3m28s, device suite 8/8 PASS, full-history secret scan clean. Current production-signed APK staged with updated hash in device report. User manual selection/explicit-profile speech retry pending; goal remains active.

@@ -67,3 +67,5 @@ Latest Settings/theme revision; instrumentation database checks; release shrinki
 - Compact Home debug APK installed and visually inspected: plain menu button, language and Direct/Cleanup controls in one row, date-grouped text history below. No repeated introductory text when history exists.
 - Home history independently confirms the user's failed Auto attempt contains CJK output. The exact personal transcript and screenshots remain outside Git; no fabricated accuracy metric.
 - Manual language-picker UX confirmation and explicit-profile speech retries requested; pending user result.
+
+- Compact Home/language source 110990e: full local checks PASS in 3m28s; 103 unit tests and 8 physical-device integration tests pass. Local full-history secret scan clean. Current staged production-signed APK verified; 36044061 bytes; SHA-256 D8C8B9DFF8955F1BBDDBCEDB97D05F2094068639C63970A2623B979CAD94D079. Earlier staged artifact hashes are superseded by this one. Actual explicit-profile speech accuracy remains pending.
