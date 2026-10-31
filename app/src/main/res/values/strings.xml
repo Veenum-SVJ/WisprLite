@@ -209,6 +209,8 @@ You can combine commands: %1$s, translate to Italian and turn it into a list. Th
     <string name="key_needed_hint">Not set — needed for cloud and cleanup</string>
     <string name="status_missing_audio">Grant audio permission</string>
     <string name="status_missing_accessibility">Turn on the accessibility service</string>
+    <string name="status_service_paused">Dictation is paused</string>
+    <string name="status_accessibility_disconnected">Accessibility is enabled but disconnected</string>
     <string name="status_missing_model">Download a local model — Dictation tab</string>
     <string name="status_missing_key">Add your Groq API key — Settings tab</string>
     <string name="status_missing_cleanup_key">Cleanup needs an API key — Settings tab</string>

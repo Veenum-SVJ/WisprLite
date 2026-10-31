@@ -124,8 +124,18 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 controls.addView(control(DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title) {
                     activity.showLanguageProfilePicker()
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(8) })
-                controls.addView(control(if (prefs.getBoolean("use_post_processing", false)) "AI Cleanup" else "Direct transcription") {
-                    prefs.edit().putBoolean("use_post_processing", !prefs.getBoolean("use_post_processing", false)).apply(); show("Home")
+                val cleanupEnabled = prefs.getBoolean("use_post_processing", false)
+                val cleanupReady = cleanupConfigured()
+                val cleanupLabel = if (!cleanupEnabled) "Direct transcription" else if (cleanupReady) "AI Cleanup" else "Cleanup · needs key"
+                controls.addView(control(cleanupLabel) {
+                    if (!cleanupEnabled && !cleanupReady) {
+                        AlertDialog.Builder(activity).setTitle("Set up AI cleanup")
+                            .setMessage("Add your cleanup provider and API key in Settings. Direct transcription is available without cleanup.")
+                            .setPositiveButton("Open Settings") { _, _ -> show("Settings") }
+                            .setNegativeButton("Cancel", null).show()
+                    } else {
+                        prefs.edit().putBoolean("use_post_processing", !cleanupEnabled).apply(); show("Home")
+                    }
                 }, LinearLayout.LayoutParams(0, -2, 1f))
                 content.addView(controls)
                 page()
@@ -143,9 +153,14 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }
                 if (label != lastDay) { content.addView(text(label, 18f)); lastDay = label }
                 val preview = (record.cleaned ?: record.original).take(220)
+                val resultLabel = when {
+                    record.cleaned != null -> "AI cleaned"
+                    record.mode == "AI Cleanup" -> "Original · cleanup not applied"
+                    else -> "Direct"
+                }
                 val row = com.google.android.material.button.MaterialButton(activity, null,
                     com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = "${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt))} · ${record.mode}\n$preview"
+                    text = "${DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt))} · $resultLabel\n$preview"
                     isAllCaps = false
                     gravity = Gravity.START or Gravity.CENTER_VERTICAL
                     cornerRadius = dp(12)
@@ -192,6 +207,12 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 } else query({ it.updateCleanup(record.id, cleaned) }) { show("Home"); detail(record.copy(cleaned = cleaned)) }
             }
         }
+    }
+    private fun cleanupConfigured(): Boolean {
+        val config = CleanupProviderConfig.fromPreferences(prefs.getString("cleanup_provider", null),
+            prefs.getString("cleanup_base_url", null), prefs.getString("cleanup_model", null))
+        return (if (config.provider == CleanupProviderConfig.Provider.GROQ) SecureKeyStorage.groqApiKey(activity)
+            else SecureKeyStorage.cleanupApiKey(activity)).isNotBlank()
     }
     private fun copy(value: String) {
         val clip = ClipData.newPlainText("WisprLite transcript", value)

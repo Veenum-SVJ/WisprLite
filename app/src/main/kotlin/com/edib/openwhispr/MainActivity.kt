@@ -742,6 +742,7 @@ class MainActivity : AppCompatActivity() {
     private fun refresh() {
         val audio = hasPerm(Manifest.permission.RECORD_AUDIO)
         val acc = WhisperAccessibilityService.instance != null
+        val serviceEnabled = prefs().getBoolean("service_master_enabled", true)
         val useLocal = prefs().getBoolean("use_local", true)
         val usePostProcessing = prefs().getBoolean("use_post_processing", false)
         val groqApiKey = SecureKeyStorage.groqApiKey(this)
@@ -821,10 +822,12 @@ class MainActivity : AppCompatActivity() {
         val localReady = useLocal && hasModel
         val cloudReady = !useLocal && hasTranscriptionKey
         val postReady = !usePostProcessing || hasCleanupKey
-        val ready = audio && acc && (localReady || cloudReady) && postReady
+        val ready = audio && acc && serviceEnabled && (localReady || cloudReady) && postReady
 
         val (missing, action) = when {
+            !serviceEnabled -> getString(R.string.status_service_paused) to null
             !audio -> getString(R.string.status_missing_audio) to null
+            !acc && ServiceWatchdog.isEnabledInSettings(this) -> getString(R.string.status_accessibility_disconnected) to null
             !acc -> getString(R.string.status_missing_accessibility) to null
             useLocal && !hasModel -> getString(R.string.status_missing_model) to { tabLayout.getTabAt(1)?.select(); Unit }
             !useLocal && !hasTranscriptionKey -> getString(R.string.status_missing_key) to { navigation?.openSettings(); Unit }

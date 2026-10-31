@@ -1372,7 +1372,9 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun tryInjectIntoNode(node: AccessibilityNodeInfo, text: String): Boolean {
         logNode("Trying node", node)
 
-        node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        // Re-focusing an active web editor can recreate its input connection
+        // while the following paste is dispatched.
+        if (!node.isFocused) node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
 
         findCustomPasteAction(node)?.let { action ->
             val ok = node.performAction(action.id)

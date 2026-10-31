@@ -267,6 +267,8 @@ Motivo: %1$s</string>
     <string name="migration_message_not_saved">WisprLite 4 está firmado con una clave nueva, así que no se puede instalar sobre la versión 3. Pasos: 1) Haz una copia de tus ajustes con el botón de abajo. 2) Desinstala WisprLite 3. 3) Descarga %1$s desde la página de versiones de GitHub y ábrelo para instalarlo. 4) En el primer inicio, restaura la copia.</string>
     <string name="migration_uninstall">Desinstalar WisprLite 3</string>
     <string name="migration_back_up_first">Hacer copia primero</string>
+    <string name="status_service_paused">El dictado está en pausa</string>
+    <string name="status_accessibility_disconnected">La accesibilidad está activada, pero desconectada</string>
 </resources>
 
 

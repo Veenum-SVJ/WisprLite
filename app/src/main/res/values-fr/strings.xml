@@ -209,6 +209,8 @@ Vous pouvez combiner des commandes : %1$s, traduis en italien puis transforme le
     <string name="key_needed_hint">Non défini — requis pour le cloud et la correction</string>
     <string name="status_missing_audio">Autorisez l’accès au micro</string>
     <string name="status_missing_accessibility">Activez le service d’accessibilité</string>
+    <string name="status_service_paused">La dictée est en pause</string>
+    <string name="status_accessibility_disconnected">L’accessibilité est activée, mais déconnectée</string>
     <string name="status_missing_model">Téléchargez un modèle local — onglet Dictée</string>
     <string name="status_missing_key">Ajoutez votre clé API Groq — onglet Paramètres</string>
     <string name="status_missing_cleanup_key">La correction nécessite une clé API — onglet Paramètres</string>

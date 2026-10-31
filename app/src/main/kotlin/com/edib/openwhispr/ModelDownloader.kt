@@ -65,6 +65,10 @@ object ModelDownloader {
     fun isInstalled(ctx: Context, model: Model) =
         LocalTranscriber.isModelComplete(modelDir(ctx, model))
 
+    // Known packs contain float and int8 variants: peak usage includes the
+    // compressed download plus staged extraction, not just the active weights.
+    internal fun minimumFreeBytes(model: Model): Long = model.sizeMb * 4_000_000L + 64L * 1024 * 1024
+
     /** Download and extract model. Callbacks fire on background thread. */
     fun download(ctx: Context, model: Model, onState: (DownloadState) -> Unit) {
         if (!activeDownloads.add(model.archive)) { onState(DownloadState.Error("This model is already downloading")); return }
@@ -74,7 +78,10 @@ object ModelDownloader {
 
         Thread {
             try {
-                require(ctx.filesDir.usableSpace > model.sizeMb * 2_000_000L) { "Not enough storage for this model" }
+                val requiredSpace = minimumFreeBytes(model)
+                require(ctx.filesDir.usableSpace > requiredSpace) {
+                    "Not enough storage. Keep at least ${android.text.format.Formatter.formatFileSize(ctx, requiredSpace)} free to download and unpack this model."
+                }
                 downloadFile(url, tmpFile, ctx.getString(R.string.empty_download_response), onState)
                 onState(DownloadState.Extracting)
                 SafeModelArchive.install(tmpFile, outDir, model.archive, LocalTranscriber::isModelComplete)
@@ -91,7 +98,7 @@ object ModelDownloader {
     fun delete(ctx: Context, model: Model) =
         modelDir(ctx, model).deleteRecursively()
 
-    private fun downloadFile(
+    internal fun downloadFile(
         url: String, dest: File, emptyResponseMessage: String, onState: (DownloadState) -> Unit
     ) {
         client.newCall(Request.Builder().url(url).build()).execute().use { response ->

@@ -11,24 +11,47 @@ import kotlin.concurrent.thread
 class SettingsExtras(private val activity: MainActivity) {
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
     private fun message(value: String) = activity.runOnUiThread { Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
-    private fun row(label: String, action: () -> Unit) = Button(activity).apply {
-        text = label; isAllCaps = false; setOnClickListener { action() }
+    private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
+    private fun heading(label: String) = TextView(activity).apply {
+        text = label; textSize = 14f; setTypeface(typeface, android.graphics.Typeface.BOLD)
+        setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
+        setPadding(dp(8), dp(20), dp(8), dp(10))
+    }
+    private fun row(label: String, action: () -> Unit) = com.google.android.material.button.MaterialButton(activity, null,
+        com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+        text = label; textSize = 16f; isAllCaps = false
+        gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+        cornerRadius = dp(12); minHeight = dp(52)
+        setPadding(dp(16), dp(10), dp(16), dp(10))
+        layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
+        setOnClickListener { action() }
     }
     fun build(): View = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
+        addView(heading("Speech and language"))
         addView(row("Transcription provider · URL, model and key") { provider() })
         addView(row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
             activity.showLanguageProfilePicker()
         })
-        addView(TextView(activity).apply { text = "Mixed/Auto preserves language switches. Pidgin is a recognition profile; accuracy depends on your model. Cloud cleanup sends transcript text, including with local speech recognition." })
-        addView(TextView(activity).apply { text = "Auto can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints, because Whisper has no separate Pidgin code. Accuracy still depends on your model." })
+        addView(row("Language help") {
+            AlertDialog.Builder(activity).setTitle("Choosing a language")
+                .setMessage("Mixed/Auto lets the model detect the language and can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints where a separate Pidgin code is unavailable. Recognition and tone-mark accuracy depend on your model.")
+                .setPositiveButton("Close", null).show()
+        })
+        addView(TextView(activity).apply {
+            text = "AI cleanup sends transcript text to your selected provider, even with offline recognition."
+            textSize = 14f; setPadding(dp(8), dp(4), dp(8), dp(8))
+        })
+        addView(heading("Recording"))
         for ((key, label, default) in listOf(Triple("recording_sound", "Recording stop sound", true), Triple("recording_vibration", "Recording vibration", false))) {
             addView(com.google.android.material.materialswitch.MaterialSwitch(activity).apply {
                 text = label; isChecked = prefs.getBoolean(key, default)
+                setPadding(dp(8), dp(6), dp(8), dp(6))
                 setOnCheckedChangeListener { _, checked -> prefs.edit().putBoolean(key, checked).apply() }
             })
         }
-        val storage = TextView(activity).apply { text = "Model storage: calculating…" }
+        addView(heading("Storage and appearance"))
+        val storage = TextView(activity).apply { text = "Model storage: calculating…"; textSize = 14f; setPadding(dp(8), dp(4), dp(8), dp(10)) }
         addView(storage)
         thread {
             val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
@@ -39,7 +62,8 @@ class SettingsExtras(private val activity: MainActivity) {
                 AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1))
             }
         })
-        addView(row("Keep audio · ${prefs.getInt("audio_retention_days", 0)} days (0 = off)") {
+        val audioDays = prefs.getInt("audio_retention_days", 0)
+        addView(row("Keep audio · ${if (audioDays == 0) "Off" else "$audioDays days"}") {
             choose("Audio retention", listOf("Off — discard audio", "1 day", "7 days", "30 days"), listOf(0,1,7,30), "audio_retention_days", 0) {
                 RetentionWorker.runSoon(activity); activity.recreate()
             }
@@ -58,6 +82,7 @@ class SettingsExtras(private val activity: MainActivity) {
                 else { prefs.edit().putInt("typing_wpm", value).apply(); dialog.dismiss(); activity.recreate() }
             } }; dialog.show()
         })
+        addView(heading("Manage your data"))
         addView(row("Clear text history") { confirm("Delete all saved text? Statistics remain.") {
             thread { HistoryRepository(activity).use { it.clearHistory() }; message("History cleared") }
         } })

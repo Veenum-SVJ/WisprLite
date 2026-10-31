@@ -267,6 +267,8 @@
     <string name="migration_message_not_saved">WisprLite 4 подписан новым ключом, поэтому он не может быть установлен поверх версии 3. Шаги: 1) Сохраните настройки кнопкой ниже. 2) Удалите WisprLite 3. 3) Скачайте %1$s со страницы релизов GitHub и откройте его для установки. 4) При первом запуске восстановите копию.</string>
     <string name="migration_uninstall">Удалить WisprLite 3</string>
     <string name="migration_back_up_first">Сначала сохранить</string>
+    <string name="status_service_paused">Диктовка приостановлена</string>
+    <string name="status_accessibility_disconnected">Специальные возможности включены, но служба не подключена</string>
 </resources>
 
 

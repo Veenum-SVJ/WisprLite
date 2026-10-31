@@ -267,6 +267,8 @@
     <string name="migration_message_not_saved">WisprLite 4 は新しい鍵で署名されているため、バージョン 3 の上にはインストールできません。手順：1) 下のボタンで設定をバックアップします。2) WisprLite 3 をアンインストールします。3) GitHub のリリースページから %1$s をダウンロードして開き、インストールします。4) 初回起動時にバックアップを復元します。</string>
     <string name="migration_uninstall">WisprLite 3 をアンインストール</string>
     <string name="migration_back_up_first">先にバックアップ</string>
+    <string name="status_service_paused">音声入力は一時停止中です</string>
+    <string name="status_accessibility_disconnected">ユーザー補助は有効ですが接続されていません</string>
 </resources>
 
 

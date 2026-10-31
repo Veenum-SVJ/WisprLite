@@ -15,7 +15,7 @@ Install an APK, grant microphone access and enable the WisprLite Accessibility S
 
 Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. API endpoints must support OpenAI-compatible multipart audio transcription. Cleanup can use a separate provider/key/model. Cloud cleanup sends text even when speech recognition is offline.
 
-Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin uses English-based recognition and cloud Pidgin vocabulary hints; it is not a separately supported base Whisper language. Auto detection can misidentify short phrases: choose English, Yorùbá or Pidgin explicitly using the Home language control. Multilingual Base is the starting recommendation for mixed-language testing, not a guarantee of Yoruba or Pidgin accuracy. Desktop Q5 model files cannot be imported into the Android runtime.
+Language profiles: Mixed/Auto, English, Yoruba and Nigerian Pidgin. English/Yoruba can supply an explicit language code. Pidgin uses English-based recognition and cloud Pidgin vocabulary hints; it is not a separately supported base Whisper language. Auto detection can misidentify short phrases: choose English, Yorùbá or Pidgin explicitly using the Home language control. Both generic Base and Small failed our real Yoruba accuracy/diacritic trials; neither is recommended as a verified Yoruba solution. Desktop Q5 model files cannot be imported into the Android runtime.
 
 Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
 

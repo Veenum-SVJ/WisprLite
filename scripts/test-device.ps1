@@ -39,16 +39,17 @@ function Run-Suite {
     $process = Start-Process -FilePath $adb -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $output -RedirectStandardError $errors
     $null = $process.Handle # Retain the handle so Windows PowerShell can read ExitCode after exit.
     try {
-        if ($Foreground) {
+        if ($Foreground -and ($Foreground -ne 'activity' -or $needsForegroundLaunch)) {
             $start = Get-Date
             while (!$process.HasExited -and ((Get-Date) - $start).TotalSeconds -lt 10) {
                 if ((Get-Content -LiteralPath $output -Raw -ErrorAction SilentlyContinue) -match 'com.edib.openwhispr') { break }
                 Start-Sleep -Milliseconds 200
             }
-            if ($Foreground -eq 'service') {
+            if ($Foreground -in @('service', 'service-web')) {
                 Set-OwnService $false
                 Set-OwnService $true
-                Invoke-Adb @('shell','am','start','-W','-n','com.veenum.wisprlite.test/com.edib.openwhispr.DictationTargetActivity') | Out-Null
+                $webComposer = if ($Foreground -eq 'service-web') { 'true' } else { 'false' }
+                Invoke-Adb @('shell','am','start','-W','-f','0x10008000','-n','com.veenum.wisprlite.test/com.edib.openwhispr.DictationTargetActivity','--ez','webComposer',$webComposer) | Out-Null
             } else {
                 # MIUI may deny the instrumentation process's background activity launch.
                 Invoke-Adb @('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-f','0x10008000','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
@@ -68,6 +69,8 @@ function Run-Suite {
         }
     }
 }
+$manufacturer = (Invoke-Adb @('shell','getprop','ro.product.manufacturer') | Out-String).Trim()
+$needsForegroundLaunch = $manufacturer -match 'xiaomi|redmi|poco'
 $initial = (Invoke-Adb @('shell','settings','get','secure','enabled_accessibility_services') | Out-String).Trim()
 $wasEnabled = $component -in $initial.Split(':')
 try {
@@ -78,7 +81,11 @@ try {
     if ($sdk -ge 33) { Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.POST_NOTIFICATIONS') | Out-Null }
     Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest,com.edib.openwhispr.RetentionDeviceTest' ''
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
+    Run-Suite 'light-and-dark-appearance' 'com.edib.openwhispr.AppearanceIntegrationTest' 'activity'
+    Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
+    Run-Suite 'model-availability' 'com.edib.openwhispr.ModelAvailabilityIntegrationTest' 'service'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
+    Run-Suite 'web-composer-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service-web'
     Write-Output "Device checks passed. Logs: $logs"
     Write-Output 'Speech accuracy, real cloud providers, optional model fixtures and airplane-mode testing are separate checks.'
 } finally {

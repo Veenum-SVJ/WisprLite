@@ -8,6 +8,20 @@ import java.io.File
 import java.nio.file.Files
 
 class SafeModelArchiveTest {
+    @Test fun `corrupted archive preserves the installed model and removes staging`() {
+        val root = Files.createTempDirectory("wispr-corrupt-install").toFile()
+        try {
+            val models = File(root, "models")
+            val existing = File(models, "model").apply { mkdirs() }
+            File(existing, "encoder.onnx").writeText("previous valid model fixture")
+            val broken = File(root, "broken.tar.bz2").apply { writeBytes(byteArrayOf(0, 1, 2, 3)) }
+            assertThrows(java.io.IOException::class.java) {
+                SafeModelArchive.install(broken, models, "model") { File(it, "encoder.onnx").isFile }
+            }
+            assertEquals("previous valid model fixture", File(existing, "encoder.onnx").readText())
+            assertFalse(models.listFiles().orEmpty().any { it.name.startsWith(".staging-") })
+        } finally { root.deleteRecursively() }
+    }
     private fun archive(file: File, entries: Map<String, String>) {
         TarArchiveOutputStream(BZip2CompressorOutputStream(file.outputStream())).use { tar ->
             entries.forEach { (name, text) ->

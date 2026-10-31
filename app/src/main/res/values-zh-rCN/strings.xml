@@ -267,6 +267,8 @@
     <string name="migration_message_not_saved">WisprLite 4 使用新密钥签名，因此无法覆盖安装在版本 3 上。步骤：1) 用下方按钮备份设置。2) 卸载 WisprLite 3。3) 从 GitHub 发布页面下载 %1$s 并打开安装。4) 首次启动时恢复备份。</string>
     <string name="migration_uninstall">卸载 WisprLite 3</string>
     <string name="migration_back_up_first">先备份</string>
+    <string name="status_service_paused">听写已暂停</string>
+    <string name="status_accessibility_disconnected">无障碍服务已启用，但未连接</string>
 </resources>
 
 
