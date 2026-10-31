@@ -28,6 +28,7 @@ object ServiceWatchdog {
     private const val CHANNEL_ID = "openwhispr_watchdog"
     private const val NOTIF_ID = 4201
     private const val SETTLE_MS = 5_000L
+    private val warningLock = Any()
 
     /** True when [enabledServices] (Settings.Secure value) lists [component] (flattened). */
     fun containsComponent(enabledServices: String?, component: String): Boolean =
@@ -45,24 +46,39 @@ object ServiceWatchdog {
             .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
+    fun clearWarning(context: Context) = synchronized(warningLock) {
+        NotificationManagerCompat.from(context).cancel(NOTIF_ID)
+    }
+
     class Check(context: Context, params: WorkerParameters) : Worker(context, params) {
         override fun doWork(): Result {
             val context = applicationContext
             val paused = context.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
                 .getBoolean("service_master_enabled", true).not()
-            if (paused || !isEnabledInSettings(context)) return Result.success()
+            if (paused || !isEnabledInSettings(context)) {
+                clearWarning(context)
+                return Result.success()
+            }
 
             // A freshly started process gets its accessibility connection a moment after launch.
             Thread.sleep(SETTLE_MS)
             if (WhisperAccessibilityService.instance != null) {
-                NotificationManagerCompat.from(context).cancel(NOTIF_ID)
+                clearWarning(context)
             } else {
                 notifyNotRunning(context)
             }
             return Result.success()
         }
 
-        private fun notifyNotRunning(context: Context) {
+        private fun notifyNotRunning(context: Context) = synchronized(warningLock) {
+            // Re-read after the settle delay. Serialize delivery with immediate
+            // pause/reconnect cancellation so an old check cannot recreate it.
+            val paused = context.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
+                .getBoolean("service_master_enabled", true).not()
+            if (paused || !isEnabledInSettings(context) || WhisperAccessibilityService.instance != null) {
+                clearWarning(context)
+                return@synchronized
+            }
             val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(
                 NotificationChannel(

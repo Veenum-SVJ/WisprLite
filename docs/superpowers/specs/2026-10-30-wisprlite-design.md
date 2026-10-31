@@ -2,6 +2,8 @@
 
 Date: 2026-10-30
 
+Approved visual refinements on 2026-10-31 supersede the original experience styling below: soft teal Modern tool styling, circular dotted voice logo, custom Signal controls, a right-side drawer, inline history actions, language first in Settings, live bubble-size preview and free bubble placement with tap/hold recording. See [modern UI](../../design/modern-tool-ui.md), [bubble behavior](../../design/circular-dotted-bubble.md) and [model badges/storage](../../design/model-provider-badges.md). These refinements retain the functional and privacy requirements in this specification.
+
 ## Purpose
 A minimal native Android dictation app for Pixel 6 and Redmi 12, adapted from EdiBianco/OpenWhispr. Android first; iOS and a desktop fork are outside this release. Use existing models, not model training.
 

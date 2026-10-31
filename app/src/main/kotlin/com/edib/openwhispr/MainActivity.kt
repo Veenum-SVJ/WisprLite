@@ -254,6 +254,7 @@ class MainActivity : AppCompatActivity() {
             val newVal = !serviceSwitch.isChecked
             prefs().edit().putBoolean("service_master_enabled", newVal).apply()
             serviceSwitch.isChecked = newVal
+            if (!newVal) ServiceWatchdog.clearWarning(this)
             WhisperAccessibilityService.instance?.refreshMasterEnabled()
         }
         statusContainer.addView(group().apply { addView(serviceRow) })

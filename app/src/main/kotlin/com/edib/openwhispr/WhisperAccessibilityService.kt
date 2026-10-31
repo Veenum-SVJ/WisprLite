@@ -149,6 +149,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         cancelRecording()
         serviceAlive = true
         instance = this
+        ServiceWatchdog.clearWarning(this)
         try {
             stopTone?.release()
             stopTone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 70)
@@ -403,7 +404,10 @@ class WhisperAccessibilityService : AccessibilityService() {
      * toggled, so an already-idle overlay hides/shows immediately instead
      * of waiting for the next focus event or poll tick. */
     fun refreshMasterEnabled() {
-        handler.post { if (!masterEnabled()) { cancelRecording(); goIdle() }; updateOverlayVisibility() }
+        handler.post {
+            if (!masterEnabled()) { ServiceWatchdog.clearWarning(this); cancelRecording(); goIdle() }
+            updateOverlayVisibility()
+        }
     }
 
     /** Shows the overlay at its target alpha immediately. No fade-in: an

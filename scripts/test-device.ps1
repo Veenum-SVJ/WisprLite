@@ -75,13 +75,23 @@ $manufacturer = (Invoke-Adb @('shell','getprop','ro.product.manufacturer') | Out
 $needsForegroundLaunch = $manufacturer -match 'xiaomi|redmi|poco'
 $initial = (Invoke-Adb @('shell','settings','get','secure','enabled_accessibility_services') | Out-String).Trim()
 $wasEnabled = $component -in $initial.Split(':')
+$sdk = [int](Invoke-Adb @('shell','getprop','ro.build.version.sdk') | Out-String).Trim()
+$packageState = Invoke-Adb @('shell','dumpsys','package','com.veenum.wisprlite') | Out-String
+$permissionStates = @{}
+$permissions = @('android.permission.RECORD_AUDIO')
+if ($sdk -ge 33) { $permissions += 'android.permission.POST_NOTIFICATIONS' }
+foreach ($permission in $permissions) {
+    $match = [regex]::Match($packageState, [regex]::Escape($permission) + ': granted=(true|false)')
+    if (!$match.Success) { throw "Cannot determine original runtime permission: $permission" }
+    $permissionStates[$permission] = $match.Groups[1].Value -eq 'true'
+}
 try {
     Invoke-Adb @('shell','pm','revoke','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
     Run-Suite 'microphone-permission-denied' 'com.edib.openwhispr.PermissionDeniedIntegrationTest' 'service'
     Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
-    $sdk = [int](Invoke-Adb @('shell','getprop','ro.build.version.sdk') | Out-String).Trim()
     if ($sdk -ge 33) { Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.POST_NOTIFICATIONS') | Out-Null }
     Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest,com.edib.openwhispr.RetentionDeviceTest' ''
+    Run-Suite 'watchdog-warning-delivery' 'com.edib.openwhispr.WatchdogDeliveryIntegrationTest' ''
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
     Run-Suite 'light-and-dark-appearance' 'com.edib.openwhispr.AppearanceIntegrationTest' 'activity'
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
@@ -96,7 +106,10 @@ try {
     Write-Output "Device checks passed. Logs: $logs"
     Write-Output 'Speech accuracy, real cloud providers, optional model fixtures and airplane-mode testing are separate checks.'
 } finally {
-    Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
+    foreach ($permission in $permissions) {
+        $permissionAction = if ($permissionStates[$permission]) { 'grant' } else { 'revoke' }
+        Invoke-Adb @('shell','pm',$permissionAction,'com.veenum.wisprlite',$permission) | Out-Null
+    }
     # Android marks an accessibility service disconnected after instrumentation force-stops
     # its process. Reapply the enabled state through a real off/on transition.
     if ($wasEnabled) {
