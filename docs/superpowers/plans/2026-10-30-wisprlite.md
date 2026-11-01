@@ -47,7 +47,7 @@ Interfaces: DictationRecord(id: String, createdAt: Long, original: String, clean
 ## Task 4: Audio lifecycle and retention
 Files: new RetentionPolicy.kt, RetentionWorker.kt; modify recording lifecycle and app startup.
 Interfaces: retention disabled or days in {1,7,30}; expiry compares creation time against clock-injected cutoff; startup sweep and daily worker share the same policy.
-- [ ] Test disabled retention deletes temporary audio on success/failure/cancel; expired files deleted, unexpired retained, unrelated files untouched; abandoned temporary file removed on next startup.
+- [x] Test disabled retention deletes temporary audio on success/failure/cancel; expired files deleted, unexpired retained, unrelated files untouched; abandoned temporary file removed on next startup.
 - [x] Implement app-private recordings, deterministic cleanup, and daily WorkManager scheduling; text expiry choices 7/30/90 days or forever.
 - [x] Verify no key/audio/history appears in OS backup configuration or logs; run tests and commit.
 

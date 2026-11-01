@@ -7,11 +7,18 @@ import org.json.JSONObject
 import org.json.JSONArray
 import java.io.IOException
 import java.util.Base64
+import java.util.concurrent.TimeUnit
 
 object TranscriberClient {
     data class Result(val text: String?, val error: String?)
 
-    private val client = OkHttpClient()
+    // Audio generation can remain silent for more than OkHttp's default 10s.
+    // Bound the entire call while allowing slower providers to return a result.
+    private val client = OkHttpClient.Builder()
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .build()
 
     const val TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
     const val TRANSCRIPTION_MODEL = "whisper-large-v3"

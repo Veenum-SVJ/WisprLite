@@ -23,7 +23,8 @@ class ConfiguredGoogleSpeechIntegrationTest {
         }
         val request = TranscriberClient.transcriptionRequest(File(context.filesDir, "english-test.wav").readBytes(), selected.key, emptyList(), setOf("en"), selected.config)
         try {
-            okhttp3.OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).build().newCall(request).execute().use { response ->
+            okhttp3.OkHttpClient.Builder().readTimeout(60, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS)
+                .callTimeout(90, TimeUnit.SECONDS).build().newCall(request).execute().use { response ->
                 val json = runCatching { org.json.JSONObject(response.body?.string().orEmpty()) }.getOrNull()
                 val choices = json?.optJSONArray("choices")
                 val choice = choices?.optJSONObject(0)
@@ -37,7 +38,19 @@ class ConfiguredGoogleSpeechIntegrationTest {
                 println("GOOGLE_RESPONSE_STRUCTURE: http=${response.code}; json=${json != null}; choices=${choices?.length() ?: 0}; content=$kind; chars=${(content as? String)?.length ?: 0}; refusal=${message?.isNull("refusal") == false}; finish=$safeFinish; error=$safeStatus")
                 assertTrue("Google returned a non-success status; safe metadata recorded", response.isSuccessful)
             }
-        } catch (_: java.io.IOException) { fail("Google request could not complete; no request or credential details logged") }
+        } catch (error: java.io.IOException) {
+            // Exception messages can contain URLs or request details. Only expose
+            // a fixed category so network failures remain distinguishable safely.
+            val category = when (error) {
+                is java.net.UnknownHostException -> "DNS"
+                is javax.net.ssl.SSLException -> "TLS"
+                is java.net.SocketTimeoutException -> "TIMEOUT"
+                is java.net.ConnectException -> "CONNECT"
+                is java.net.SocketException -> "SOCKET"
+                else -> "IO"
+            }
+            fail("Google request could not complete: $category; no request or credential details logged")
+        }
     }
 
     @Test fun savedGoogleProfileTranscribesSyntheticEnglish() {
@@ -58,7 +71,7 @@ class ConfiguredGoogleSpeechIntegrationTest {
             response.set(it); completed.countDown()
         }
         try {
-            assertTrue("Google speech request timed out", completed.await(60, TimeUnit.SECONDS))
+            assertTrue("Google speech request timed out", completed.await(100, TimeUnit.SECONDS))
             val result = requireNotNull(response.get())
             val status = result.error?.takeIf { it.matches(Regex("Transcription provider returned HTTP [0-9]{3}")) } ?: "details withheld"
             assertTrue("Google speech request failed: $status", result.error == null)

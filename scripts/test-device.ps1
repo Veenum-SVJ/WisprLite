@@ -59,7 +59,9 @@ function Run-Suite {
                 Invoke-Adb @('shell','am','start','-W','-f','0x10008000','-n','com.veenum.wisprlite.test/com.edib.openwhispr.DictationTargetActivity','--ez','webComposer',$webComposer) | Out-Null
             } elseif ($Foreground -ne 'service-activity' -or $needsForegroundLaunch) {
                 # MIUI may deny the instrumentation process's background activity launch.
-                Invoke-Adb @('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-f','0x10008000','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
+                # Do not CLEAR_TASK: ActivityScenario may already have launched its
+                # Activity, and clearing the task destroys the instance it owns.
+                Invoke-Adb @('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-f','0x10000000','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
             }
         }
         if ($readyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','touch',"cache/$readyFile") | Out-Null }

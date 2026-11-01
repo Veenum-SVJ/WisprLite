@@ -4,6 +4,7 @@ import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 object PostProcessor {
     data class Result(val text: String?, val error: String?)
@@ -15,7 +16,11 @@ object PostProcessor {
         return parsed.copy(text = stripTranscriptTags(parsed.text))
     }
 
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .callTimeout(90, TimeUnit.SECONDS)
+        .build()
 
     // The default cleanup prompt: literal dictation cleanup with strict
     // self-correction handling, instruction-preservation (the transcript is
