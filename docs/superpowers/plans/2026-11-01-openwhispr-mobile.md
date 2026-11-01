@@ -87,7 +87,7 @@ Status: approved; execution in progress in isolated .tools/redesign worktree on 
 - [x] Build optimized APK, verify signature and 16 KiB ZIP alignment; measure bytes and compare baseline.
 - [x] Reuse the existing installation signer for adb install -r; never uninstall com.veenum.wisprlite to bypass a mismatch. Keep production signing material private.
 - [x] Remove owned fixtures/test package, restore only own accessibility binding, preserve other services and confirm daily-use startup.
-- [ ] Scan staged changes, commit/push authorized source, verify CI and publish approved APK with accurate release notes. Keep screenshots/private data ignored.
+- [x] Scan staged changes, commit/push authorized source, verify CI and publish approved APK with accurate release notes. Keep screenshots/private data ignored.
 
 ## Usage-limit strategy
 
@@ -96,3 +96,5 @@ No five-hour completion promise. Prioritize usable checkpoints: brand/navigation
 ## Verification closeout
 
 See `docs/testing/openwisper-0.2.0.md`: 154 JVM tests, lint/build and 43 Redmi checks passed; independent branch review findings fixed. Some original broad test bullets remain unchecked rather than implying exhaustive coverage: actual landscape, every external app's tone routing, interrupted-write recovery and new live provider trials were not established. They are disclosed validation limits, not missing product controls. Pixel was disconnected; final delivery targets the authorized connected Redmi and reusable APK. No new API quota/model downloads spent. Public release operations are recorded in the handoff.
+
+Public delivery completed: https://github.com/Veenum-SVJ/WisprLite/releases/tag/v0.2.0-preview ; uploaded APK bytes and digest verified. Pixel installation remains a disconnected-device follow-up.

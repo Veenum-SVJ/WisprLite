@@ -26,3 +26,5 @@ Optimized version 0.2.0 / versionCode 3 installed on the Redmi with install -r. 
 No new live cloud speech/cleanup quota was used for this visual update. Prior provider accuracy results remain historical; these checks do not establish multilingual accuracy, every target app's tone behavior, interrupted-device-write recovery, actual landscape recording animation, or every OEM's background recovery behavior. The previous web-insertion intermittency is not claimed universally solved, although this Redmi native/web run passed. New downloaded model packs were not automatically provisioned or evaluated.
 
 Private logs/screenshots remain under ignored .tools and are not published. The app has no account, relay backend or transcript sync.
+
+Public release: https://github.com/Veenum-SVJ/WisprLite/releases/tag/v0.2.0-preview . Uploaded APK state/size/SHA-256 verified against the local installed artifact.

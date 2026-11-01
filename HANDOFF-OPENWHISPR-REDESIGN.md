@@ -18,9 +18,13 @@ User's latest amendment: idle circle docks only left/right at a chosen height (n
 
 Optimized same-key APK `.tools/releases/OpenWisper-0.2.0-android.apk`: 36,285,527 bytes; SHA-256 2CCEBE0BBB194D3589E432F744EC3B0DA5D81858B10E341DC63B1F449575D327. Signature and 16 KiB ZIP alignment verified. Installed on Redmi with install -r; version0.2.0/code3, normal launch, microphone permission and accessibility binding confirmed. Other accessibility service preserved. Owned screenshot caches/fixture preferences and test helper removed. Providers/models/personal history retained. Original font0.9 and portrait lock restored; MIUI test launch op restored to ignore.
 
-## Remaining delivery operations
+## Delivery complete
 
-Finish fixture/docs commit, fast-forward original implementation branch (it has only an owned uncommitted handoff pointer: inspect/preserve it before restoring that exact owned edit), push, publish v0.2.0-preview with verified APK, verify asset bytes/hash and update this section with release URL. Do not claim publication until confirmed. Pixel is disconnected: its 0.2.0 install/check is pending, and APK can be installed later without data loss using the same signer.
+Final verification/docs commit d733f02 was fast-forwarded to default implementation and pushed. Public preview: https://github.com/Veenum-SVJ/WisprLite/releases/tag/v0.2.0-preview . GitHub asset state is uploaded, size36,285,527 and SHA-256 digest matches the local signed APK. Original workspace also has the APK at `.tools/releases/OpenWisper-0.2.0-android.apk`.
+
+Automatic review rejected discarding the original workspace's owned handoff pointer, so it was preserved instead in a recoverable Git stash named “Preserve original handoff pointer before verified redesign delivery”. No uncommitted edit was discarded. Both default and redesign branches have the final source; this closeout documentation follows the release commit.
+
+Pixel is disconnected: its 0.2.0 install/check remains pending. Install this same APK later using install -r, preserving its existing data; never copy keys between phones or uninstall to solve a mismatch.
 
 ## Honest limits
 
@@ -28,4 +32,4 @@ Finish fixture/docs commit, fast-forward original implementation branch (it has 
 
 ## Continuing if interrupted
 
-Continue in `.tools/redesign`, inspect git status and this handoff, preserve user data and private keys/screenshots, and finish only the remaining delivery operations above. Use existing ignored local signing identity and shared SDK/cache; do not print keys or copy credentials between phones. Repository is public at https://github.com/Veenum-SVJ/WisprLite . Never publish private `.tools/openwhispr-reference` screenshots or resources/.env. The GitHub connector lacks release-asset upload; existing authorized gh/git CLI handles release delivery.
+Continue in `.tools/redesign`, inspect git status and this handoff, preserve user data and private keys/screenshots, and continue only a newly requested change or the disconnected Pixel update. The Redmi redesign/release is complete; do not repeat finished checks without a new reason. Use existing ignored local signing identity and shared SDK/cache; do not print keys or copy credentials between phones. Repository is public at https://github.com/Veenum-SVJ/WisprLite . Never publish private `.tools/openwhispr-reference` screenshots or resources/.env. The GitHub connector lacks release-asset upload; existing authorized gh/git CLI handles release delivery.
