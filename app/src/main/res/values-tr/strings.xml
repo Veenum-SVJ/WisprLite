@@ -269,6 +269,11 @@ Neden: %1$s</string>
     <string name="migration_back_up_first">Önce yedekle</string>
     <string name="status_service_paused">Dikte duraklatıldı</string>
     <string name="status_accessibility_disconnected">Erişilebilirlik etkin ancak bağlantısı kesilmiş</string>
+    <string name="background_autostart_row">Arka planda otomatik başlatma · WisprLite yeniden başlayabilsin</string>
+    <string name="background_autostart_title">Yüzen düğmeyi kullanılabilir tut</string>
+    <string name="background_autostart_help">Telefonunuzun arka planda otomatik başlatma listesinde WisprLite uygulamasına izin verin. Bu ayar pil optimizasyonundan ayrıdır. Düğme kaybolursa bu ayarı ve erişilebilirlik hizmetini kontrol edin.</string>
+    <string name="background_autostart_open">Otomatik başlatma ayarlarını aç</string>
+    <string name="background_autostart_unavailable">WisprLite uygulama bilgilerini açın ve arka planda otomatik başlatma ayarını bulun.</string>
 </resources>
 
 

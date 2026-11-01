@@ -269,6 +269,11 @@
     <string name="migration_back_up_first">Сначала сохранить</string>
     <string name="status_service_paused">Диктовка приостановлена</string>
     <string name="status_accessibility_disconnected">Специальные возможности включены, но служба не подключена</string>
+    <string name="background_autostart_row">Фоновый автозапуск · Разрешить перезапуск WisprLite</string>
+    <string name="background_autostart_title">Сохранить доступ к плавающей кнопке</string>
+    <string name="background_autostart_help">Разрешите WisprLite в списке фонового автозапуска телефона. Это отдельная настройка, не связанная с оптимизацией батареи. Если кнопка исчезнет, проверьте эту настройку и службу специальных возможностей.</string>
+    <string name="background_autostart_open">Открыть настройки автозапуска</string>
+    <string name="background_autostart_unavailable">Откройте сведения о приложении WisprLite и найдите фоновый автозапуск.</string>
 </resources>
 
 

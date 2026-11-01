@@ -269,6 +269,11 @@
     <string name="migration_back_up_first">先备份</string>
     <string name="status_service_paused">听写已暂停</string>
     <string name="status_accessibility_disconnected">无障碍服务已启用，但未连接</string>
+    <string name="background_autostart_row">后台自启动 · 允许 WisprLite 重新启动</string>
+    <string name="background_autostart_title">保持悬浮按钮可用</string>
+    <string name="background_autostart_help">请在手机的后台自启动列表中允许 WisprLite。这与电池优化是两个独立设置。如果悬浮按钮消失，请检查此设置和无障碍服务。</string>
+    <string name="background_autostart_open">打开自启动设置</string>
+    <string name="background_autostart_unavailable">打开 WisprLite 的应用信息，找到后台自启动设置。</string>
 </resources>
 
 

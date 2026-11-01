@@ -16,6 +16,18 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class HistoryDetailIntegrationTest {
+    private fun awaitWindowFocus(scenario: ActivityScenario<MainActivity>) {
+        val deadline = android.os.SystemClock.uptimeMillis() + 15_000
+        var stable = 0
+        while (android.os.SystemClock.uptimeMillis() < deadline) {
+            var focused = false
+            scenario.onActivity { focused = it.hasWindowFocus() }
+            stable = if (focused) stable + 1 else 0
+            if (stable >= 3) return
+            Thread.sleep(100)
+        }
+        fail("Foreground window focus is required for Android clipboard access")
+    }
     private fun descendants(view: View): List<View> = buildList {
         add(view)
         if (view is ViewGroup) for (index in 0 until view.childCount) addAll(descendants(view.getChildAt(index)))
@@ -34,10 +46,13 @@ class HistoryDetailIntegrationTest {
         try {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 var previousClip: android.content.ClipData? = null
+                var capturedClipboard = false
                 lateinit var card: View
                 try {
+                    awaitWindowFocus(scenario)
                     scenario.onActivity { activity ->
                         previousClip = clipboard.primaryClip
+                        capturedClipboard = true
                         val nav = requireNotNull(activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity))
                         card = nav.javaClass.getDeclaredMethod("transcriptCard", DictationRecord::class.java)
                             .apply { isAccessible = true }.invoke(nav,
@@ -46,6 +61,7 @@ class HistoryDetailIntegrationTest {
                         content.addView(card, 0)
                     }
                     instrumentation.waitForIdleSync()
+                    awaitWindowFocus(scenario)
                     scenario.onActivity { activity ->
                         fun action(description: String) = descendants(card).single { it.contentDescription == description }
                         val words = card.findViewWithTag<TextView>("transcript-text")
@@ -68,7 +84,9 @@ class HistoryDetailIntegrationTest {
                         assertTrue("Expanded text must remain in the page scroll container", scrollable)
                     }
                 } finally {
-                    if (previousClip == null) clipboard.clearPrimaryClip() else clipboard.setPrimaryClip(previousClip!!)
+                    if (capturedClipboard) {
+                        if (previousClip == null) clipboard.clearPrimaryClip() else clipboard.setPrimaryClip(previousClip!!)
+                    }
                 }
             }
             assertEquals(before, HistoryRepository(context).use { it.totals(0) })

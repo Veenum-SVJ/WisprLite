@@ -269,6 +269,11 @@ Motivo: %1$s</string>
     <string name="migration_back_up_first">Prima fai un backup</string>
     <string name="status_service_paused">La dettatura è in pausa</string>
     <string name="status_accessibility_disconnected">L’accessibilità è attiva, ma disconnessa</string>
+    <string name="background_autostart_row">Avvio automatico · Consenti il riavvio di WisprLite</string>
+    <string name="background_autostart_title">Mantieni disponibile il pulsante mobile</string>
+    <string name="background_autostart_help">Consenti WisprLite nell’elenco di avvio automatico in background del telefono. Questa impostazione è separata dall’ottimizzazione della batteria. Se il pulsante scompare, controlla questa impostazione e il servizio di accessibilità.</string>
+    <string name="background_autostart_open">Apri le impostazioni di avvio automatico</string>
+    <string name="background_autostart_unavailable">Apri le informazioni dell’app WisprLite e cerca l’avvio automatico in background.</string>
 </resources>
 
 

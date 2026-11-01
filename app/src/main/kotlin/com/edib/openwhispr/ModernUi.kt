@@ -54,13 +54,13 @@ internal object ModernUi {
         label.startsWith("Reset") -> R.drawable.ic_ui_insights
         else -> R.drawable.ic_ui_clock
     }
-    fun settingRow(context: Context, label: String, action: () -> Unit): View = LinearLayout(context).apply {
+    fun settingRow(context: Context, label: String, action: () -> Unit, iconResource: Int = settingsIcon(label)): View = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         minimumHeight = dp(context, 56)
         setPadding(dp(context, 14), dp(context, 12), dp(context, 12), dp(context, 12))
         background = clickableSurface(context)
         isFocusable = true; isClickable = true
-        addView(icon(context, settingsIcon(label)))
+        addView(icon(context, iconResource))
         val parts = label.split(" · ", limit = 2)
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL

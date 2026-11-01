@@ -37,8 +37,10 @@ function Run-Suite {
     $output = Join-Path $logs "$Name.txt"
     $errors = Join-Path $logs "$Name.stderr.txt"
     $readyFile = if ($Classes -match 'OfflineDictationLifecycleIntegrationTest') { 'offline-ready-' + [guid]::NewGuid().ToString('N') + '.tmp' } else { $null }
+    $foregroundReadyFile = if ($needsForegroundLaunch -and $Foreground -in @('activity', 'service-activity')) { 'foreground-ready-' + [guid]::NewGuid().ToString('N') + '.tmp' } else { $null }
     $arguments = @('-s',$Serial,'shell','am','instrument','-w','-e','class',$Classes)
     if ($readyFile) { $arguments += @('-e','runnerReadyFile',$readyFile) }
+    if ($foregroundReadyFile) { $arguments += @('-e','runnerForegroundReadyFile',$foregroundReadyFile,'-e','listener','com.edib.openwhispr.DeviceForegroundReadyListener') }
     if ($Classes -match 'ConfiguredCloudProviderIntegrationTest') { $arguments += @('-e','confirmedCloudTrial','synthetic_groq') }
     $arguments += 'com.veenum.wisprlite.test/androidx.test.runner.AndroidJUnitRunner'
     $process = Start-Process -FilePath $adb -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $output -RedirectStandardError $errors
@@ -65,6 +67,7 @@ function Run-Suite {
             }
         }
         if ($readyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','touch',"cache/$readyFile") | Out-Null }
+        if ($foregroundReadyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','touch',"cache/$foregroundReadyFile") | Out-Null }
         $deadline = (Get-Date).AddSeconds(120)
         while (!$process.WaitForExit(500)) {
             if ((Get-Date) -gt $deadline) { throw "$Name timed out; see $output" }
@@ -78,6 +81,7 @@ function Run-Suite {
             Invoke-Adb @('shell','am','force-stop','com.veenum.wisprlite') | Out-Null
         }
         if ($readyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','rm','-f',"cache/$readyFile") | Out-Null }
+        if ($foregroundReadyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','rm','-f',"cache/$foregroundReadyFile") | Out-Null }
     }
 }
 $manufacturer = (Invoke-Adb @('shell','getprop','ro.product.manufacturer') | Out-String).Trim()

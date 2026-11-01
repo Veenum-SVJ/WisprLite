@@ -58,6 +58,14 @@ class SettingsExtras(private val activity: MainActivity) {
                 setOnCheckedChangeListener { _, checked -> prefs.edit().putBoolean(key, checked).apply() }
             })
         }
+        if (android.os.Build.MANUFACTURER.trim().lowercase(java.util.Locale.ROOT) in setOf("xiaomi", "redmi", "poco")) {
+            addView(ModernUi.settingRow(activity, activity.getString(R.string.background_autostart_row), {
+                AlertDialog.Builder(activity).setTitle(R.string.background_autostart_title)
+                    .setMessage(R.string.background_autostart_help)
+                    .setPositiveButton(R.string.background_autostart_open) { _, _ -> openBackgroundStartupSettings() }
+                    .setNegativeButton("Close", null).show()
+            }, R.drawable.ic_ui_background_startup))
+        }
         addView(heading("Storage and appearance"))
         val models = row("Local models · View installed and downloadable models") { activity.openLocalModels() }
         val storage = models.findViewWithTag<TextView>("setting-subtitle")
@@ -102,6 +110,20 @@ class SettingsExtras(private val activity: MainActivity) {
     }
     private fun confirm(label: String, action: () -> Unit) {
         AlertDialog.Builder(activity).setMessage(label).setPositiveButton("Confirm") { _, _ -> action() }.setNegativeButton("Cancel", null).show()
+    }
+    private fun openBackgroundStartupSettings() {
+        val intents = listOf(
+            android.content.Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
+                .putExtra("package_name", activity.packageName),
+            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:${activity.packageName}")),
+        )
+        for (intent in intents) {
+            try { activity.startActivity(intent); return }
+            catch (_: android.content.ActivityNotFoundException) { /* Try app information on other firmware. */ }
+            catch (_: SecurityException) { /* Vendor settings may deny external entry. */ }
+        }
+        message(activity.getString(R.string.background_autostart_unavailable))
     }
     private fun choose(title: String, labels: List<String>, values: List<Int>, key: String, default: Int, action: () -> Unit) {
         AlertDialog.Builder(activity).setTitle(title).setSingleChoiceItems(labels.toTypedArray(), values.indexOf(prefs.getInt(key, default))) { dialog, index ->

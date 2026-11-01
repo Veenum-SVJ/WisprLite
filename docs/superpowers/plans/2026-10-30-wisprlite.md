@@ -64,13 +64,14 @@ Interfaces: screens consume repositories/configuration rather than network calls
 Files: existing LocalTranscriber.kt, ModelDownloader.kt, WhisperAccessibilityService.kt and tests.
 - [x] Keep known model packs and advertise actual supported languages; verify multilingual Base/Small artifacts before listing them.
 - [x] Test interrupted/corrupt downloads, insufficient storage, missing active model, repeated taps, and local mode with no network.
-- [ ] Preserve focused-field insertion and clipboard fallback; verify permissions denied/revoked and background process recovery.
+- [x] Preserve focused-field insertion and clipboard fallback; verify permissions denied/revoked and background process recovery. Redmi recovery passed after enabling its separate Xiaomi Background autostart switch; see docs/testing/background-recovery.md for exact scope and limits.
 - [x] Remove unused voice-command and updater UI/dependencies only after confirming no dictation coupling; run regression suite and commit.
 
 ## Task 7: Release and physical-device validation
 Files: app/build.gradle.kts; CI workflow; docs/testing/device-report.md.
+Device-scope amendment: the user disconnected/took the Pixel 6 and explicitly directed all remaining tests to the Redmi 12. Preserve the completed Pixel baseline evidence; remaining physical trials target only Redmi.
 - [x] Enable release shrinking/resource shrinking and add only proven required keep rules; build lint/test/debug/release artifacts.
 - [x] Use adb devices -l; install only on user-authorized connected test device, without uninstalling their existing app.
-- [ ] Test recording/insertion in standard fields and custom composers; airplane mode; background recovery; optional retention; custom cloud provider and cleanup if credentials entered in-app.
-- [ ] Run English/Yoruba/Pidgin/mixed evaluation on Pixel 6 and Redmi 12; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
+- [x] Test recording/insertion in standard fields and custom composers; airplane mode; background recovery; optional retention; custom cloud provider and cleanup if credentials entered in-app. Groq synthetic speech/cleanup passed; Google request failures and model-quality failures remain explicitly recorded separately.
+- [ ] Run English/Yoruba/Pidgin/mixed evaluation, retaining Pixel 6 baseline results and targeting remaining physical trials to Redmi 12 per the user's amendment; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
 - [ ] Inspect final diff and staged content for secrets; commit and push to authorized public WisprLite repository. Supply APK, repository link, measured results, and remaining limitations.

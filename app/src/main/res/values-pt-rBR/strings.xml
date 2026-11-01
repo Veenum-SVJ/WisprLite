@@ -269,6 +269,11 @@ Motivo: %1$s</string>
     <string name="migration_back_up_first">Fazer backup primeiro</string>
     <string name="status_service_paused">O ditado está pausado</string>
     <string name="status_accessibility_disconnected">A acessibilidade está ativada, mas desconectada</string>
+    <string name="background_autostart_row">Inicialização automática · Permitir que o WisprLite reinicie</string>
+    <string name="background_autostart_title">Manter o botão flutuante disponível</string>
+    <string name="background_autostart_help">Permita o WisprLite na lista de inicialização automática em segundo plano do celular. Essa configuração é separada da otimização da bateria. Se o botão desaparecer, verifique essa configuração e o serviço de acessibilidade.</string>
+    <string name="background_autostart_open">Abrir configurações de inicialização automática</string>
+    <string name="background_autostart_unavailable">Abra as informações do aplicativo WisprLite e procure a inicialização automática em segundo plano.</string>
 </resources>
 
 

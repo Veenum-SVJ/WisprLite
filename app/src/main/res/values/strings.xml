@@ -272,6 +272,11 @@ Reason: %1$s</string>
     <string name="migration_message_not_saved">WisprLite 4 is signed with a new key, so it can\'t be installed over version 3. Steps: 1) Back up your settings with the button below. 2) Uninstall WisprLite 3. 3) Download %1$s from the GitHub release page and open it to install. 4) On first launch, restore your backup.</string>
     <string name="migration_uninstall">Uninstall WisprLite 3</string>
     <string name="migration_back_up_first">Back up first</string>
+    <string name="background_autostart_row">Background autostart · Allow WisprLite to restart</string>
+    <string name="background_autostart_title">Keep the bubble available</string>
+    <string name="background_autostart_help">Allow WisprLite in your phone’s Background autostart list. This is separate from battery optimization. If the bubble disappears, check this setting and the Accessibility service.</string>
+    <string name="background_autostart_open">Open autostart settings</string>
+    <string name="background_autostart_unavailable">Open WisprLite’s app information and look for background autostart.</string>
 </resources>
 
 

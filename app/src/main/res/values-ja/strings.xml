@@ -269,6 +269,11 @@
     <string name="migration_back_up_first">先にバックアップ</string>
     <string name="status_service_paused">音声入力は一時停止中です</string>
     <string name="status_accessibility_disconnected">ユーザー補助は有効ですが接続されていません</string>
+    <string name="background_autostart_row">バックグラウンドで自動起動 · WisprLiteの再起動を許可</string>
+    <string name="background_autostart_title">フローティングボタンを使える状態にする</string>
+    <string name="background_autostart_help">端末のバックグラウンド自動起動リストでWisprLiteを許可してください。これはバッテリー最適化とは別の設定です。ボタンが消えた場合は、この設定とユーザー補助サービスを確認してください。</string>
+    <string name="background_autostart_open">自動起動の設定を開く</string>
+    <string name="background_autostart_unavailable">WisprLiteのアプリ情報を開き、バックグラウンド自動起動の設定を探してください。</string>
 </resources>
 
 
