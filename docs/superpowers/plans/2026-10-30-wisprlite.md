@@ -76,4 +76,5 @@ Device-scope amendment: the user disconnected/took the Pixel 6 and explicitly di
 - [x] Use adb devices -l; install only on user-authorized connected test device, without uninstalling their existing app.
 - [x] Test recording/insertion in standard fields and custom composers; airplane mode; background recovery; optional retention; custom cloud provider and cleanup if credentials entered in-app. Groq synthetic speech/cleanup passed; Google request failures and model-quality failures remain explicitly recorded separately.
 - [x] Complete revised English-first evaluation (Yoruba/Pidgin accuracy acceptance withdrawn by user), retaining Pixel 6 baseline results and targeting remaining physical trials to Redmi 12 per the user's amendment; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
-- [ ] Inspect final diff and staged content for secrets; commit and push to authorized public WisprLite repository. Supply APK, repository link, measured results, and remaining limitations.
+- [x] Inspect final diff and staged content for secrets; commit and push to authorized public WisprLite repository. Supply APK, repository link, measured results, and remaining limitations.
+

@@ -22,3 +22,11 @@ Multiple named provider profiles keep encrypted keys separately, with explicit t
 Tap the floating bubble to start and tap again to stop; hold to record until release; drag to reposition. Language is first in Settings. Home keeps text history with inline actions; audio saving defaults off. Settings contains model download/delete/select controls, official provider badges, saved providers, live bubble-size preview, appearance and retention controls. On Redmi, keep Background autostart enabled as well as the standard battery exemption.
 
 Only owned test fixtures and the test package are removed during handoff. Personal history, providers, model downloads and the original OpenWhispr app remain intact. Historical research documents describe prior experiments, not active release requirements.
+
+## Redmi final handoff
+
+The final code passed all 28 standard device checks on Redmi 12 using the foreground-aware harness. A preliminary direct invocation did not complete correctly under MIUI foreground restrictions and is not counted as a pass. The optimized APK then installed without data loss and cold-launched successfully (3,211 ms reported by Android). WisprLite's Accessibility Service was rebound and confirmed bound with no crashed services; other enabled services were preserved. The test package was uninstalled.
+
+Cleanup removed owned internal fixtures, screenshots, synthetic audio, test UI XML/video, picker-export fixture and the single guarded fixed-phrase trial row. Two saved provider profiles and four installed models (Whisper Base, Tiny multilingual, Tiny English and Small) were verified unchanged before the optimized update. English is selected; existing cloud transcription/cleanup choices remain configured. The disconnected Pixel retains its completed optimized installation and earlier recorded handoff checks.
+
+The APK signature and 16 KiB ZIP alignment verify successfully. Unit/lint/build checks passed locally. GitHub's final implementation secret scan passed; workflow results are independently visible in Actions. New larger catalog packs remain unbenchmarked on these phones. Google service availability and historical Yoruba/Pidgin accuracy failures are retained as limitations rather than hidden or claimed fixed.
