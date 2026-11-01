@@ -8,6 +8,13 @@ import java.io.IOException
 object PostProcessor {
     data class Result(val text: String?, val error: String?)
 
+    internal fun transportResponse(status: Int, body: String): Result {
+        if (status !in 200..299) return Result(null, "Cleanup provider returned HTTP $status")
+        val parsed = parseResponse(body)
+        if (parsed.error != null || parsed.text.isNullOrBlank()) return Result(null, "Invalid cleanup response")
+        return parsed.copy(text = stripTranscriptTags(parsed.text))
+    }
+
     private val client = OkHttpClient()
 
     // The default cleanup prompt: literal dictation cleanup with strict
@@ -201,26 +208,20 @@ Output hygiene:
     ): Call? {
         val request = try {
             cleanupRequest(text, prompt, apiKey, config)
-        } catch (e: IllegalArgumentException) {
-            callback(Result(null, e.message ?: "Invalid cleanup configuration"))
+        } catch (_: IllegalArgumentException) {
+            callback(Result(null, "Check your cleanup URL, model, and API key"))
             return null
         }
         val call = client.newCall(request)
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                callback(Result(null, e.message))
+                callback(Result(null, "Unable to reach cleanup provider"))
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string() ?: ""
-                if (!response.isSuccessful && responseBody.isBlank()) {
-                    callback(Result(null, "HTTP ${response.code}"))
-                    return
+                response.use {
+                    callback(transportResponse(it.code, it.body?.string().orEmpty()))
                 }
-                // Parse only the provider response;
-                // the tag stripping happens here rather than inside it.
-                val parsed = parseResponse(responseBody)
-                callback(parsed.copy(text = stripTranscriptTags(parsed.text)))
             }
         })
         return call

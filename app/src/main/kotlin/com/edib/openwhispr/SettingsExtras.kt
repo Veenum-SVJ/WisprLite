@@ -10,6 +10,17 @@ import kotlin.concurrent.thread
 
 class SettingsExtras(private val activity: MainActivity) {
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
+    private var languageValue: TextView? = null
+    private var providersValue: TextView? = null
+    private fun providerSummary(): String = runCatching {
+        val store = ProviderProfiles(activity)
+        val profiles = store.all().associateBy { it.id }
+        "Speech: ${profiles[store.activeSpeechId()]?.name ?: "Manual"}; cleanup: ${profiles[store.activeCleanupId()]?.name ?: "Manual"}"
+    }.getOrDefault("Saved profile needs attention")
+    fun refresh() {
+        languageValue?.text = DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title
+        providersValue?.text = providerSummary()
+    }
     private fun message(value: String) = activity.runOnUiThread { Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun heading(label: String) = TextView(activity).apply {
@@ -21,16 +32,15 @@ class SettingsExtras(private val activity: MainActivity) {
     fun build(): View = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
         addView(heading("Speech and language"))
-        addView(row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
+        val language = row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
             activity.showLanguageProfilePicker()
-        })
+        }
+        languageValue = language.findViewWithTag("setting-subtitle")
+        addView(language)
         addView(row("Transcription provider · URL, model and key") { provider() })
-        val selections = runCatching {
-            val store = ProviderProfiles(activity)
-            val profiles = store.all().associateBy { it.id }
-            "Speech: ${profiles[store.activeSpeechId()]?.name ?: "Manual"}; cleanup: ${profiles[store.activeCleanupId()]?.name ?: "Manual"}"
-        }.getOrDefault("Saved profile needs attention")
-        addView(row("Saved providers · $selections") { ProviderProfilesUi(activity).show() })
+        val providers = row("Saved providers · ${providerSummary()}") { ProviderProfilesUi(activity).show() }
+        providersValue = providers.findViewWithTag("setting-subtitle")
+        addView(providers)
         addView(row("Language help") {
             AlertDialog.Builder(activity).setTitle("Choosing a language")
                 .setMessage("Mixed/Auto lets the model detect the language and can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints where a separate Pidgin code is unavailable. Recognition and tone-mark accuracy depend on your model.")

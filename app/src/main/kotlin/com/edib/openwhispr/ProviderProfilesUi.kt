@@ -81,6 +81,7 @@ class ProviderProfilesUi(private val activity: MainActivity) {
                 error {
                     store.save(ProviderProfile(profile.id, name.text.toString().trim(), url.text.toString().trim(), speech.text.toString().trim(),
                         cleanup.text.toString().trim(), if (format.selectedItemPosition == 1) SpeechApiFormat.AUDIO_CHAT else SpeechApiFormat.MULTIPART), key.text.toString())
+                    activity.refreshSettingsState()
                     dialog.dismiss(); show()
                 }
             }

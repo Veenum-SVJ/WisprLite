@@ -1,6 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9_.:-]+$')][string]$Serial,
-    [string]$AdbPath
+    [string]$AdbPath,
+    [switch]$IncludeOfflineFixture,
+    [switch]$IncludeGroqCloudFixture
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -34,8 +36,11 @@ function Run-Suite {
     param([string]$Name, [string]$Classes, [string]$Foreground)
     $output = Join-Path $logs "$Name.txt"
     $errors = Join-Path $logs "$Name.stderr.txt"
-    $arguments = @('-s',$Serial,'shell','am','instrument','-w','-e','class',$Classes,
-        'com.veenum.wisprlite.test/androidx.test.runner.AndroidJUnitRunner')
+    $readyFile = if ($Classes -match 'OfflineDictationLifecycleIntegrationTest') { 'offline-ready-' + [guid]::NewGuid().ToString('N') + '.tmp' } else { $null }
+    $arguments = @('-s',$Serial,'shell','am','instrument','-w','-e','class',$Classes)
+    if ($readyFile) { $arguments += @('-e','runnerReadyFile',$readyFile) }
+    if ($Classes -match 'ConfiguredCloudProviderIntegrationTest') { $arguments += @('-e','confirmedCloudTrial','synthetic_groq') }
+    $arguments += 'com.veenum.wisprlite.test/androidx.test.runner.AndroidJUnitRunner'
     $process = Start-Process -FilePath $adb -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $output -RedirectStandardError $errors
     $null = $process.Handle # Retain the handle so Windows PowerShell can read ExitCode after exit.
     try {
@@ -57,6 +62,7 @@ function Run-Suite {
                 Invoke-Adb @('shell','am','start','-W','-a','android.intent.action.MAIN','-c','android.intent.category.LAUNCHER','-f','0x10008000','-n','com.veenum.wisprlite/com.edib.openwhispr.MainActivity') | Out-Null
             }
         }
+        if ($readyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','touch',"cache/$readyFile") | Out-Null }
         $deadline = (Get-Date).AddSeconds(120)
         while (!$process.WaitForExit(500)) {
             if ((Get-Date) -gt $deadline) { throw "$Name timed out; see $output" }
@@ -69,6 +75,7 @@ function Run-Suite {
             $process.Kill()
             Invoke-Adb @('shell','am','force-stop','com.veenum.wisprlite') | Out-Null
         }
+        if ($readyFile) { Invoke-Adb @('shell','run-as','com.veenum.wisprlite','rm','-f',"cache/$readyFile") | Out-Null }
     }
 }
 $manufacturer = (Invoke-Adb @('shell','getprop','ro.product.manufacturer') | Out-String).Trim()
@@ -98,6 +105,7 @@ try {
     Run-Suite 'model-picker-visibility' 'com.edib.openwhispr.ModelPickerVisibilityIntegrationTest' 'activity'
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
     Run-Suite 'bubble-size-preview-and-layout' 'com.edib.openwhispr.BubblePreviewIntegrationTest' 'activity'
+    Run-Suite 'language-selection-labels' 'com.edib.openwhispr.LanguageSelectionIntegrationTest' 'activity'
     Run-Suite 'backup-picker-cancel' 'com.edib.openwhispr.BackupPickerIntegrationTest#cancellingDocumentPickerDiscardsPendingPassphraseAndSnapshot' 'activity'
     Run-Suite 'backup-picker-roundtrip' 'com.edib.openwhispr.BackupPickerIntegrationTest#exportedDocumentCanBeSelectedAndRestoredThroughAndroidPicker' 'activity'
     Run-Suite 'clipboard-fallback' 'com.edib.openwhispr.ClipboardFallbackIntegrationTest' 'service-activity'
@@ -105,6 +113,8 @@ try {
     Run-Suite 'bubble-gestures-and-placement' 'com.edib.openwhispr.BubbleInteractionIntegrationTest' 'service'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
     Run-Suite 'web-composer-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service-web'
+    if ($IncludeOfflineFixture) { Run-Suite 'offline-dictation-retention' 'com.edib.openwhispr.OfflineDictationLifecycleIntegrationTest' 'service' }
+    if ($IncludeGroqCloudFixture) { Run-Suite 'configured-groq-cloud' 'com.edib.openwhispr.ConfiguredCloudProviderIntegrationTest' '' }
     Write-Output "Device checks passed. Logs: $logs"
     Write-Output 'Speech accuracy, real cloud providers, optional model fixtures and airplane-mode testing are separate checks.'
 } finally {

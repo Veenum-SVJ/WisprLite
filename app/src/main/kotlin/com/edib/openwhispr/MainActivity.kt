@@ -32,6 +32,7 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private var navigation: WisprNavigation? = null
+    private var settingsExtras: SettingsExtras? = null
 
     private lateinit var statusSubtitle: TextView
     // [ui] Status row dot + tap-to-fix target, and the cloud switch's subtitle.
@@ -471,7 +472,9 @@ class MainActivity : AppCompatActivity() {
         showTab(0)
 
         val allSettings = vertical(0)
-        allSettings.addView(SettingsExtras(this).build())
+        val extras = SettingsExtras(this)
+        settingsExtras = extras
+        allSettings.addView(extras.build())
         for (section in listOf(statusContainer, dictationContainer, settingsContainer)) {
             outer.removeView(section)
             section.visibility = View.VISIBLE
@@ -681,6 +684,7 @@ class MainActivity : AppCompatActivity() {
     // --- State Updates ---
 
     private fun refresh() {
+        settingsExtras?.refresh()
         val audio = hasPerm(Manifest.permission.RECORD_AUDIO)
         val acc = WhisperAccessibilityService.instance != null
         val serviceEnabled = prefs().getBoolean("service_master_enabled", true)
@@ -975,6 +979,8 @@ class MainActivity : AppCompatActivity() {
         }
         navigation?.refresh()
     }
+
+    internal fun refreshSettingsState() { refresh() }
 
     private fun saveTranscriptionLanguages(selected: Set<String>) {
         prefs().edit().putStringSet(TranscriptionLanguages.PREF_KEY, selected.toSet()).apply()
