@@ -17,8 +17,18 @@ Sources: [LyngualLabs card](https://huggingface.co/LyngualLabs/whisper-small-yor
 
 The user subsequently approved saved provider profiles. The app now keeps named profiles with separate encrypted keys and explicit speech/cleanup selections, alongside manual settings. Keys from different providers must not be combined in one field.
 
-Groq uses multipart speech. Google AI Studio issues Gemini credentials and its preset now selects the explicitly implemented audio-chat request format. Google's compatible chat endpoint also serves text cleanup. Request construction/parsing is tested; actual account availability and recognition quality have not been live-tested here.
+Groq uses multipart speech. Google AI Studio issues Gemini credentials and its preset selects the explicitly implemented audio-chat request format. Google's compatible chat endpoint also serves text cleanup. Subsequent live trials are recorded in the [public-corpus evaluation](public-corpus-evaluation.md): Groq Large-v3 returned text with substantial Yorùbá/Pidgin errors; Google requests failed, including a separate low-reasoning experiment. A prior Google synthetic diagnostic returned a compatible response, but this does not establish reliable recognition.
 
-Saved profiles do not enable cloud mode or cleanup and never silently switch providers after an error. See [profile behavior](../design/saved-provider-profiles.md). No new cloud upload has been performed as part of this implementation.
+Saved profiles do not enable cloud mode or cleanup and never silently switch providers after an error. See [profile behavior](../design/saved-provider-profiles.md). Explicitly authorized synthetic and public-corpus live requests are documented separately; no personal recordings or keys were published.
 
 Google source: [OpenAI compatibility and audio input](https://ai.google.dev/gemini-api/docs/openai?hl=en).
+
+## LyngualLabs conversion investigation — 2026-11-01
+
+The existing Apache-2.0 model is pinned to revision `ac05aac79a0a6fa522f75055a6af1523eb7952b6`. Its 966,995,080-byte safetensors file finished downloading into ignored research storage and matched the publisher's SHA256 `98b4e0a8e0c083c899c526f60b6c83bda6906eebf3c9f01080f9db8e84afe6fe`. This is an existing fine-tune, not a training run, and it has not replaced any phone model.
+
+A metadata-only check mapped all 479 tensor names and shapes to encoder/decoder modules from pinned OpenAI Whisper revision `86098128c0b4f24f0e2aa2994de830614b474227`, with no missing names, unexpected names, shape mismatches or mapping collisions. The check instantiated only meta-device modules; it did not load weights or run recognition. Earlier tokenizer comparison matched all 50,257 regular token IDs and identified one special-token name alias at ID 50362 (`<|nospeech|>` versus `<|nocaptions|>`), which still requires deliberate handling and inference parity checks.
+
+CPU-only PyTorch 2.15.0+cpu and evaluation/export dependencies were installed in the isolated ignored Python 3.14 environment. These are workstation research dependencies, not Android app dependencies. Strict weight loading/tied-output verification, HF/OpenAI numerical and independent decoded-text parity, and float ONNX numerical/full-decoding parity subsequently passed on the two pinned public clips. Int8 structural checks passed but output changed. Original HF float had 66.67% Yorùbá WER / 50.00% Pidgin WER; workstation int8 had 61.54% / 57.14%. Redmi native int8 ran successfully but had 71.79% / 42.86%, with 60.845s / 10.943s decode time. Conversion/runtime compatibility does not resolve quality. No model pack or catalog entry has been added; no installed model was replaced. See the [conversion investigation](lyngual-conversion.md) for provenance, methods, limits and measurements.
+
+The initial Transformers metadata/tokenizer command was not executed because automatic approval review reported a usage-limit failure, explicitly not an unsafe-action determination. A subsequent request through normal review was accepted and the check completed; no bypass or redownload was used. Private evidence remains under `.tools/model-research/`.
