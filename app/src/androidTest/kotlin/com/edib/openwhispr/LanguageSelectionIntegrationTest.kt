@@ -29,7 +29,7 @@ class LanguageSelectionIntegrationTest {
                     navigation.openSettings()
                     val settings = navigation.javaClass.getDeclaredField("settings").apply { isAccessible = true }.get(navigation) as ViewGroup
                     fun displayed(): String {
-                        val extras = settings.getChildAt(0) as ViewGroup
+                        val extras = settings.getChildAt(2) as ViewGroup
                         val row = (0 until extras.childCount).map { extras.getChildAt(it) }.single { view ->
                             view.isClickable && descendants(view).filterIsInstance<TextView>().any { it.text.toString() == "Language" }
                         }
