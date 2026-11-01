@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">WisprLite</string>
+    <string name="app_name">OpenWisper</string>
     <string name="accessibility_description">ディクテーション：音声を録音して文字起こしし、フォーカスされた入力欄にテキストを挿入します。</string>
-    <string name="notification_channel_name">WisprLite バックグラウンドサービス</string>
+    <string name="notification_channel_name">OpenWisper バックグラウンドサービス</string>
     <string name="notification_channel_description">バックグラウンドでディクテーション用のフローティングボタンを維持します</string>
-    <string name="notification_content_title">WisprLite は実行中です</string>
+    <string name="notification_content_title">OpenWisper は実行中です</string>
     <string name="notification_content_text">フローティングのマイクをタップしてディクテーション</string>
     <string name="language">言語</string>
     <string name="language_summary">アプリの言語を選択</string>
@@ -100,9 +100,9 @@
 
     <string name="status_ready">準備完了 — フローティングのマイクをタップしてディクテーション</string>
     <string name="restricted_settings_title">Android 13 以降の追加手順</string>
-    <string name="restricted_settings_message">Android は Google Play 以外からインストールされたユーザー補助サービスを制限することがあります。WisprLite のスイッチが無効な場合：
+    <string name="restricted_settings_message">Android は Google Play 以外からインストールされたユーザー補助サービスを制限することがあります。OpenWisper のスイッチが無効な場合：
 
-1. WisprLite のアイコンを長押しして「アプリの情報」を開きます。
+1. OpenWisper のアイコンを長押しして「アプリの情報」を開きます。
 2. 右上のメニューを開き、「制限された設定を許可」を選びます。
 3. ここに戻り、ユーザー補助サービスを有効にします。</string>
     <string name="open_accessibility_settings">ユーザー補助の設定を開く</string>
@@ -110,24 +110,24 @@
     <string name="open_settings_failed">設定を開けませんでした: %1$s</string>
     <string name="open_battery_settings_failed">バッテリーの設定を開けませんでした: %1$s</string>
     <string name="update_available">アップデートがあります</string>
-    <string name="update_available_message">WisprLite %1$s が利用可能です。現在のバージョンは %2$s です。</string>
+    <string name="update_available_message">OpenWisper %1$s が利用可能です。現在のバージョンは %2$s です。</string>
     <string name="whats_new">新機能</string>
     <string name="up_to_date">最新バージョン（%1$s）を使用しています</string>
     <string name="allow_install_updates">アップデートのインストールを許可</string>
-    <string name="allow_install_updates_message">WisprLite のアップデートをインストールするには、次の画面で不明なアプリのインストールを許可してください。その後ここに戻り、もう一度「更新」をタップしてください。</string>
+    <string name="allow_install_updates_message">OpenWisper のアップデートをインストールするには、次の画面で不明なアプリのインストールを許可してください。その後ここに戻り、もう一度「更新」をタップしてください。</string>
     <string name="continue_button">続行</string>
     <string name="downloading_update">アップデートをダウンロード中…</string>
     <string name="download_failed">ダウンロードに失敗しました: %1$s</string>
     <string name="installer_start_failed">インストーラーを開始できませんでした: %1$s</string>
     <string name="keep_dictation_running">ディクテーションを動作させ続ける</string>
-    <string name="battery_warning_message">Android のバッテリー管理や一部のメーカーの仕組みにより、電力節約のためバックグラウンドのアプリが停止されることがあります。WisprLite が画面に表示されていない間、ディクテーションが中断される場合があります。
+    <string name="battery_warning_message">Android のバッテリー管理や一部のメーカーの仕組みにより、電力節約のためバックグラウンドのアプリが停止されることがあります。OpenWisper が画面に表示されていない間、ディクテーションが中断される場合があります。
 
 ディクテーションサービスが動作し続けるように、バックグラウンド動作を制限なしに許可してください。この設定は後で Android の設定から変更できます。</string>
     <string name="disable_restrictions">バックグラウンド動作を許可</string>
     <string name="groq_key_help_html">Groq API キーが必要ですか？ &lt;a href="https://console.groq.com/keys"&gt;console.groq.com/keys&lt;/a&gt; で無料で取得できます。</string>
     <string name="groq_api_key_hint">gsk_…</string>
     <string name="custom_instructions_hint">例：NASA は必ず正式名称で書く</string>
-    <string name="custom_instructions_help">これらの指示は、WisprLite に組み込まれた整形ルールに追加されます。安全性、書式、自己訂正の動作を上書きすることはできません。</string>
+    <string name="custom_instructions_help">これらの指示は、OpenWisper に組み込まれた整形ルールに追加されます。安全性、書式、自己訂正の動作を上書きすることはできません。</string>
     <string name="default_trigger_phrase">Whisper Command</string>
     <string name="command_mode_help">録音の最初にこのフレーズを言うと、通常のディクテーションではなくコマンドモードになります。</string>
     <string name="command_examples_body">%1$s と言った後に、次のいずれかのコマンドを続けます。入力欄にある既存のテキスト、またはコマンドの直後にディクテーションしたテキストに適用されます：
@@ -141,11 +141,11 @@
 コマンドは組み合わせることもできます：%1$s、英語に翻訳して箇条書きにして。この順番で適用されます。</string>
     <string name="got_it">わかりました</string>
     <string name="overlay_content_description">ディクテーション用マイク。ダブルタップで録音を開始または停止します。</string>
-    <string name="grant_audio_permission">WisprLite の設定でマイクへのアクセスを許可してください。</string>
+    <string name="grant_audio_permission">OpenWisper の設定でマイクへのアクセスを許可してください。</string>
     <string name="audio_permission_denied">マイクの許可が拒否されました。</string>
     <string name="no_audio_captured">音声が録音されませんでした。</string>
     <string name="local_transcription_error">ローカルでの文字起こしに失敗しました: %1$s</string>
-    <string name="set_groq_key">WisprLite の設定で Groq API キーを入力してください。</string>
+    <string name="set_groq_key">OpenWisper の設定で Groq API キーを入力してください。</string>
     <string name="transcription_error">文字起こしに失敗しました: %1$s</string>
     <string name="empty_transcript">文字起こしサービスからテキストが返されませんでした。</string>
     <string name="no_speech_detected">音声が検出されませんでした。</string>
@@ -193,14 +193,14 @@
     <string name="percent_unit">パーセント</string>
     <string name="saved_securely">安全に保存されました</string>
 
-    <string name="process_text_label">WisprLite の辞書に追加</string>
+    <string name="process_text_label">OpenWisper の辞書に追加</string>
     <string name="dictionary_no_text">追加する選択テキストがありません</string>
     <string name="dictionary_added">辞書に追加しました</string>
     <string name="dictionary_title">カスタム辞書</string>
     <string name="dictionary_summary">ディクテーションと整形の際に、人名、略語、専門用語を正しく認識して書けるようにします</string>
     <string name="dictionary_word_count">%1$d 語</string>
-    <string name="dictionary_input_hint">1行に1項目。例：WisprLite | open whisper, open wisper</string>
-    <string name="dictionary_saved_local_message">辞書は、ディクテーションと整形の際に人名、略語、専門用語を認識して正しく書くのに役立ちます。| の前の形が最終的な表記で、| の後の候補は発音と認識のヒントにすぎません。辞書はカスタム指示と併用されます。1語だけの古い形式の行も引き続き使えます。例：WisprLite | open whisper, open wisper。</string>
+    <string name="dictionary_input_hint">1行に1項目。例：OpenWisper | open whisper, open wisper</string>
+    <string name="dictionary_saved_local_message">辞書は、ディクテーションと整形の際に人名、略語、専門用語を認識して正しく書くのに役立ちます。| の前の形が最終的な表記で、| の後の候補は発音と認識のヒントにすぎません。辞書はカスタム指示と併用されます。1語だけの古い形式の行も引き続き使えます。例：OpenWisper | open whisper, open wisper。</string>
 
     <string name="about_current_version">バージョン %1$s を使用中 · タップして確認</string>
     <string name="key_needed_hint">未設定 — クラウドと整形に必要です</string>
@@ -252,28 +252,28 @@
     <string name="backup_export_failed">バックアップを保存できませんでした: %1$s</string>
     <string name="backup_restore_done">設定とキーを復元しました</string>
     <string name="backup_restore_failed">復元できませんでした: パスフレーズが違うか、ファイルが壊れています</string>
-    <string name="welcome_title">WisprLite へようこそ</string>
+    <string name="welcome_title">OpenWisper へようこそ</string>
     <string name="welcome_message">バックアップから設定とキーを復元するか、最初から始めます。</string>
     <string name="welcome_restore">バックアップから復元</string>
     <string name="welcome_start_fresh">最初から始める</string>
 
     <string name="accessibility_enabled_not_running">オンですが動作していません。タップしてオフにしてから再度オンにしてください。</string>
     <string name="watchdog_channel_name">ディクテーションサービスの状態</string>
-    <string name="watchdog_title">WisprLite のディクテーションが停止しました</string>
+    <string name="watchdog_title">OpenWisper のディクテーションが停止しました</string>
     <string name="watchdog_text">ユーザー補助はオンですが、サービスが動作していません。タップしてオンに戻してください。</string>
 
-    <string name="migration_title">WisprLite 4 へ移行</string>
-    <string name="migration_message_saved">WisprLite 4 は新しい鍵で署名されているため、バージョン 3 の上にはインストールできません。手順：1) 下のボタンで設定をバックアップします。2) WisprLite 3 をアンインストールします。3) ファイルアプリでダウンロードを開き、%1$s をタップしてインストールします。4) 初回起動時にバックアップを復元します。</string>
-    <string name="migration_message_not_saved">WisprLite 4 は新しい鍵で署名されているため、バージョン 3 の上にはインストールできません。手順：1) 下のボタンで設定をバックアップします。2) WisprLite 3 をアンインストールします。3) GitHub のリリースページから %1$s をダウンロードして開き、インストールします。4) 初回起動時にバックアップを復元します。</string>
-    <string name="migration_uninstall">WisprLite 3 をアンインストール</string>
+    <string name="migration_title">OpenWisper 4 へ移行</string>
+    <string name="migration_message_saved">OpenWisper 4 は新しい鍵で署名されているため、バージョン 3 の上にはインストールできません。手順：1) 下のボタンで設定をバックアップします。2) OpenWisper 3 をアンインストールします。3) ファイルアプリでダウンロードを開き、%1$s をタップしてインストールします。4) 初回起動時にバックアップを復元します。</string>
+    <string name="migration_message_not_saved">OpenWisper 4 は新しい鍵で署名されているため、バージョン 3 の上にはインストールできません。手順：1) 下のボタンで設定をバックアップします。2) OpenWisper 3 をアンインストールします。3) GitHub のリリースページから %1$s をダウンロードして開き、インストールします。4) 初回起動時にバックアップを復元します。</string>
+    <string name="migration_uninstall">OpenWisper 3 をアンインストール</string>
     <string name="migration_back_up_first">先にバックアップ</string>
     <string name="status_service_paused">音声入力は一時停止中です</string>
     <string name="status_accessibility_disconnected">ユーザー補助は有効ですが接続されていません</string>
-    <string name="background_autostart_row">バックグラウンドで自動起動 · WisprLiteの再起動を許可</string>
+    <string name="background_autostart_row">バックグラウンドで自動起動 · OpenWisperの再起動を許可</string>
     <string name="background_autostart_title">フローティングボタンを使える状態にする</string>
-    <string name="background_autostart_help">端末のバックグラウンド自動起動リストでWisprLiteを許可してください。これはバッテリー最適化とは別の設定です。ボタンが消えた場合は、この設定とユーザー補助サービスを確認してください。</string>
+    <string name="background_autostart_help">端末のバックグラウンド自動起動リストでOpenWisperを許可してください。これはバッテリー最適化とは別の設定です。ボタンが消えた場合は、この設定とユーザー補助サービスを確認してください。</string>
     <string name="background_autostart_open">自動起動の設定を開く</string>
-    <string name="background_autostart_unavailable">WisprLiteのアプリ情報を開き、バックグラウンド自動起動の設定を探してください。</string>
+    <string name="background_autostart_unavailable">OpenWisperのアプリ情報を開き、バックグラウンド自動起動の設定を探してください。</string>
 </resources>
 
 

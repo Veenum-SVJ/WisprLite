@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 object SettingsBackup {
     const val FORMAT = "openwispr-backup"
-    const val VERSION = 1
+    const val VERSION = 2
     const val MIN_PASSPHRASE_LENGTH = 8
     private const val ITERATIONS = 210_000
     private const val KEY_BITS = 256
@@ -26,12 +26,12 @@ object SettingsBackup {
     private val random = SecureRandom()
 
     /** Preference names left out of a backup: volatile caches and migrated legacy keys. */
-    fun isExcludedPreference(key: String) = key.startsWith("cached_update_") || key == "api_key"
+    fun isExcludedPreference(key: String) = key.startsWith("cached_update_") || key == "api_key" || key == ToneRules.NEXT_KEY
 
     class BackupException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
     /** Plain settings: [prefs] values are String, Int, Long, Float, Boolean or Set<String>. */
-    data class Snapshot(val prefs: Map<String, Any>, val secrets: Map<String, String>)
+    data class Snapshot(val prefs: Map<String, Any>, val secrets: Map<String, String>, val snippets: List<Snippet>? = null)
 
     fun encrypt(snapshot: Snapshot, passphrase: String): String {
         require(passphrase.length >= MIN_PASSPHRASE_LENGTH) { "passphrase too short" }
@@ -55,7 +55,7 @@ object SettingsBackup {
         try {
             val envelope = JSONObject(file)
             require(envelope.getString("format") == FORMAT) { "not an OpenWispr backup" }
-            require(envelope.getInt("version") == VERSION) { "unsupported backup version" }
+            require(envelope.getInt("version") in 1..VERSION) { "unsupported backup version" }
             val kdf = envelope.getJSONObject("kdf")
             val salt = unb64(kdf.getString("salt"))
             val iv = unb64(envelope.getJSONObject("cipher").getString("iv"))
@@ -92,7 +92,13 @@ object SettingsBackup {
         }
         val secrets = JSONObject()
         for ((key, value) in snapshot.secrets) if (value.isNotBlank()) secrets.put(key, value)
-        return JSONObject().put("prefs", prefs).put("secrets", secrets)
+        return JSONObject().put("prefs", prefs).put("secrets", secrets).apply {
+            snapshot.snippets?.let { items ->
+                SnippetValidation.validateAll(items)
+                put("snippets", JSONArray().apply { items.forEach { item -> put(JSONObject().put("id",item.id).put("trigger",item.trigger)
+                    .put("replacement",item.replacement).put("enabled",item.enabled)) } })
+            }
+        }
     }
 
     private fun fromJson(json: JSONObject): Snapshot {
@@ -114,9 +120,16 @@ object SettingsBackup {
             }
         }
         val secretsJson = json.getJSONObject("secrets")
-        val secrets = secretsJson.keys().asSequence().associateWith { secretsJson.getString(it) }
+        val secrets = secretsJson.keys().asSequence().associateWith { secretsJson.getString(it) }.filterValues { it.isNotBlank() }
         prefs[ProviderProfiles.METADATA_KEY]?.let { ProviderProfileCodec.decode(it as String) }
-        return Snapshot(prefs, secrets)
+        prefs[ToneRules.KEY]?.let { ToneRuleCodec.decode(it as String) }
+        val snippets = if (!json.has("snippets")) null else json.getJSONArray("snippets").let { array ->
+            require(array.length() <= 5000)
+            (0 until array.length()).map { index -> array.getJSONObject(index).let { item ->
+                Snippet(item.getString("id"),item.getString("trigger"),item.getString("replacement"),item.getBoolean("enabled"))
+            } }.also(SnippetValidation::validateAll)
+        }
+        return Snapshot(prefs, secrets, snippets)
     }
 
     private fun deriveKey(passphrase: String, salt: ByteArray, iterations: Int): SecretKeySpec {

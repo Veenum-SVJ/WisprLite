@@ -33,6 +33,11 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
     private var navigation: WisprNavigation? = null
     private var settingsExtras: SettingsExtras? = null
+    private lateinit var postProcessSwitch: MaterialSwitch
+    private val cleanupPreferenceListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "use_post_processing" && ::postProcessSwitch.isInitialized)
+            postProcessSwitch.isChecked = prefs().getBoolean("use_post_processing", false)
+    }
 
     private lateinit var statusSubtitle: TextView
     // [ui] Status row dot + tap-to-fix target, and the cloud switch's subtitle.
@@ -102,7 +107,7 @@ class MainActivity : AppCompatActivity() {
             window.decorView.post { showWelcome() }
         }
 
-        // Keep the native WisprLite splash brief; the static brand mark needs no animation delay.
+        // Keep the native OpenWisper splash brief; the static brand mark needs no animation delay.
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             splashScreen.setOnExitAnimationListener { splash ->
                 val start = splash.iconAnimationStart?.toEpochMilli()
@@ -129,7 +134,7 @@ class MainActivity : AppCompatActivity() {
         // default, including for existing installs), so the app makes no
         // request to GitHub unless the user enables it or taps "Check for
         // updates".
-        // WisprLite updates are distributed through GitHub releases, never installed in-app.
+        // OpenWisper updates are distributed through GitHub releases, never installed in-app.
 
         val outer = vertical(0, 0)
 
@@ -146,7 +151,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) }
         })
         header.addView(TextView(this).apply {
-            text = "WisprLite"
+            text = "OpenWisper"
             textSize = 32f
         })
         outer.addView(header)
@@ -290,18 +295,18 @@ class MainActivity : AppCompatActivity() {
             showLanguageProfilePicker()
         }
         languageRowSub = languageRow.findViewWithTag("subtitle")
-        // Language selection lives in the WisprLite settings controls.
+        // Language selection lives in the OpenWisper settings controls.
 
         dictationContainer.addView(sectionHeader(getString(R.string.text_enhancement)))
         val postGroup = group()
 
         val isPostProcessing = prefs().getBoolean("use_post_processing", false)
-        val postProcessSwitch = MaterialSwitch(this).apply {
+        postProcessSwitch = MaterialSwitch(this).apply {
             isChecked = isPostProcessing
             isClickable = false
         }
         val postProcessRow = settingsRow(getString(R.string.cleanup_transcript), getString(R.string.text_enhancement_help), postProcessSwitch) {
-            val newVal = !postProcessSwitch.isChecked
+            val newVal = !prefs().getBoolean("use_post_processing", false)
             prefs().edit().putBoolean("use_post_processing", newVal).apply()
             postProcessSwitch.isChecked = newVal
             refresh()
@@ -499,6 +504,8 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
+    override fun onStart() { super.onStart(); prefs().registerOnSharedPreferenceChangeListener(cleanupPreferenceListener) }
+    override fun onStop() { prefs().unregisterOnSharedPreferenceChangeListener(cleanupPreferenceListener); super.onStop() }
     override fun onResume() { super.onResume(); refresh(); navigation?.refresh() }
     override fun onDestroy() {
         backupPassphrase = null
@@ -542,6 +549,7 @@ class MainActivity : AppCompatActivity() {
             icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_ui_download)
             iconTint = ColorStateList.valueOf(ModernUi.color(this@MainActivity, R.color.primary))
             contentDescription = getString(R.string.download_model, model.name)
+            setOnClickListener { onModelAction(model) }
             setTextColor(attrColor(androidx.appcompat.R.attr.colorPrimary))
         }
 
@@ -660,6 +668,8 @@ class MainActivity : AppCompatActivity() {
         views.delBtn.visibility = if (installed) View.VISIBLE else View.GONE
 
         if (views.progress.visibility == View.GONE) {
+            views.dlBtn.isEnabled = true
+            views.dlBtn.contentDescription = getString(R.string.download_model, model.name)
             val specs = modelSummary(model, installed)
             val missing = TranscriptionLanguages.saved(prefs()) - model.languages
             views.subtitle.text = if (missing.isEmpty()) specs else specs + "\n" +
@@ -704,6 +714,7 @@ class MainActivity : AppCompatActivity() {
     // --- State Updates ---
 
     private fun refresh() {
+        if (::postProcessSwitch.isInitialized) postProcessSwitch.isChecked = prefs().getBoolean("use_post_processing", false)
         settingsExtras?.refresh()
         val audio = hasPerm(Manifest.permission.RECORD_AUDIO)
         val acc = WhisperAccessibilityService.instance != null

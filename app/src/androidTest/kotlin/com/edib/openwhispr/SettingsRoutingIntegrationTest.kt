@@ -78,4 +78,39 @@ class SettingsRoutingIntegrationTest {
             prefs.edit().apply { keys.forEach { remove(it) }; previous.forEach { (key, value) -> when(value) { is String -> putString(key, value); is Boolean -> putBoolean(key, value) } } }.commit()
         }
     }
+
+    @Test fun homeModeChangeSynchronizesCleanupSettings() {
+        val prefs = InstrumentationRegistry.getInstrumentation().targetContext.getSharedPreferences("openwhispr", 0)
+        val keys = listOf("welcome_done", "use_post_processing")
+        val previous = prefs.all.filterKeys { it in keys }
+        prefs.edit().putBoolean("welcome_done", true).putBoolean("use_post_processing", true).commit()
+        fun descendants(view: View): List<View> = buildList {
+            add(view); if (view is android.view.ViewGroup) for (i in 0 until view.childCount) addAll(descendants(view.getChildAt(i)))
+        }
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity ->
+                    descendants(activity.window.decorView).filterIsInstance<TextView>()
+                        .single { it.text.toString() in listOf("AI Cleanup", "Cleanup · needs key") }.performClick()
+                    assertFalse(prefs.getBoolean("use_post_processing", true))
+                }
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                scenario.onActivity { activity ->
+                    val navigation = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
+                    navigation.openSettings()
+                    activity.window.decorView.findViewWithTag<View>("settings-open-LANGUAGE").performClick()
+                    val toggle = activity.javaClass.getDeclaredField("postProcessSwitch").apply { isAccessible = true }.get(activity) as com.google.android.material.materialswitch.MaterialSwitch
+                    assertFalse("Settings must reflect Direct selected on Home", toggle.isChecked)
+                    prefs.edit().putBoolean("use_post_processing", true).commit()
+                }
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                scenario.onActivity { activity ->
+                    val toggle = activity.javaClass.getDeclaredField("postProcessSwitch").apply { isAccessible = true }.get(activity) as com.google.android.material.materialswitch.MaterialSwitch
+                    assertTrue(toggle.isChecked)
+                    (toggle.parent as View).performClick()
+                    assertFalse(prefs.getBoolean("use_post_processing", true))
+                }
+            }
+        } finally { prefs.edit().apply { keys.forEach { remove(it) }; previous.forEach { (key,value) -> putBoolean(key,value as Boolean) } }.commit() }
+    }
 }

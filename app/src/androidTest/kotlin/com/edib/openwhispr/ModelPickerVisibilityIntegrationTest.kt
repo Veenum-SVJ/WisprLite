@@ -63,6 +63,11 @@ class ModelPickerVisibilityIntegrationTest {
                         val children = descendants(container)
                         val names = children.filterIsInstance<TextView>().map { it.text.toString() }
                         MODEL_CATALOG.forEach { assertTrue("Missing model ${it.name}", it.name in names) }
+                        MODEL_CATALOG.filter { it.archive !in installed }.forEach { model ->
+                            val download = children.single { it.contentDescription?.toString() == activity.getString(R.string.download_model, model.name) }
+                            assertTrue("Download icon needs an action", download.hasOnClickListeners())
+                            assertTrue("Download icon needs to be enabled", download.isEnabled)
+                        }
                         val badges = children.filterIsInstance<ImageView>().filter { it.contentDescription?.toString()?.endsWith("model family") == true }
                         assertEquals(MODEL_CATALOG.size, badges.size)
                         assertTrue(badges.all { it.drawable != null && it.visibility == View.VISIBLE })

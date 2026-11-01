@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BubbleInteractionIntegrationTest {
-    @Test fun tapHoldCancellationAndFreeDragUseTheRealBubbleListener() {
+    @Test fun tapHoldCancellationAndEdgeDockingUseTheRealBubbleListener() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val prefs = context.getSharedPreferences("openwhispr", 0)
@@ -41,6 +41,9 @@ class BubbleInteractionIntegrationTest {
             prefs.edit().putBoolean("use_local", false).putBoolean("service_master_enabled", true).commit()
             touch(MotionEvent.ACTION_DOWN); touch(MotionEvent.ACTION_UP)
             assertEquals("RECORDING", state())
+            instrumentation.waitForIdleSync()
+            val recordingParams = field("layoutParams").get(service) as WindowManager.LayoutParams
+            assertTrue("Recording expands the logo into a compact capsule", recordingParams.width > recordingParams.height)
             instrumentation.runOnMainSync { service.onInterrupt() }
             instrumentation.waitForIdleSync()
             touch(MotionEvent.ACTION_DOWN)
@@ -56,10 +59,10 @@ class BubbleInteractionIntegrationTest {
             touch(MotionEvent.ACTION_DOWN)
             touch(MotionEvent.ACTION_MOVE, -100f, -100f)
             val dropped = field("layoutParams").get(service) as WindowManager.LayoutParams
-            val expectedX = dropped.x
+            val expectedX = BubbleSize.snappedX(dropped.x, dropped.width, context.resources.displayMetrics.widthPixels, (8 * context.resources.displayMetrics.density).toInt())
             val expectedY = dropped.y
             touch(MotionEvent.ACTION_UP, -100f, -100f)
-            assertEquals("Drag release must not snap horizontally", expectedX, dropped.x)
+            assertEquals("Drag release docks to the nearest horizontal edge", expectedX, dropped.x)
             assertEquals(expectedY, dropped.y)
             assertTrue(prefs.contains(BubbleSize.X_FRACTION_KEY))
             assertTrue(prefs.contains(BubbleSize.Y_FRACTION_KEY))

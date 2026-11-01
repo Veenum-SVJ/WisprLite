@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9_.:-]+$')][string]$Serial,
     [string]$AdbPath,
     [switch]$IncludeOfflineFixture,
-    [switch]$IncludeGroqCloudFixture
+    [switch]$IncludeGroqCloudFixture,
+    [switch]$AllowMiuiTestLaunch
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -98,12 +99,23 @@ foreach ($permission in $permissions) {
     if (!$match.Success) { throw "Cannot determine original runtime permission: $permission" }
     $permissionStates[$permission] = $match.Groups[1].Value -eq 'true'
 }
+$originalMiuiLaunchMode = $null
 try {
+    if ($AllowMiuiTestLaunch -and $needsForegroundLaunch) {
+        $ops = Invoke-Adb @('shell','cmd','appops','get','com.veenum.wisprlite') | Out-String
+        $mode = [regex]::Match($ops, 'MIUIOP\(10021\): (allow|ignore|deny|default|foreground)')
+        if (!$mode.Success) { throw 'Cannot determine MIUI background launch state; refusing to change it' }
+        $originalMiuiLaunchMode = $mode.Groups[1].Value
+        Invoke-Adb @('shell','cmd','appops','set','com.veenum.wisprlite','10021','allow') | Out-Null
+    }
     Invoke-Adb @('shell','pm','revoke','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
     Run-Suite 'microphone-permission-denied' 'com.edib.openwhispr.PermissionDeniedIntegrationTest' 'service'
     Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
     if ($sdk -ge 33) { Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.POST_NOTIFICATIONS') | Out-Null }
     Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest,com.edib.openwhispr.RetentionDeviceTest' ''
+    Run-Suite 'redesign-migration-snippets-tone' 'com.edib.openwhispr.HistoryMigrationTest,com.edib.openwhispr.SnippetRepositoryTest,com.edib.openwhispr.SnippetExpanderDeviceTest,com.edib.openwhispr.ToneRulesDeviceTest' ''
+    Run-Suite 'redesign-main-screens' 'com.edib.openwhispr.MainScreensIntegrationTest' 'activity'
+    Run-Suite 'redesign-settings' 'com.edib.openwhispr.SettingsRoutingIntegrationTest' 'activity'
     Run-Suite 'saved-provider-profiles' 'com.edib.openwhispr.ProviderProfilesIntegrationTest' ''
     Run-Suite 'watchdog-warning-delivery' 'com.edib.openwhispr.WatchdogDeliveryIntegrationTest' ''
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
@@ -124,6 +136,9 @@ try {
     Write-Output "Device checks passed. Logs: $logs"
     Write-Output 'Speech accuracy, real cloud providers, optional model fixtures and airplane-mode testing are separate checks.'
 } finally {
+    if ($null -ne $originalMiuiLaunchMode) {
+        Invoke-Adb @('shell','cmd','appops','set','com.veenum.wisprlite','10021',$originalMiuiLaunchMode) | Out-Null
+    }
     foreach ($permission in $permissions) {
         $permissionAction = if ($permissionStates[$permission]) { 'grant' } else { 'revoke' }
         Invoke-Adb @('shell','pm',$permissionAction,'com.veenum.wisprlite',$permission) | Out-Null

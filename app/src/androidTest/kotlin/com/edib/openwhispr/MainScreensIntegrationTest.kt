@@ -159,13 +159,13 @@ class MainScreensIntegrationTest {
                 dialog(screen).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             }
             awaitUi(scenario) { descendants(it.window.decorView).any { v -> v.contentDescription == "Delete WisprLite" } }
-            assertEquals(listOf("Ṣọlá | Shola, Sola, Scholar", "Ẹ káàárọ̀ | e kaaro", "WisprLite | whisper light"), Dictionary.load(prefs))
+            assertEquals(setOf("Ṣọlá | Shola, Sola, Scholar", "Ẹ káàárọ̀ | e kaaro", "WisprLite | whisper light"), Dictionary.load(prefs).toSet())
             scenario.onActivity { activity ->
                 descendants(activity.window.decorView).single { it.contentDescription == "Delete WisprLite" }.performClick()
                 dialog(screen).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             }
             assertEquals(2, Dictionary.load(prefs).size)
-            assertEquals(listOf("Shola", "Sola", "Scholar"), Dictionary.parseEntries(prefs.getString(Dictionary.PREF_KEY, null)).first().aliases)
+            assertEquals(listOf("Shola", "Sola", "Scholar"), Dictionary.parseEntries(prefs.getString(Dictionary.PREF_KEY, null)).single { it.canonical == "Ṣọlá" }.aliases)
         } finally { scenario.onActivity { screen.close() } }
     }
 }

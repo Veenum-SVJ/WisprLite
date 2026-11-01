@@ -1,12 +1,46 @@
-# Proposed implementation sequence
+# OpenWhispr Mobile Redesign Implementation Plan
 
-Status: draft requested by user; design review pending. Read ../specs/2026-11-01-openwhispr-mobile-design.md and HANDOFF-OPENWHISPR-REDESIGN.md first. Do not treat the completed 0.1.1 plan as completion of this redesign.
+> For agentic workers: use superpowers:subagent-driven-development task by task, with independent task and final review.
+
+**Goal:** Implement the approved blue Android redesign with searchable transcripts, spoken snippets, per-app tone, speaking-activity Insights and grouped settings.
+**Architecture:** Native Views over focused SQLite repositories and pure text/rule engines. Existing microphone, providers, secure keys and sherpa runtime remain; schema migration is additive and atomic.
+**Tech Stack:** Kotlin, Android Views/Material, SQLite, OkHttp, JUnit; Android 11+/arm64.
+**Spec:** ../specs/2026-11-01-openwhispr-mobile-design.md
+**Approval:** User approved the full design and next-dictation manual override on 2026-11-01.
+
+## Execution contracts
+
+- Core storage: `Snippet(id:String, trigger:String, replacement:String, enabled:Boolean=true)`; `SnippetRepository(context, databaseName:String="wisprlite.db")` provides `all():List<Snippet>`, `save(snippet)`, `delete(id)`, `replaceAll(list)`.
+- Pure `SnippetExpander.prepare(text:String, snippets:List<Snippet>):Prepared` exposes `source`, `expanded`, `protectedText`; `restore(cleaned:String):String?` rejects missing/duplicated/reordered/unknown markers. No recursive expansion.
+- `DictationRecord` gains trailing optional `expanded:String?=null`; `delivered` getter = cleaned ?: expanded ?: original. Existing callers compile. `HistoryRepository.listBefore(cursor,limit,search:String="")` searches all text forms safely; `events():List<SpeakingEvent>` supplies local Insights.
+- `ToneRules(prefs)` exposes `consumeFor(packageName:String?):Tone`, `overrideNext(tone:Tone?)`, `setAppCategory(packageName,category)` and editable category defaults. `Tone.instruction:String` contains formatting guidance only. Raw app package never enters cloud payload.
+- UI screen files own their Views and lifecycle; WisprNavigation coordinates refresh/query generation and stable back behavior. Settings screen categories must reuse existing controls, not duplicate them.
+- Root owns service pipeline, encrypted backup integration, branding and final assembly; implementer task briefs restrict other file ownership to avoid conflicts.
+
+## Global constraints
+
+No new runtime framework; no accounts/notes/calendar/hotkeys/analytics. Preserve profiles, keys, history, models and original OpenWhispr. Direct mode remains AI-free. All persisted snippet/tone data is local or included only in user-triggered encrypted backups. Never expose credentials, personal screenshots or device serials. Never uninstall main app to resolve signing mismatch.
+
+## Concrete regression cycles
+
+Core test first: `prepare("send my signature", listOf(Snippet("a","my signature","Regards, Alex"))).expanded == "send Regards, Alex"`; verify Unicode boundaries, longest matches, disabled entries, nonrecursive text and exact protected restoration. Run `testDebugUnitTest --tests '*Snippet*'`, implement then run the full unit suite once.
+
+Migration fixture: create real schema v1 with transcript/event, set user_version=1, open HistoryDatabase v2, assert original values/counters intact and snippets writable. Search fixtures contain literal `%`, `_`, quotes and Unicode. Use isolated database names and delete only their fixture files.
+
+Tone tests: package classification, unknown app Neutral, disabled style returns Neutral, next override consumed once, Direct never calls provider. Test payloads contain no package IDs.
+
+Insights tests: use fixed SpeakingEvent timestamps across local midnight/DST, zero durations, today/yesterday grace and deletion-independent statistics. Test update tags with v-prefix/prerelease/offline/error inputs.
+
+After each coherent task: run focused tests, read diff, update ledger, commit owned files, independent review and resolve findings. No partial APK replaces daily-use phone installations.
+
+
+Status: approved; execution in progress in isolated .tools/redesign worktree on codex/openwhispr-redesign. Read ../specs/2026-11-01-openwhispr-mobile-design.md and HANDOFF-OPENWHISPR-REDESIGN.md first. Do not treat the completed 0.1.1 plan as completion of this redesign.
 
 ## 1. Preserve baseline and approve visual direction
 - [x] Inspect actual installed desktop app; capture private references; confirm exact logo blue.
 - [x] Confirm transcript-only search, spoken snippets and per-app tone/manual override.
-- [ ] Review full design and static logo/screen proposal with user; settle any material reviewer questions.
-- [ ] Create a codex/ branch from current implementation after approval; inspect AGENTS.md and current changes.
+- [x] Full design and static logo/screen proposal approved; reviewer found no blocking questions.
+- [x] Created isolated .tools/redesign worktree on codex/openwhispr-redesign; no AGENTS.md found; baseline clean.
 - [ ] Record app/data/signing constraints and baseline checks. Do not copy or expose keys or reset phone data.
 
 ## 2. Brand and navigation shell

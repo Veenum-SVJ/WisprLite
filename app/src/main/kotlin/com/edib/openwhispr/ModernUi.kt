@@ -31,7 +31,7 @@ internal object ModernUi {
     }
     fun logo(context: Context, size: Int = 32) = ImageView(context).apply {
         setImageResource(R.drawable.ic_app_logo)
-        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color(context, R.color.primary)) }
+        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color(context, R.color.brand_blue)) }
         setPadding(dp(context, 2), dp(context, 2), dp(context, 2), dp(context, 2))
         layoutParams = LinearLayout.LayoutParams(dp(context, size), dp(context, size))
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -42,6 +42,12 @@ internal object ModernUi {
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     fun settingsIcon(label: String): Int = when {
+        label.startsWith("Preferences") -> R.drawable.ic_ui_appearance
+        label.startsWith("Tone & Style") -> R.drawable.ic_ui_cleanup
+        label.startsWith("Speech-to-Text") -> R.drawable.ic_ui_audio_retention
+        label.startsWith("Language Models") -> R.drawable.ic_ui_provider
+        label.startsWith("Privacy & Data") -> R.drawable.ic_ui_text_retention
+        label.startsWith("System") -> R.drawable.ic_ui_info
         label.startsWith("Providers and cleanup") -> R.drawable.ic_ui_provider
         label.startsWith("Recording and bubble") -> R.drawable.ic_ui_audio_retention
         label.startsWith("Storage and appearance") -> R.drawable.ic_ui_appearance

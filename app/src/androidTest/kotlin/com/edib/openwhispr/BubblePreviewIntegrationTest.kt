@@ -59,6 +59,7 @@ class BubblePreviewIntegrationTest {
                     activity.onBackPressedDispatcher.onBackPressed()
                     val nav = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     nav.openSettings()
+                    val root = activity.window.decorView
                     root.findViewWithTag<View>("settings-open-PREFERENCES").performClick()
                     assertNotNull("Language belongs to Preferences", root.findViewWithTag<View>("settings-language"))
                 }

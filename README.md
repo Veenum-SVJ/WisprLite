@@ -1,16 +1,18 @@
-# WisprLite
+# OpenWisper
 
-A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
+Previously named WisprLite. A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
 [Download the Android 0.1.1 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.1.1-preview/WisprLite-0.1.1-android.apk) · 36.2 MB · Android 11+ / arm64. Models download separately.
 
 ## Screens
-- Home: inline text history, original/cleaned selection, copy/delete and cleanup actions, expandable long transcripts, Direct/Cleanup mode.
-- Insights: donut charts for Today, Last 7 days and All time, with recordings, words, speaking duration and estimated typing time saved beneath.
-- Dictionary: custom words, names and pronunciation aliases.
-- Settings: providers, offline models, language profiles, appearance, recording feedback, retention and encrypted settings backup.
+The 0.2.0 redesign is being verified; the download above remains the earlier preview until delivery.
 
-Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Warm light/dark themes follow the system by default. Settings starts with Status, Setup, Service and Engine, followed by Language and labelled collapsible sections. Open Storage and appearance → Local models for the single inline model list.
+- Home: searchable transcript history, inline copy/delete and original/expanded/cleaned text, expandable long transcripts and Direct/Cleanup mode.
+- Insights: speaking activity heatmap, selectable day details, words, recordings, speaking time and streaks. Typing time saved is an estimate.
+- Dictionary: custom words and pronunciation aliases, plus snippets whose spoken shortcuts expand saved text.
+- Settings: grouped Preferences, Tone & Style, Speech-to-Text, Language Models, Privacy & Data, and System pages.
+
+Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Blue fine-dot branding pairs neutral light and charcoal dark themes. Tone rules are optional, remembered per destination app; a manual override applies to the next dictation. Direct mode never enables AI cleanup. Snippet payloads are protected through cleanup; invalid AI placeholder output falls back to the expanded text.
 
 ## Setup
 Install an APK, grant microphone access and enable the WisprLite Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
@@ -27,7 +29,7 @@ The local catalog offers 12 compatible packs: multilingual and English Whisper T
 
 Language at the top of Settings offers **English** (the default) and **Auto-detect**. Auto-detect uses the languages supported by the chosen model; English-only models remain English-only. Short phrases can be misidentified. Explicit Yoruba and Nigerian Pidgin profiles were removed at the user's request after unsuccessful accuracy trials. Historical research is retained for transparency and is not a current accuracy guarantee. Existing retired profiles migrate to Auto-detect; you can select English explicitly.
 
-Tap the floating bubble to start/stop, or hold to record and release to transcribe. Drag it freely to position it. Settings provides a live bubble-size preview. Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
+Tap the floating bubble to start/stop, or hold to record and release to transcribe. Drag it vertically along either screen edge; releasing docks it to the nearest left or right side. During recording the circular logo grows inward into a translucent black compact capsule with a microphone-responsive dotted waveform. Settings provides a live bubble-size preview. Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
 
 ## Development
 Requires JDK 17, Android SDK platform 35 and build-tools 35.0.0. Set sdk.dir in an untracked local.properties file.
@@ -36,7 +38,7 @@ Requires JDK 17, Android SDK platform 35 and build-tools 35.0.0. Set sdk.dir in 
     # After installing the debug APK and debug Android-test APK:
     powershell -File scripts/test-device.ps1 -Serial YOUR_ADB_SERIAL
 
-Android 11/API 30 or newer and arm64 are targeted. The device script handles Redmi foreground-launch restrictions and the test helper field. Database and credential fixtures use isolated test storage; the service test briefly records and cancels microphone audio, then verifies cross-app insertion. It briefly revokes microphone permission to test denial, grants permissions needed by the checks, then restores the original microphone/notification grant states and whether WisprLite accessibility was enabled, preserving other services. It does not uninstall the app or clear personal history. Run it while no personal dictation is in progress. Real speech accuracy, cloud-provider credentials and airplane-mode checks are separate.
+Android 11/API 30 or newer and arm64 are targeted. The device script handles Redmi foreground-launch restrictions and the test helper field. Database and credential fixtures use isolated test storage; the service test briefly records and cancels microphone audio, then verifies cross-app insertion. It briefly revokes microphone permission to test denial, grants permissions needed by the checks, then restores the original microphone/notification grant states and whether WisprLite accessibility was enabled, preserving other services. It does not uninstall the app or clear personal history. Run it while no personal dictation is in progress. For Xiaomi foreground-launch restrictions, `-AllowMiuiTestLaunch` temporarily allows the app’s MIUI background activity launch operation and restores its original state in the runner’s final cleanup. Real speech accuracy, cloud-provider credentials and airplane-mode checks are separate.
 
 Optional device-runner flags are explicit: `-IncludeOfflineFixture` exercises the complete offline service with a provisioned synthetic `files/english-test.wav` and installed Tiny English model. It refuses pre-existing personal recording files and removes only its own fixtures. `-IncludeGroqCloudFixture` sends synthetic English audio and synthetic mixed-language cleanup text to the configured Groq endpoints using keys stored on the device; it can incur provider usage. Neither live API calls nor these provisioned model fixtures run by default. Do not substitute personal audio for the synthetic fixture.
 

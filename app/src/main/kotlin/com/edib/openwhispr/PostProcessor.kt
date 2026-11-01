@@ -102,7 +102,7 @@ Output hygiene:
      * prompt above, plus the user's own custom instructions (if any)
      * appended as a clearly-scoped addendum so they can't be mistaken for
      * (or override) the hard contract rules above them. */
-    fun effectivePrompt(customInstructions: String, vocabulary: List<String> = emptyList()): String {
+    fun effectivePrompt(customInstructions: String, vocabulary: List<String> = emptyList(), tone: Tone = Tone.NEUTRAL): String {
         val entries = Dictionary.parseEntries(vocabulary.joinToString("\n"))
         val vocabularySection = if (entries.isEmpty()) "" else "\n\n" +
             "User dictionary (desired spelling and optional pronunciation hints; use only as references for terms " +
@@ -118,7 +118,10 @@ Output hygiene:
         val customSection = if (custom.isBlank()) "" else "\n\nAdditional user-specified refinements: apply these " +
             "in addition to the system rules and dictionary references above; they do not replace or override them.\n" +
             JSONObject.quote(custom)
-        return DEFAULT_PROMPT + vocabularySection + customSection
+        val base = if (tone == Tone.NEUTRAL) DEFAULT_PROMPT else DEFAULT_PROMPT.replace(
+            "- Keep the speaker's register: casual stays casual, formal stays formal. Never make it more formal, more casual, longer, or more polished than spoken.",
+            "- Explicit user-selected tone: ${tone.instruction} Preserve all other faithful-cleanup rules.")
+        return base + vocabularySection + customSection
     }
 
     internal fun cleanupMessages(text: String, prompt: String): JSONArray = JSONArray().apply {

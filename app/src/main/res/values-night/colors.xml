@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#8ED2C8</color>
-    <color name="primary_container">#214F4A</color>
-    <color name="on_primary_container">#D2EFE8</color>
+    <color name="primary">#91ADFF</color>
+    <color name="primary_container">#20376B</color>
+    <color name="on_primary_container">#E3EBFF</color>
 
     <color name="secondary">#BEC6DC</color>
     <color name="secondary_container">#3E4759</color>
@@ -11,11 +11,11 @@
     <color name="tertiary">#EFC076</color>
     <color name="tertiary_container">#5E4200</color>
     <color name="on_tertiary_container">#FFDEA6</color>
-    <color name="app_background">#181D1C</color>
-    <color name="panel">#202C29</color>
-    <color name="panel_muted">#263630</color>
-    <color name="ink">#E6F1EA</color>
-    <color name="ink_muted">#ADBFB5</color>
-    <color name="panel_outline">#3A4D43</color>
+    <color name="app_background">#18191B</color>
+    <color name="panel">#212327</color>
+    <color name="panel_muted">#292C32</color>
+    <color name="ink">#EEF0F4</color>
+    <color name="ink_muted">#AFB5BF</color>
+    <color name="panel_outline">#363940</color>
 </resources>
 

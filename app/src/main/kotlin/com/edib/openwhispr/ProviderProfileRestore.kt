@@ -4,6 +4,25 @@ package com.edib.openwhispr
 internal object ProviderProfileRestore {
     fun prepare(current: Map<String, Any?>, incoming: Map<String, Any>, selected: Set<String>, selectedSecrets: Set<String>): Map<String, Any> {
         val changes = incoming.filterKeys { it in selected }.toMutableMap()
+        val target = current + changes
+        fun speech(values: Map<String, Any?>) = (values["transcription_base_url"] as? String)
+            ?.trim()?.trimEnd('/')?.takeIf { it.isNotBlank() } ?: "https://api.groq.com/openai/v1"
+        fun cleanup(values: Map<String, Any?>): String = CleanupProviderConfig.fromPreferences(
+            values["cleanup_provider"] as? String, values["cleanup_base_url"] as? String,
+            values["cleanup_model"] as? String).chatCompletionsUrl().toString()
+        fun guard(key: String, before: String, source: String, after: String) {
+            require(before == after || key in selectedSecrets) {
+                "Select the matching API key when restoring a changed manual provider URL"
+            }
+            require(key !in selectedSecrets || source == after) {
+                "Restore the matching manual provider settings with this API key"
+            }
+        }
+        guard("transcription_api_key", speech(current), speech(incoming), speech(target))
+        // The Groq key has a fixed destination. Custom cleanup keys must stay paired
+        // with their configured endpoint, even while another provider is selected.
+        fun customCleanup(values: Map<String, Any?>) = cleanup(values + ("cleanup_provider" to "openai_compatible"))
+        guard("cleanup_api_key", customCleanup(current), customCleanup(incoming), customCleanup(target))
         val existing = ProviderProfileCodec.decode(current[ProviderProfiles.METADATA_KEY] as? String ?: "[]")
         val imported = incoming[ProviderProfiles.METADATA_KEY]?.let { ProviderProfileCodec.decode(it as String) }.orEmpty()
         var profiles = existing

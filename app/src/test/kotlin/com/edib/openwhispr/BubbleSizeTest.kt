@@ -5,6 +5,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BubbleSizeTest {
+    @Test fun `resizing a wide right capsule preserves its side in a narrow window`() {
+        assertEquals(BubbleSize.Position(228,400), BubbleSize.resizedDockedPosition(BubbleSize.Position(114,400),198,84,84,320,1000,8))
+    }
+
+    @Test fun `docking preserves height and selects nearest edge with left midpoint tie`() {
+        assertEquals(BubbleSize.Position(8, 400), BubbleSize.dockedPosition(472, 400, 1000, 2000, 56, 8))
+        assertEquals(BubbleSize.Position(936, 400), BubbleSize.dockedPosition(600, 400, 1000, 2000, 56, 8))
+        assertEquals(BubbleSize.Position(860, 1936), BubbleSize.dockedPosition(900, 5000, 1000, 2000, 132, 8, 56))
+    }
+
     @Test fun `free position retains interior placement and adapts to a new screen size`() {
         val position = BubbleSize.freePosition(0.3f, 0.4f, 1080, 2400, 56, 8)
         assertEquals(310, position.x)

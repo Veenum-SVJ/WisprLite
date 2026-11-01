@@ -46,6 +46,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var speakingMillis = 0L
     private val session = DictationSession()
     private var recordingJob = 0L
+    private var recordingTone = Tone.NEUTRAL
     @Volatile private var serviceAlive = true
     private val modelLock = Any()
     private var transcriptionCall: okhttp3.Call? = null
@@ -81,10 +82,10 @@ class WhisperAccessibilityService : AccessibilityService() {
         private const val NOTIF_CHANNEL_ID = "openwhispr_service"
         private const val NOTIF_ID = 1
 
-        private const val COLOR_IDLE = 0xEE245E5D.toInt()
+        private const val COLOR_IDLE = 0xFF2056DF.toInt()
         // [ui] Soft red for the recording state (logo tint + outline);
         // replaces the old solid red / grey button colours.
-        private const val COLOR_REC_ACCENT = 0xFF82C7BF.toInt()
+        private const val COLOR_REC_ACCENT = 0xFFFFFFFF.toInt()
         private const val COLOR_FEEDBACK_BG = 0xEE1C1C1E.toInt()
         private const val COLOR_RING = 0xFFE8EAED.toInt()
     }
@@ -112,6 +113,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var imeVisibleSignal = false
     private var button: ImageView? = null
     private val dottedLogo = DottedVoiceDrawable()
+    private val recordingWave = RecordingCapsuleDrawable()
     private var cancelBubblePress: (() -> Unit)? = null
     // [ui] Smoothed recording level for the voice-reactive overlay (main thread).
     private var audioLevel = 0f
@@ -190,6 +192,12 @@ class WhisperAccessibilityService : AccessibilityService() {
         try { recorder?.stop() } catch (_: RuntimeException) { }
         try { recorder?.release() } catch (_: RuntimeException) { }
         pcmStream = null
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        refreshBubbleSize()
+        refreshPosition()
     }
 
     override fun onDestroy() {
@@ -468,8 +476,8 @@ class WhisperAccessibilityService : AccessibilityService() {
                 val dimensions = BubbleSize.dimensions(currentBubbleSizePercent())
                 val ringSize = (dimensions.ringDp * dp).toInt()
                 val margin = (MARGIN_DP * dp).toInt()
-                val position = BubbleSize.clampPosition(
-                    lp.x, lp.y, screenW, screenH, ringSize, margin
+                val position = BubbleSize.resizedDockedPosition(
+                    BubbleSize.Position(lp.x, lp.y), lp.width, ringSize, ringSize, screenW, screenH, margin
                 )
 
                 lp.width = ringSize
@@ -494,6 +502,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                     (dimensions.paddingDp * dp).toInt()
                 )
                 wm.updateViewLayout(view, lp)
+                updateOverlayShape(state == State.RECORDING)
 
                 feedbackLayoutParams?.let { feedbackParams ->
                     positionFeedback(feedbackParams, lp)
@@ -505,12 +514,14 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** Fractions preserve the free position across screen sizes; old side/height settings are a fallback. */
+    /** Restores height and docks old interior positions to the nearest screen edge. */
     private fun savedHomePosition(ringSize: Int): BubbleSize.Position {
         val margin = (MARGIN_DP * dp).toInt()
         if (prefs().contains(BubbleSize.X_FRACTION_KEY) && prefs().contains(BubbleSize.Y_FRACTION_KEY))
             return BubbleSize.freePosition(prefs().getFloat(BubbleSize.X_FRACTION_KEY, 1f),
-                prefs().getFloat(BubbleSize.Y_FRACTION_KEY, 0.5f), screenW, screenH, ringSize, margin)
+                prefs().getFloat(BubbleSize.Y_FRACTION_KEY, 0.5f), screenW, screenH, ringSize, margin).let {
+                    BubbleSize.dockedPosition(it.x, it.y, screenW, screenH, ringSize, margin)
+                }
         return BubbleSize.positionFor(prefs().getInt(BubbleSize.POSITION_PERCENT_KEY, BubbleSize.DEFAULT_POSITION_PERCENT),
             prefs().getBoolean(BubbleSize.ON_LEFT_KEY, false), screenW, screenH, ringSize, margin)
     }
@@ -522,10 +533,11 @@ class WhisperAccessibilityService : AccessibilityService() {
                 val view = overlayView ?: return@post
                 val lp = layoutParams ?: return@post
                 val wm = getSystemService(WINDOW_SERVICE) as WindowManager
-                val position = savedHomePosition(lp.width)
+                val position = savedHomePosition((BubbleSize.dimensions(currentBubbleSizePercent()).ringDp * dp).toInt())
                 lp.x = position.x
                 lp.y = position.y
                 wm.updateViewLayout(view, lp)
+                updateOverlayShape(state == State.RECORDING)
                 feedbackLayoutParams?.let { feedbackParams ->
                     positionFeedback(feedbackParams, lp)
                     feedbackView?.let { wm.updateViewLayout(it, feedbackParams) }
@@ -548,7 +560,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         handler.post {
             try {
                 val wm = getSystemService(WINDOW_SERVICE) as WindowManager
-                val size = layoutParams?.width
+                val size = layoutParams?.height
                     ?: (BubbleSize.dimensions(currentBubbleSizePercent()).ringDp * dp).toInt()
                 val position = BubbleSize.positionFor(
                     percent, onLeft, screenW, screenH, size, (MARGIN_DP * dp).toInt()
@@ -680,7 +692,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                     if (gesture.move(abs(ev.rawX - touchX) + abs(ev.rawY - touchY))) {
                         handler.removeCallbacks(beginHold)
                         val position = BubbleSize.clampPosition(startX + (ev.rawX - touchX).toInt(),
-                            startY + (ev.rawY - touchY).toInt(), screenW, screenH, params.width, margin)
+                            startY + (ev.rawY - touchY).toInt(), screenW, screenH, params.width, margin, params.height)
                         params.x = position.x; params.y = position.y
                         wm.updateViewLayout(v, params)
                         feedbackLayoutParams?.let { positionFeedback(it, params); feedbackView?.let { view -> wm.updateViewLayout(view, it) } }
@@ -692,9 +704,15 @@ class WhisperAccessibilityService : AccessibilityService() {
                     when (gesture.up()) {
                         BubbleGesture.Release.TAP -> v.performClick()
                         BubbleGesture.Release.STOP_HOLD -> if (state == State.RECORDING) stopAndTranscribe()
-                        BubbleGesture.Release.SAVE_POSITION -> prefs().edit()
-                            .putFloat(BubbleSize.X_FRACTION_KEY, BubbleSize.fraction(params.x, screenW, params.width, margin))
-                            .putFloat(BubbleSize.Y_FRACTION_KEY, BubbleSize.fraction(params.y, screenH, params.width, margin)).apply()
+                        BubbleGesture.Release.SAVE_POSITION -> {
+                            val docked = BubbleSize.dockedPosition(params.x, params.y, screenW, screenH, params.width, margin, params.height)
+                            params.x = docked.x; params.y = docked.y
+                            wm.updateViewLayout(v, params)
+                            feedbackLayoutParams?.let { positionFeedback(it, params); feedbackView?.let { view -> wm.updateViewLayout(view, it) } }
+                            prefs().edit()
+                                .putFloat(BubbleSize.X_FRACTION_KEY, BubbleSize.fraction(params.x, screenW, params.width, margin))
+                                .putFloat(BubbleSize.Y_FRACTION_KEY, BubbleSize.fraction(params.y, screenH, params.height, margin)).apply()
+                        }
                         BubbleGesture.Release.NONE -> {}
                     }
                     true
@@ -702,6 +720,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                 MotionEvent.ACTION_CANCEL -> {
                     handler.removeCallbacks(beginHold)
                     if (gesture.cancel() && state == State.RECORDING) { cancelRecording(); goIdle() }
+                    refreshPosition()
                     true
                 }
                 else -> true
@@ -736,6 +755,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         feedbackView = feedback
         layoutParams = params
         feedbackLayoutParams = feedbackParams
+        setRecordingLook(state == State.RECORDING)
     }
 
     private fun removeOverlay() {
@@ -773,30 +793,61 @@ class WhisperAccessibilityService : AccessibilityService() {
     /** [ui] Recording tints the button's icon soft red with a thin red
      * outline (and onAudioLevel makes the button follow your voice);
      * otherwise the original hairline. The icon itself is set by setIcon. */
+    private fun updateOverlayShape(recording: Boolean) {
+        val view = overlayView ?: return
+        val lp = layoutParams ?: return
+        val dims = BubbleSize.dimensions(currentBubbleSizePercent())
+        val margin = (MARGIN_DP * dp).toInt()
+        val left = lp.x + lp.width / 2 <= screenW / 2
+        val height = (dims.ringDp * dp).toInt()
+        val width = if (recording) minOf(screenW - 2 * margin, (132 * dp * currentBubbleSizePercent() / 100f).toInt()).coerceAtLeast(height) else height
+        lp.width = width; lp.height = height
+        lp.x = if (left) margin else maxOf(margin, screenW - width - margin)
+        lp.y = lp.y.coerceIn(margin, maxOf(margin, screenH - height - margin))
+        (button?.layoutParams as? FrameLayout.LayoutParams)?.let {
+            it.width = if (recording) width - (12 * dp).toInt() else (dims.buttonDp * dp).toInt()
+            it.height = (dims.buttonDp * dp).toInt(); button?.layoutParams = it
+        }
+        runCatching { (getSystemService(WINDOW_SERVICE) as WindowManager).updateViewLayout(view, lp) }
+        feedbackLayoutParams?.let { positionFeedback(it, lp) }
+    }
+
     private fun setRecordingLook(recording: Boolean) {
         handler.post {
             val b = button ?: return@post
-            b.background = if (recording) circle(COLOR_IDLE, COLOR_REC_ACCENT, (1.5f * dp).toInt())
-                           else circle(COLOR_IDLE)
+            updateOverlayShape(recording)
+            b.background = if (recording) pill(0xB31A1A1A.toInt()) else circle(COLOR_IDLE)
+            b.setImageDrawable(if (recording) recordingWave else dottedLogo)
             b.imageTintList = if (recording) ColorStateList.valueOf(COLOR_REC_ACCENT) else null
             audioLevel = 0f
             dottedLogo.recording = recording
             dottedLogo.voiceLevel = 0f
+            recordingWave.voiceLevel = 0f
             b.animate().cancel()
-            b.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+            b.scaleX = 1f; b.scaleY = 1f
+            overlayView?.contentDescription = if (recording) "Recording. Tap to stop." else "Dictation. Tap or hold to record."
+            if (recording && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+                val lp = layoutParams
+                val target = b.layoutParams.width.coerceAtLeast(1)
+                b.pivotX = if (lp != null && lp.x + lp.width / 2 > screenW / 2) target.toFloat() else 0f
+                b.scaleX = ((BubbleSize.dimensions(currentBubbleSizePercent()).buttonDp * dp) / target).coerceIn(.2f, 1f)
+                b.alpha = .6f
+                b.animate().scaleX(1f).alpha(1f).setDuration(160).start()
+            } else b.alpha = 1f
         }
     }
 
     /** Swaps the overlay's icon: the app logo while idle, the mic glyph
      * while recording/transcribing. */
     private fun setIcon(res: Int) {
-        handler.post { dottedLogo.recording = state == State.RECORDING; button?.setImageDrawable(dottedLogo) }
+        handler.post { dottedLogo.recording = false; button?.setImageDrawable(if (state == State.RECORDING) recordingWave else dottedLogo) }
     }
 
     private fun setBusy(visible: Boolean) {
         handler.post {
             spinner?.visibility = View.GONE
             dottedLogo.processing = visible
+            if (visible) overlayView?.contentDescription = "Processing dictation. Please wait."
         }
     }
 
@@ -852,6 +903,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         if (state != State.RECORDING) return
         audioLevel = maxOf(level, audioLevel * 0.85f)
         dottedLogo.voiceLevel = audioLevel
+        recordingWave.voiceLevel = audioLevel
     }
 
     // --- State machine ---
@@ -892,6 +944,12 @@ class WhisperAccessibilityService : AccessibilityService() {
         try { audioRecord!!.startRecording() } catch (_: RuntimeException) {
             cancelRecording(); reset("Couldn’t start microphone recording"); return
         }
+        recordingTone = runCatching {
+            val window = windows.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused }
+            val node = window?.root
+            val target = try { node?.packageName?.toString()?.takeUnless { it == packageName } } finally { node?.recycle() }
+            ToneRules(prefs()).consumeFor(target)
+        }.getOrDefault(Tone.NEUTRAL)
         recordingJob = session.begin()
         val job = recordingJob
         val recorder = audioRecord!!
@@ -1065,18 +1123,24 @@ class WhisperAccessibilityService : AccessibilityService() {
             return
         }
 
-        val usePostProcessing = prefs().getBoolean("use_post_processing", false)
+        val draft = runCatching {
+            val snippets = SnippetRepository(this).use { it.all() }
+            DictationCleanup.prepare(text, snippets, recordingTone)
+        }.getOrNull()
+        val expandedText = draft?.expanded ?: text
+        val usePostProcessing = prefs().getBoolean("use_post_processing", false) && draft != null
         val historyId = java.util.UUID.randomUUID().toString()
         try {
             HistoryRepository(this).use { it.saveSuccessful(DictationRecord(historyId, System.currentTimeMillis(),
-                text, null, speakingMillis, if (usePostProcessing) "AI Cleanup" else "Direct")) }
+                text, null, speakingMillis, if (usePostProcessing) "AI Cleanup" else "Direct",
+                if (draft?.hasSnippets == true) expandedText else null, draft?.snippetState)) }
         } catch (_: Exception) { toast("Couldn’t save transcript history; your dictation is still available") }
         if (usePostProcessing) {
             val cleanup = try { ProviderProfiles(this).cleanupSelection() } catch (_: Exception) {
                 handler.post {
                     if (!session.isCurrent(job)) return@post
                     toast("Check your selected cleanup provider. Original text is preserved.")
-                    injectText(text); goIdle()
+                    injectText(expandedText); goIdle()
                 }
                 return
             }
@@ -1086,7 +1150,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                 handler.post {
                     if (!session.isCurrent(job)) return@post
                     toast(getString(R.string.cleanup_needs_key))
-                    injectText(text)
+                    injectText(expandedText)
                     goIdle()
                 }
                 return
@@ -1094,34 +1158,34 @@ class WhisperAccessibilityService : AccessibilityService() {
 
             val customInstructions = prefs().getString("custom_instructions", "") ?: ""
             val vocabulary = Dictionary.load(prefs())
-            val prompt = PostProcessor.effectivePrompt(customInstructions, vocabulary)
+            val prompt = requireNotNull(draft).prompt(customInstructions, vocabulary)
 
             session.runIfCurrent(job) {
-            cleanupCall = PostProcessor.process(text, prompt, apiKey, cleanupConfig) { result ->
+            cleanupCall = PostProcessor.process(requireNotNull(draft).protectedText, prompt, apiKey, cleanupConfig) { result ->
                 handler.post {
                     if (!session.isCurrent(job)) return@post
                     val cleaned = result.text?.trim()
-                    if (cleaned == "EMPTY") {
+                    if (cleaned == "EMPTY" && draft?.hasSnippets != true) {
                         // Model correctly identified filler-only/no-speech audio;
                         // don't literally type the word "EMPTY" into the field.
                         toast(getString(R.string.no_speech_detected))
-                    } else if (!cleaned.isNullOrBlank() && PostProcessor.looksGenerated(text, cleaned)) {
+                    } else if (!cleaned.isNullOrBlank() && draft?.accept(cleaned) == null) {
                         // [cleanup] The model wrote or rewrote content instead of
                         // cleaning (e.g. drafted the email you described). Never
                         // insert that; insert your own words instead.
                         Log.i(TAG, "Cleanup output rejected (not a cleanup of the transcript); using raw text")
-                        if (injectText(text)) showFeedback(getString(R.string.cleanup_skipped_kept_words), 3000)
+                        if (injectText(expandedText)) showFeedback(getString(R.string.cleanup_skipped_kept_words), 3000)
                     } else if (!cleaned.isNullOrBlank()) {
                         thread {
-                            try { HistoryRepository(this).use { it.updateCleanup(historyId, cleaned) } }
+                            try { HistoryRepository(this).use { it.updateCleanup(historyId, requireNotNull(draft?.accept(cleaned))) } }
                             catch (_: Exception) { toast("Couldn’t save cleaned text to history") }
                         }
-                        injectText(cleaned)
+                        injectText(requireNotNull(draft?.accept(cleaned)))
                     } else {
                         // [privacy] injectText only shows its feedback when it falls back
                         // to the clipboard; if the raw text was inserted, still say
                         // that cleanup failed.
-                        if (injectText(text, feedback = getString(R.string.cleanup_failed_clipboard), feedbackDurationMs = 3000)) {
+                        if (injectText(expandedText, feedback = getString(R.string.cleanup_failed_clipboard), feedbackDurationMs = 3000)) {
                             showFeedback(getString(R.string.cleanup_failed_inserted_raw), 3000)
                         }
                     }
@@ -1132,7 +1196,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         } else {
             handler.post {
                 if (!session.isCurrent(job)) return@post
-                injectText(text)
+                injectText(expandedText)
                 goIdle()
             }
         }

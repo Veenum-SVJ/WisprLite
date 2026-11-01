@@ -94,12 +94,24 @@ object BubbleSize {
         screenWidth: Int,
         screenHeight: Int,
         ringSize: Int,
-        margin: Int
+        margin: Int,
+        height: Int = ringSize
     ): Position {
         val maxX = maxOf(margin, screenWidth - ringSize - margin)
-        val maxY = maxOf(margin, screenHeight - ringSize - margin)
+        val maxY = maxOf(margin, screenHeight - height - margin)
         return Position(x.coerceIn(margin, maxX), y.coerceIn(margin, maxY))
     }
+
+    fun resizedDockedPosition(previous: Position, oldWidth: Int, width: Int, height: Int,
+        screenWidth: Int, screenHeight: Int, margin: Int): Position {
+        val left = previous.x + oldWidth / 2 <= screenWidth / 2
+        return Position(if (left) margin else maxOf(margin, screenWidth - width - margin),
+            previous.y.coerceIn(margin, maxOf(margin, screenHeight - height - margin)))
+    }
+
+    /** Final placement docks to the nearest side; an exact middle drop chooses left. */
+    fun dockedPosition(x: Int, y: Int, screenWidth: Int, screenHeight: Int, width: Int, margin: Int, height: Int = width): Position =
+        Position(snappedX(x, width, screenWidth, margin), y.coerceIn(margin, maxOf(margin, screenHeight - height - margin)))
 
     fun snappedX(x: Int, ringSize: Int, screenWidth: Int, margin: Int): Int {
         val maxX = maxOf(margin, screenWidth - ringSize - margin)

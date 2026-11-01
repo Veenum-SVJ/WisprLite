@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -127,13 +128,15 @@ internal class DictionaryScreen(
         WhisperAccessibilityService.instance?.reloadModel(); load()
     }
 
-    private fun write(action: (SnippetRepository) -> Unit, done: () -> Unit = {}) {
+    private fun write(action: (SnippetRepository) -> Unit, done: () -> Unit = {}, failed: () -> Unit = {}) {
         worker.execute {
             val ok = runCatching { SnippetRepository(activity, databaseName).use(action) }.isSuccess
             activity.runOnUiThread {
                 if (closed) return@runOnUiThread
-                if (ok) { done(); load() } else Toast.makeText(activity,
-                    "Couldn’t save. Use a unique trigger and non-empty saved text, then retry.", Toast.LENGTH_LONG).show()
+                if (ok) { done(); load() } else {
+                    failed()
+                    Toast.makeText(activity, "Couldn’t save. Use a unique trigger and non-empty saved text, then retry.", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -154,7 +157,7 @@ internal class DictionaryScreen(
             onChange { state.putString("draft_title", it) }
         }
         val second = screenInput(activity, if (isSnippet) "Saved text" else "Aliases, separated by commas").apply {
-            tag = "entry-body"; minLines = if (isSnippet) 4 else 2; gravity = android.view.Gravity.TOP
+            tag = "entry-body"; minLines = if (isSnippet) 4 else 2; maxLines = 8; isVerticalScrollBarEnabled = true; gravity = android.view.Gravity.TOP
             setText(state.getString("draft_body", "")); onChange { state.putString("draft_body", it) }
         }
         fields.addView(first); fields.addView(second)
@@ -164,11 +167,12 @@ internal class DictionaryScreen(
         }
         if (isSnippet) fields.addView(enabled)
         val editor = AlertDialog.Builder(activity).setTitle(if (isSnippet) "Snippet" else "Dictionary word")
-            .setView(fields).setNegativeButton("Cancel") { _, _ -> state.putBoolean("editing", false) }
+            .setView(ScrollView(activity).apply { isFillViewport = true; addView(fields) }).setNegativeButton("Cancel") { _, _ -> state.putBoolean("editing", false) }
             .setPositiveButton("Save", null).create()
         dialog = editor
         editor.setOnCancelListener { state.putBoolean("editing", false) }
-        editor.setOnShowListener {
+        editor.show()
+        run {
             editor.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val title = first.text.toString().trim()
                 val body = second.text.toString()
@@ -178,12 +182,22 @@ internal class DictionaryScreen(
                 if (!isSnippet && (body.contains('|') || body.contains('\n'))) {
                     second.error = "Separate aliases with commas; use one line without |"; return@setOnClickListener
                 }
-                fun finish() { state.putBoolean("editing", false); editor.dismiss(); dialog = null }
+                fun finish() { if (dialog === editor) { state.putBoolean("editing", false); editor.dismiss(); dialog = null } }
                 if (isSnippet) {
                     val candidate = Snippet(id ?: state.getString("edit_id") ?: UUID.randomUUID().toString(), title, body, enabled.isChecked)
                     // Reusing the draft ID makes a save retried after rotation idempotent.
                     state.putString("edit_id", candidate.id)
-                    write({ repo -> SnippetValidation.validateAll(repo.all().filterNot { it.id == candidate.id } + candidate); repo.save(candidate) }) { finish() }
+                    editor.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+                    editor.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled = false
+                    editor.setCancelable(false)
+                    write(action = { repo -> SnippetValidation.validateAll(repo.all().filterNot { it.id == candidate.id } + candidate); repo.save(candidate) },
+                        done = { finish() }, failed = {
+                            if (dialog === editor) {
+                                editor.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                                editor.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled = true
+                                editor.setCancelable(true)
+                            }
+                        })
                 } else {
                     val existing = Dictionary.parseEntries(prefs.getString(Dictionary.PREF_KEY, null))
                     if (existing.any { it.canonical != word && it.canonical.equals(title, true) }) {
@@ -195,7 +209,6 @@ internal class DictionaryScreen(
                 }
             }
         }
-        editor.show()
     }
 
     override fun close() { closed = true; generation++; dialog?.dismiss(); dialog = null; worker.shutdownNow() }

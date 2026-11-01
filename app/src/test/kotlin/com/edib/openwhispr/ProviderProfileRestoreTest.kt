@@ -33,4 +33,17 @@ class ProviderProfileRestoreTest {
         assertThrows(IllegalArgumentException::class.java) { ProviderProfileRestore.prepare(current, emptyMap(), emptySet(), key) }
         assertTrue(ProviderProfileRestore.prepare(current, current, emptySet(), key).isEmpty())
     }
+
+    @Test fun manualSpeechEndpointAndKeyMustBeRestoredTogether() {
+        val source = mapOf<String, Any>("transcription_base_url" to "https://other.example/v1")
+        assertThrows(IllegalArgumentException::class.java) { ProviderProfileRestore.prepare(emptyMap(), source, source.keys, emptySet()) }
+        assertEquals(source, ProviderProfileRestore.prepare(emptyMap(), source, source.keys, setOf("transcription_api_key")))
+        assertThrows(IllegalArgumentException::class.java) { ProviderProfileRestore.prepare(emptyMap(), source, emptySet(), setOf("transcription_api_key")) }
+    }
+    @Test fun customCleanupEndpointAndKeyMustBeRestoredTogetherEvenWhenInactive() {
+        val source = mapOf<String, Any>("cleanup_base_url" to "https://other.example/v1")
+        assertThrows(IllegalArgumentException::class.java) { ProviderProfileRestore.prepare(emptyMap(), source, source.keys, emptySet()) }
+        assertEquals(source, ProviderProfileRestore.prepare(emptyMap(), source, source.keys, setOf("cleanup_api_key")))
+        assertThrows(IllegalArgumentException::class.java) { ProviderProfileRestore.prepare(emptyMap(), source, emptySet(), setOf("cleanup_api_key")) }
+    }
 }

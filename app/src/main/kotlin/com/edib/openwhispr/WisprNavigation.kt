@@ -56,7 +56,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         val header = LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(20), dp(8), dp(12), dp(8))
             addView(ModernUi.logo(activity))
-            addView(ModernUi.label(activity, "WisprLite", 19f, strong = true),
+            addView(ModernUi.label(activity, "OpenWisper", 19f, strong = true),
                 LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(10) })
             addView(com.google.android.material.button.MaterialButton(activity).apply {
                 contentDescription = "Open navigation"
@@ -105,7 +105,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         panel.addView(LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL
             addView(ModernUi.logo(activity, 36))
-            addView(ModernUi.label(activity, "WisprLite", 22f, strong = true), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(12) })
+            addView(ModernUi.label(activity, "OpenWisper", 22f, strong = true), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(12) })
             setPadding(dp(8), 0, dp(8), dp(28))
         })
         val icons = mapOf("Home" to R.drawable.ic_ui_home, "Insights" to R.drawable.ic_ui_insights,

@@ -55,7 +55,7 @@ object UpdateChecker {
     fun check(): AvailableRelease? {
         val client = OkHttpClient.Builder().connectTimeout(12, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
             .callTimeout(20, TimeUnit.SECONDS).followRedirects(false).build()
-        client.newCall(Request.Builder().url(API).header("Accept", "application/vnd.github+json").header("User-Agent", "WisprLite-update-check").build()).execute().use { response ->
+        client.newCall(Request.Builder().url(API).header("Accept", "application/vnd.github+json").header("User-Agent", "OpenWisper-update-check").build()).execute().use { response ->
             if (response.code == 403 || response.code == 429) throw IOException("GitHub rate limit reached. Try again later.")
             if (!response.isSuccessful) throw IOException("GitHub returned HTTP ${response.code}. Try again later.")
             return latest(response.body?.string() ?: throw IOException("GitHub returned an empty response."))

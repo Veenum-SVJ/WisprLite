@@ -109,3 +109,7 @@ Extend encrypted backups compatibly for snippets/tone settings if included. Cont
 This document and the design artifacts need user review before product-code changes. No new app implementation has started. This is a feature expansion (snippets, per-app style, search and heatmap), not solely a recolor. Use staged commits and update HANDOFF-OPENWHISPR-REDESIGN.md after each milestone. No completion-time guarantee based on a usage percentage.
 
 Independent builder review completed: **nothing important left**. Reviewer identified no blocking unanswered design questions. Static proposal: ../../design/openwhispr-redesign/mobile-proposal.png; logo: ../../design/openwhispr-redesign/logo-proposal.svg. These are design artifacts with synthetic content, not screenshots of an implemented Android redesign.
+
+## Approved recording interaction amendment
+
+User clarified after resuming: the idle circular logo can move vertically along LEFT or RIGHT edges only; dropping at the exact middle chooses left, other drops choose the nearer side. Old interior coordinates restore docked. Recording appearance selected explicitly: compact rounded capsule, growing inward from the docked edge with voice-responsive white dotted waveform, not a waveform within the circular logo. Stop/processing returns to circle; hold-release and tap-toggle remain, drag never starts recording. Restore, rotation, resize and canceled drags must remain edge-docked. This supersedes free interior placement in the original document.

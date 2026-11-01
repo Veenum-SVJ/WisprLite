@@ -120,9 +120,11 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
         }
     }
     private fun transcriptCard(record: DictationRecord): View {
-        var showingOriginal = false
-        var expanded = state.getString("search", "").orEmpty().isNotBlank()
-        fun currentText() = if (showingOriginal) record.original else record.delivered
+        val query = state.getString("search", "").orEmpty().trim()
+        var showingOriginal = query.isNotBlank() && !record.delivered.contains(query, true) && record.original.contains(query, true)
+        var matchingExpanded = query.isNotBlank() && !record.delivered.contains(query, true) && !record.original.contains(query, true) && record.expanded?.contains(query, true) == true
+        var expanded = query.isNotBlank()
+        fun currentText() = if (showingOriginal) record.original else if (matchingExpanded) record.expanded.orEmpty() else record.delivered
         val row = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             tag = "transcript-card-${record.id}"
@@ -155,14 +157,15 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
             orientation = LinearLayout.VERTICAL
             addView(ModernUi.label(activity, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt)), 12f, muted = true))
         }
-        val status = ModernUi.label(activity, if (record.cleaned != null) "AI cleaned" else if (record.expanded != null) "Expanded" else if (record.mode == "AI Cleanup") "Original" else "Direct", 12f, muted = true)
-        if (record.delivered != record.original) {
+        val status = ModernUi.label(activity, if (matchingExpanded) "Expanded · match" else if (showingOriginal) "Original · match" else if (record.cleaned != null) "AI cleaned" else if (record.expanded != null) "Expanded" else if (record.mode == "AI Cleanup") "Original" else "Direct", 12f, muted = true)
+        if (record.delivered != record.original || matchingExpanded) {
             status.minimumHeight = dp(48)
             status.gravity = Gravity.CENTER_VERTICAL
-            status.contentDescription = "Show original transcript"
+            status.contentDescription = if (showingOriginal) "Show delivered transcript" else "Show original transcript"
             status.setTextColor(ModernUi.color(activity, R.color.primary))
             status.isFocusable = true
             status.setOnClickListener {
+                matchingExpanded = false
                 showingOriginal = !showingOriginal
                 status.text = if (showingOriginal) "Original" else if (record.cleaned != null) "AI cleaned" else "Expanded"
                 status.contentDescription = if (showingOriginal) "Show delivered transcript" else "Show original transcript"
@@ -231,7 +234,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
         return runCatching { ProviderProfiles(activity).cleanupSelection().key.isNotBlank() }.getOrDefault(false)
     }
     private fun copy(value: String) {
-        val clip = ClipData.newPlainText("WisprLite transcript", value)
+        val clip = ClipData.newPlainText("OpenWisper transcript", value)
         if (android.os.Build.VERSION.SDK_INT >= 33) clip.description.extras = android.os.PersistableBundle().apply { putBoolean("android.content.extra.IS_SENSITIVE", true) }
         (activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
         Toast.makeText(activity, "Copied", Toast.LENGTH_SHORT).show()

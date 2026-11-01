@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">WisprLite</string>
+    <string name="app_name">OpenWisper</string>
     <string name="accessibility_description">Dictée : enregistre l’audio, le transcrit et insère le texte dans le champ actif.</string>
-    <string name="notification_channel_name">Service en arrière-plan WisprLite</string>
+    <string name="notification_channel_name">Service en arrière-plan OpenWisper</string>
     <string name="notification_channel_description">Maintient la fenêtre de dictée active en arrière-plan</string>
-    <string name="notification_content_title">WisprLite est en cours d’exécution</string>
+    <string name="notification_content_title">OpenWisper est en cours d’exécution</string>
     <string name="notification_content_text">Touchez le micro flottant pour dicter</string>
     <string name="language">Langue</string>
     <string name="language_summary">Choisir la langue de l’application</string>
@@ -66,7 +66,7 @@
     <string name="add_custom_instructions">Consignes personnalisées</string>
 
     <string name="setup">Configuration</string>
-    <string name="accessibility_help">Permet à WisprLite de détecter le champ actif et d’y insérer le texte transcrit.</string>
+    <string name="accessibility_help">Permet à OpenWisper de détecter le champ actif et d’y insérer le texte transcrit.</string>
     <string name="engine">Moteur</string>
     <string name="tap_add_refinements">Touchez pour ajouter des consignes</string>
     <string name="voice_commands_summary">Dites une phrase déclencheuse pour traduire, résumer et plus encore</string>
@@ -100,9 +100,9 @@
 
     <string name="status_ready">Prêt — touchez le micro flottant pour dicter</string>
     <string name="restricted_settings_title">Étape supplémentaire sur Android 13+</string>
-    <string name="restricted_settings_message">Android peut restreindre les services d’accessibilité installés en dehors de Google Play. Si l’interrupteur d’WisprLite est désactivé :
+    <string name="restricted_settings_message">Android peut restreindre les services d’accessibilité installés en dehors de Google Play. Si l’interrupteur d’OpenWisper est désactivé :
 
-1. Appuyez longuement sur l’icône d’WisprLite et ouvrez Informations sur l’application.
+1. Appuyez longuement sur l’icône d’OpenWisper et ouvrez Informations sur l’application.
 2. Ouvrez le menu en haut à droite, puis choisissez Autoriser les paramètres restreints.
 3. Revenez ici et activez le service d’accessibilité.</string>
     <string name="open_accessibility_settings">Ouvrir les paramètres d’accessibilité</string>
@@ -110,24 +110,24 @@
     <string name="open_settings_failed">Impossible d’ouvrir les paramètres : %1$s</string>
     <string name="open_battery_settings_failed">Impossible d’ouvrir les paramètres de batterie : %1$s</string>
     <string name="update_available">Mise à jour disponible</string>
-    <string name="update_available_message">WisprLite %1$s est disponible. Votre version actuelle est la %2$s.</string>
+    <string name="update_available_message">OpenWisper %1$s est disponible. Votre version actuelle est la %2$s.</string>
     <string name="whats_new">Nouveautés</string>
     <string name="up_to_date">Vous utilisez la dernière version (%1$s)</string>
     <string name="allow_install_updates">Autoriser l’installation des mises à jour</string>
-    <string name="allow_install_updates_message">Pour installer les mises à jour dans WisprLite, autorisez l’installation d’applications inconnues sur l’écran suivant. Revenez ensuite ici et touchez de nouveau Mettre à jour.</string>
+    <string name="allow_install_updates_message">Pour installer les mises à jour dans OpenWisper, autorisez l’installation d’applications inconnues sur l’écran suivant. Revenez ensuite ici et touchez de nouveau Mettre à jour.</string>
     <string name="continue_button">Continuer</string>
     <string name="downloading_update">Téléchargement de la mise à jour…</string>
     <string name="download_failed">Échec du téléchargement : %1$s</string>
     <string name="installer_start_failed">Impossible de démarrer le programme d’installation : %1$s</string>
     <string name="keep_dictation_running">Maintenir la dictée active</string>
-    <string name="battery_warning_message">La gestion de la batterie Android ou certains fabricants peuvent arrêter les applications en arrière-plan pour économiser l’énergie. Cela peut interrompre la dictée lorsque WisprLite n’est pas à l’écran.
+    <string name="battery_warning_message">La gestion de la batterie Android ou certains fabricants peuvent arrêter les applications en arrière-plan pour économiser l’énergie. Cela peut interrompre la dictée lorsque OpenWisper n’est pas à l’écran.
 
 Autorisez l’activité sans restriction en arrière-plan pour que le service de dictée puisse rester actif. Vous pourrez modifier ce réglage plus tard dans les paramètres Android.</string>
     <string name="disable_restrictions">Autoriser l’activité en arrière-plan</string>
     <string name="groq_key_help_html">Besoin d’une clé API Groq ? Obtenez-en une gratuitement ici : &lt;a href="https://console.groq.com/keys"&gt;console.groq.com/keys&lt;/a&gt;.</string>
     <string name="groq_api_key_hint">gsk_…</string>
     <string name="custom_instructions_hint">Par exemple : toujours écrire NASA en toutes lettres</string>
-    <string name="custom_instructions_help">Ces consignes complètent les règles intégrées de correction d’WisprLite. Elles ne peuvent pas remplacer ses règles de sécurité, de mise en forme ou d’autocorrection.</string>
+    <string name="custom_instructions_help">Ces consignes complètent les règles intégrées de correction d’OpenWisper. Elles ne peuvent pas remplacer ses règles de sécurité, de mise en forme ou d’autocorrection.</string>
     <string name="default_trigger_phrase">Commande Whisper</string>
     <string name="command_mode_help">Dites cette phrase au début d’un enregistrement pour passer en mode commande plutôt qu’en dictée normale.</string>
     <string name="command_examples_body">Dites %1$s, puis l’une de ces commandes. Elles s’appliquent au texte déjà présent dans le champ ou au texte dicté juste après la commande :
@@ -141,11 +141,11 @@ Autorisez l’activité sans restriction en arrière-plan pour que le service de
 Vous pouvez combiner des commandes : %1$s, traduis en italien puis transforme le texte en liste. Elles seront appliquées dans cet ordre.</string>
     <string name="got_it">Compris</string>
     <string name="overlay_content_description">Micro de dictée. Touchez deux fois pour démarrer ou arrêter l’enregistrement.</string>
-    <string name="grant_audio_permission">Autorisez l’accès au microphone dans les paramètres d’WisprLite.</string>
+    <string name="grant_audio_permission">Autorisez l’accès au microphone dans les paramètres d’OpenWisper.</string>
     <string name="audio_permission_denied">Autorisation d’accès au microphone refusée.</string>
     <string name="no_audio_captured">Aucun son n’a été enregistré.</string>
     <string name="local_transcription_error">Échec de la transcription locale : %1$s</string>
-    <string name="set_groq_key">Ajoutez votre clé API Groq dans les paramètres d’WisprLite.</string>
+    <string name="set_groq_key">Ajoutez votre clé API Groq dans les paramètres d’OpenWisper.</string>
     <string name="transcription_error">Échec de la transcription : %1$s</string>
     <string name="empty_transcript">Le service de transcription n’a renvoyé aucun texte.</string>
     <string name="no_speech_detected">Aucune parole détectée.</string>
@@ -195,14 +195,14 @@ Vous pouvez combiner des commandes : %1$s, traduis en italien puis transforme le
     <string name="saved_securely">Enregistrée de façon sécurisée</string>
 
     <!-- Dictionary strings (PR 3) -->
-    <string name="process_text_label">Ajouter au dictionnaire WisprLite</string>
+    <string name="process_text_label">Ajouter au dictionnaire OpenWisper</string>
     <string name="dictionary_no_text">Aucun texte sélectionné à ajouter</string>
     <string name="dictionary_added">Ajouté au dictionnaire</string>
     <string name="dictionary_title">Dictionnaire personnalisé</string>
     <string name="dictionary_summary">Aider à reconnaître et écrire les noms propres, acronymes et termes spécialisés pendant la dictée et la correction</string>
     <string name="dictionary_word_count">%1$d mots</string>
-    <string name="dictionary_input_hint">Une entrée par ligne. Exemple : WisprLite | open whisper, open wisper</string>
-    <string name="dictionary_saved_local_message">Le dictionnaire aide à reconnaître et écrire les noms propres, acronymes et termes spécialisés pendant la dictée et la correction. La forme avant | est l’orthographe finale ; les variantes après | sont uniquement des indices de prononciation et de reconnaissance. Le dictionnaire reste actif avec des consignes personnalisées. Les anciennes lignes avec un seul terme restent valides. Exemple : WisprLite | open whisper, open wisper.</string>
+    <string name="dictionary_input_hint">Une entrée par ligne. Exemple : OpenWisper | open whisper, open wisper</string>
+    <string name="dictionary_saved_local_message">Le dictionnaire aide à reconnaître et écrire les noms propres, acronymes et termes spécialisés pendant la dictée et la correction. La forme avant | est l’orthographe finale ; les variantes après | sont uniquement des indices de prononciation et de reconnaissance. Le dictionnaire reste actif avec des consignes personnalisées. Les anciennes lignes avec un seul terme restent valides. Exemple : OpenWisper | open whisper, open wisper.</string>
 
     <!-- Strings for the actionable status row, update dialog and cleanup feedback -->
     <string name="about_current_version">Version actuelle : v%1$s · touchez pour vérifier</string>
@@ -257,26 +257,26 @@ Raison : %1$s</string>
     <string name="backup_export_failed">Impossible d\'enregistrer la sauvegarde : %1$s</string>
     <string name="backup_restore_done">Réglages et clés restaurés</string>
     <string name="backup_restore_failed">Restauration impossible : mot de passe incorrect ou fichier endommagé</string>
-    <string name="welcome_title">Bienvenue dans WisprLite</string>
+    <string name="welcome_title">Bienvenue dans OpenWisper</string>
     <string name="welcome_message">Restaurez vos réglages et clés depuis une sauvegarde, ou commencez à zéro.</string>
     <string name="welcome_restore">Restaurer une sauvegarde</string>
     <string name="welcome_start_fresh">Commencer à zéro</string>
 
     <string name="accessibility_enabled_not_running">Activé mais inactif. Touchez pour le désactiver puis le réactiver.</string>
     <string name="watchdog_channel_name">État du service de dictée</string>
-    <string name="watchdog_title">La dictée WisprLite s\'est arrêtée</string>
+    <string name="watchdog_title">La dictée OpenWisper s\'est arrêtée</string>
     <string name="watchdog_text">L\'accessibilité est activée, mais le service ne tourne pas. Touchez pour la réactiver.</string>
 
-    <string name="migration_title">Passer à WisprLite 4</string>
-    <string name="migration_message_saved">WisprLite 4 est signé avec une nouvelle clé, il ne peut donc pas être installé par-dessus la version 3. Étapes : 1) Sauvegardez vos réglages avec le bouton ci-dessous. 2) Désinstallez WisprLite 3. 3) Ouvrez Téléchargements dans l\'application Fichiers et touchez %1$s pour l\'installer. 4) Au premier lancement, restaurez votre sauvegarde.</string>
-    <string name="migration_message_not_saved">WisprLite 4 est signé avec une nouvelle clé, il ne peut donc pas être installé par-dessus la version 3. Étapes : 1) Sauvegardez vos réglages avec le bouton ci-dessous. 2) Désinstallez WisprLite 3. 3) Téléchargez %1$s depuis la page des versions GitHub et ouvrez-le pour l\'installer. 4) Au premier lancement, restaurez votre sauvegarde.</string>
-    <string name="migration_uninstall">Désinstaller WisprLite 3</string>
+    <string name="migration_title">Passer à OpenWisper 4</string>
+    <string name="migration_message_saved">OpenWisper 4 est signé avec une nouvelle clé, il ne peut donc pas être installé par-dessus la version 3. Étapes : 1) Sauvegardez vos réglages avec le bouton ci-dessous. 2) Désinstallez OpenWisper 3. 3) Ouvrez Téléchargements dans l\'application Fichiers et touchez %1$s pour l\'installer. 4) Au premier lancement, restaurez votre sauvegarde.</string>
+    <string name="migration_message_not_saved">OpenWisper 4 est signé avec une nouvelle clé, il ne peut donc pas être installé par-dessus la version 3. Étapes : 1) Sauvegardez vos réglages avec le bouton ci-dessous. 2) Désinstallez OpenWisper 3. 3) Téléchargez %1$s depuis la page des versions GitHub et ouvrez-le pour l\'installer. 4) Au premier lancement, restaurez votre sauvegarde.</string>
+    <string name="migration_uninstall">Désinstaller OpenWisper 3</string>
     <string name="migration_back_up_first">Sauvegarder d\'abord</string>
-    <string name="background_autostart_row">Démarrage automatique · Autoriser le redémarrage de WisprLite</string>
+    <string name="background_autostart_row">Démarrage automatique · Autoriser le redémarrage de OpenWisper</string>
     <string name="background_autostart_title">Garder la bulle disponible</string>
-    <string name="background_autostart_help">Autorisez WisprLite dans la liste de démarrage automatique en arrière-plan de votre téléphone. Ce réglage est distinct de l’optimisation de la batterie. Si la bulle disparaît, vérifiez ce réglage et le service d’accessibilité.</string>
+    <string name="background_autostart_help">Autorisez OpenWisper dans la liste de démarrage automatique en arrière-plan de votre téléphone. Ce réglage est distinct de l’optimisation de la batterie. Si la bulle disparaît, vérifiez ce réglage et le service d’accessibilité.</string>
     <string name="background_autostart_open">Ouvrir les réglages de démarrage automatique</string>
-    <string name="background_autostart_unavailable">Ouvrez les informations de l’application WisprLite et recherchez le démarrage automatique en arrière-plan.</string>
+    <string name="background_autostart_unavailable">Ouvrez les informations de l’application OpenWisper et recherchez le démarrage automatique en arrière-plan.</string>
 </resources>
 
 
