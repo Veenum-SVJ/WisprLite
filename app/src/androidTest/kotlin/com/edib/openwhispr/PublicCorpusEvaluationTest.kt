@@ -26,8 +26,10 @@ class PublicCorpusEvaluationTest {
         val provider = arguments.getString("publicCorpusProvider")
         require(provider in setOf("groq", "google"))
         val lowReasoning = arguments.getString("googleReasoningLow") == "true"
+        val turbo = arguments.getString("groqTurbo") == "true"
+        require(!turbo || provider == "groq")
         require(!lowReasoning || provider == "google")
-        val trial = if (lowReasoning) "${provider}_low" else provider
+        val trial = if (turbo) "groq_turbo" else if (lowReasoning) "${provider}_low" else provider
         require(arguments.getString("confirmedCloudTrial") == "public_corpus_$trial")
         val host = if (provider == "groq") "api.groq.com" else "generativelanguage.googleapis.com"
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -59,7 +61,8 @@ class PublicCorpusEvaluationTest {
             val completed = CountDownLatch(1)
             val response = AtomicReference<TranscriberClient.Result>()
             val started = System.nanoTime()
-            val config = selected.config.copy(recognitionHint = language.recognitionHint)
+            val config = selected.config.copy(recognitionHint = language.recognitionHint,
+                model = if (turbo) "whisper-large-v3-turbo" else selected.config.model)
             val call = if (lowReasoning) {
                 // Explicit experiment only: never changes production requests or saved profiles.
                 val original = TranscriberClient.transcriptionRequest(audio[index], selected.key, emptyList(),
@@ -90,7 +93,7 @@ class PublicCorpusEvaluationTest {
                     if (it.matches(Regex("Transcription provider returned HTTP [0-9]{3}"))) it else "request_failed"
                 }
                 results.put(JSONObject().put("fixture", name).put("sha256", hash)
-                    .put("language", language.name).put("model", selected.config.model)
+                    .put("language", language.name).put("model", config.model)
                     .put("elapsed_ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started))
                     .put("error", error ?: JSONObject.NULL)
                     .put("text", result?.text ?: JSONObject.NULL))

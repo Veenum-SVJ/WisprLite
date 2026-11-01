@@ -32,10 +32,14 @@ Scorer checks covered known substitution, insertion and deletion counts, canonic
 |---|---|---:|---:|---:|---:|---|
 | Groq / whisper-large-v3 | Yorùbá | 1,715 ms | 37 / 39 | 94.87% | 69.23% | Returned text; poor match |
 | Groq / whisper-large-v3 | Pidgin | 517 ms | 6 / 14 | 42.86% | 42.86% | Returned text; substantial errors |
+| Groq / whisper-large-v3-turbo | Yorùbá | 2,130 ms | 36 / 39 | 92.31% | 74.36% | Returned text; poor match |
+| Groq / whisper-large-v3-turbo | Pidgin | 610 ms | 5 / 14 | 35.71% | 35.71% | Returned text; substantial errors |
 | Google / gemini-3.8-flash | Yorùbá | 62,085 ms | — | — | — | Redacted request failure; unscored |
 | Google / gemini-3.8-flash | Pidgin | 60,064 ms | — | — | — | Redacted request failure; unscored |
 
 Groq's speed is not evidence of sufficient accuracy. These measurements support the user's earlier failure report and do not justify recommending generic Large-v3 as a verified Yorùbá solution. Google's two failures provide no accuracy comparison. Other utterances, accents, recording conditions and model versions may differ.
+
+The separately required Turbo comparison uses `groqTurbo=true` and confirmation `public_corpus_groq_turbo`. It overrides only the test request model, never saved profiles or active selection, and writes `groq_turbo-results.json`. Test-only APK/debug lint passed in 59s; the two-clip measurement completed in 2.898s. Turbo did not establish adequate Yorùbá/Pidgin accuracy on these cases. This completes the named Large-v3/Turbo comparison, not mixed-speech/user-voice acceptance. Private evidence: `.tools/turbo-corpus-build.log`, `.tools/turbo-corpus-device.log` and scored JSON under `.tools/corpus-eval/`.
 
 Google documents [`reasoning_effort=low`](https://ai.google.dev/gemini-api/docs/openai) for its compatible API. A separate explicit experiment uses `googleReasoningLow=true` and confirmation `public_corpus_google_low`, writing `google_low-results.json`; it changes only the test request, not production behavior or saved profiles. Its outcome must be reported separately. Do not infer that default reasoning caused these failures without comparative evidence.
 
