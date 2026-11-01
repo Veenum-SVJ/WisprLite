@@ -85,4 +85,4 @@ Device-scope amendment: the user disconnected/took the Pixel 6 and explicitly di
 - [x] Build/lint/unit-test the update and verify model controls, charts and light/dark appearance on Pixel.
 - [ ] Remove new test fixtures and test package; sign and install optimized 0.1.1 on both phones without clearing data.
 - [ ] Scan, commit and push the follow-up, publish its APK and verify GitHub checks.
-- [x] Group Settings into native collapsible sections, put Status/Setup/Service/Engine first and keep a single inline Local models disclosure. Compile, targeted UI checks and light/dark visual review passed; wider regression is in progress.
+- [x] Group Settings into native collapsible sections, put Status/Setup/Service/Engine first and keep a single inline Local models disclosure. Compile, targeted UI checks, light/dark visual review and the final full 28-check Pixel regression passed. Intermittent earlier web-test failures are recorded in the handoff report.

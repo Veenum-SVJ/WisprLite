@@ -1,6 +1,6 @@
 # Insights charts and complete model removal — 2026-11-01
 
-Status: version 0.1.1 is implemented and locally built, but final optimized phone deployment, test-artifact cleanup and GitHub publication are pending. The public 0.1.0 preview predates these changes.
+Status: version 0.1.1 is implemented, built and installed as an optimized update on Pixel. Its test package and owned fixtures are removed. Redmi deployment and the updated public APK are pending; the 0.1.0 preview predates these changes.
 
 Verification: 122 unit tests and debug/release lint passed; the complete final build passed in 3m45s. Pixel model-control/chart assertions passed in 2.701s; light/dark appearance passed in 2.747s. The rendered dark Insights screenshot was visually reviewed. Redmi's attempted test-helper installation was cancelled and is not a passed check.
 

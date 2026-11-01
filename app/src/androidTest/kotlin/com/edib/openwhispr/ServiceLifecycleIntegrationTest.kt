@@ -64,11 +64,19 @@ class ServiceLifecycleIntegrationTest {
             assertNoNewAudio()
             val phrase = "WisprLite insertion: Ṣọlá, how you dey?"
             var injected = false
+            var editorReadySince = 0L
+            fun readyEditor(node: AccessibilityNodeInfo): Boolean = (node.isEditable && node.isFocused) ||
+                (0 until node.childCount).any { index -> node.getChild(index)?.let(::readyEditor) == true }
             val targetDeadline = System.currentTimeMillis() + 45_000
             while (!injected && System.currentTimeMillis() < targetDeadline) {
                 instrumentation.runOnMainSync {
                     val roots = service.windows.mapNotNull { it.root }.filter { it.packageName?.toString() == "com.veenum.wisprlite.test" }
-                    if (roots.isNotEmpty()) {
+                    // A WebView root can appear before its contenteditable and input
+                    // connection are ready. Paste may then acknowledge without inserting.
+                    val ready = roots.any(::readyEditor)
+                    if (!ready) editorReadySince = 0L
+                    else if (editorReadySince == 0L) editorReadySince = System.currentTimeMillis()
+                    if (ready && System.currentTimeMillis() - editorReadySince >= 500L) {
                         injected = service.javaClass.getDeclaredMethod("injectText", String::class.java, String::class.java, Long::class.javaPrimitiveType)
                             .apply { isAccessible = true }.invoke(service, phrase, null, 0L) as Boolean
                     }
@@ -85,6 +93,13 @@ class ServiceLifecycleIntegrationTest {
                     found = service.windows.mapNotNull { it.root }.filter { it.packageName?.toString() == "com.veenum.wisprlite.test" }.any(::contains)
                 }
                 if (!found) Thread.sleep(100)
+            }
+            if (!found) instrumentation.runOnMainSync {
+                fun describe(node: AccessibilityNodeInfo) {
+                    println("Owned test editor node: ${node.className}; editable=${node.isEditable}; text=${node.text}")
+                    for (index in 0 until node.childCount) node.getChild(index)?.let(::describe)
+                }
+                service.windows.mapNotNull { it.root }.filter { it.packageName?.toString() == "com.veenum.wisprlite.test" }.forEach(::describe)
             }
             assertTrue("Accessibility action reported success but field text differs", found)
         } finally {

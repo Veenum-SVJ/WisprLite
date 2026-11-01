@@ -30,3 +30,15 @@ The final code passed all 28 standard device checks on Redmi 12 using the foregr
 Cleanup removed owned internal fixtures, screenshots, synthetic audio, test UI XML/video, picker-export fixture and the single guarded fixed-phrase trial row. Two saved provider profiles and four installed models (Whisper Base, Tiny multilingual, Tiny English and Small) were verified unchanged before the optimized update. English is selected; existing cloud transcription/cleanup choices remain configured. The disconnected Pixel retains its completed optimized installation and earlier recorded handoff checks.
 
 The APK signature and 16 KiB ZIP alignment verify successfully. Unit/lint/build checks passed locally. GitHub's final implementation secret scan passed; workflow results are independently visible in Actions. New larger catalog packs remain unbenchmarked on these phones. Google service availability and historical Yoruba/Pidgin accuracy failures are retained as limitations rather than hidden or claimed fixed.
+
+## 0.1.1 follow-up
+
+The update adds setup-first, collapsible Settings; a single inline Local models disclosure; Delete for every installed model including the selected one; refreshed model storage; and native Insights charts with numerical details. See the design documents for behavior and the recorded intermittent web-test limitation.
+
+Final production build passed 122 unit tests, debug/release lint and debug/test/release APK builds in 3m57s. Targeted Pixel layout/model/chart checks and light/dark appearance passed, followed by a full 28-check Pixel run. The initial language UI test assumed the previous layout and was updated for the user-requested order. Two intermediate broad runs failed the web field's text-match assertion despite paste acknowledgement; focused cold/native/web checks and the final full run passed. Do not describe the cause as proven or the intermittent observation as definitively fixed.
+
+Optimized APK: 36,215,895 bytes (36.2 MB decimal), SHA-256 `f7ac3ce508d994eb1080c97d73d6ffa9f14c7567311ecedf34787f3350f93bce`. Signature and 16 KiB ZIP alignment verify. No new UI/chart dependency or model download was introduced.
+
+Pixel now runs non-debuggable 0.1.1 and cold-launched in 918 ms. Its accessibility service is confirmed bound with no crashed services. The test helper and identified fixtures/picker exports were removed. Its two saved provider profiles, cloud-only choice and zero installed local packs were verified preserved before the optimized update. The handoff preserved the current model storage and provider profiles; credentials were not transferred between phones.
+
+Redmi's final 0.1.1 optimized deployment is pending reconnection. Do not claim both phones have this follow-up until verified.
