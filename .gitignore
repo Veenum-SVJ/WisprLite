@@ -16,3 +16,4 @@ keystore.properties
 upstream/
 .tools/
 .superpowers/
+__pycache__/

@@ -38,5 +38,7 @@ Release code/resource shrinking is enabled. Without keystore.properties the rele
 
 See docs/testing/device-report.md for measured results and outstanding tests. A passing build does not establish language accuracy or device performance.
 
+The [public speech evaluation](docs/testing/public-corpus-evaluation.md) records pinned Yorùbá/Pidgin samples, opt-in measurement commands and Unicode-aware scoring. Its observed Large-v3 errors and Google request failures do not establish language acceptance.
+
 ## Provenance and license
 Adapted from EdiBianco/OpenWhispr v4.0.0, commit 7f41114c1028190749b3bfeed721c3aef05d56fe, and its kafkasl/phone-whisper foundation. Apache-2.0 license retained in LICENSE; original documentation is preserved under docs/upstream. See NOTICE. WisprLite changes are recorded in Git history.
