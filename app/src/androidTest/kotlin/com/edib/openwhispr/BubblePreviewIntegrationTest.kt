@@ -59,13 +59,8 @@ class BubblePreviewIntegrationTest {
                     activity.onBackPressedDispatcher.onBackPressed()
                     val nav = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     nav.openSettings()
-                    val settings = nav.javaClass.getDeclaredField("settings").apply { isAccessible = true }.get(nav) as ViewGroup
-                    val extras = settings.getChildAt(2) as ViewGroup
-                    val firstAction = (0 until extras.childCount).map { extras.getChildAt(it) }.first { it.isClickable }
-                    assertTrue("Language follows top-level setup and engine controls", descendants(firstAction).filterIsInstance<TextView>().any { it.text.toString() == "Language" })
-                    if (activity.window.decorView.findViewWithTag<View>("settings-body-recording").visibility == View.GONE) {
-                        activity.window.decorView.findViewWithTag<View>("settings-toggle-recording").performClick()
-                    }
+                    root.findViewWithTag<View>("settings-open-PREFERENCES").performClick()
+                    assertNotNull("Language belongs to Preferences", root.findViewWithTag<View>("settings-language"))
                 }
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->

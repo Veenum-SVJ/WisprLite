@@ -74,14 +74,15 @@ class AppearanceIntegrationTest {
                     scenario.onActivity { activity ->
                         val root = activity.window.decorView
                         val labels = descendants(root).filterIsInstance<TextView>().map { it.text.toString() }
-                        assertTrue(labels.any { it.startsWith("Transcription provider") })
+                        assertTrue(labels.contains("Speech-to-Text"))
                         val bitmap = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
                         try { root.draw(Canvas(bitmap)); File(output, "settings-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
                         finally { bitmap.recycle() }
                         prefs.edit().putBoolean("service_master_enabled", false).commit()
                         activity.javaClass.getDeclaredMethod("refresh").apply { isAccessible = true }.invoke(activity)
-                        assertTrue("Paused dictation must be reflected in the status card", descendants(root).filterIsInstance<TextView>()
-                            .any { it.text.toString() == "Dictation is paused" })
+                        val readiness = root.findViewWithTag<View>("settings-readiness")
+                        assertTrue("Paused dictation must be reflected in the visible readiness banner", readiness.isShown &&
+                            readiness.findViewWithTag<TextView>("setting-subtitle").text.toString().startsWith("Dictation is paused"))
                         prefs.edit().putBoolean("service_master_enabled", master).commit()
                         activity.onBackPressedDispatcher.onBackPressed()
                     }

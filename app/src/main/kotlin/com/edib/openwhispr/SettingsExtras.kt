@@ -2,191 +2,188 @@ package com.edib.openwhispr
 
 import android.app.AlertDialog
 import android.content.Context
+import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatDelegate
 import kotlin.concurrent.thread
 
-class SettingsExtras(private val activity: MainActivity) {
+class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = null) {
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
+    private val router = SettingsRouter(activity, savedState)
+    private val tone = ToneStyleSettings(activity)
     private var languageValue: TextView? = null
-    private var providersValue: TextView? = null
-    private var modelStorageValue: TextView? = null
+    private val providerValues = mutableListOf<TextView>()
+    private var storageValue: TextView? = null
+    private var diagnostics: TextView? = null
     private var modelList: View? = null
-    private var modelShortcut: View? = null
-    private var storageSection: CollapsibleSettingsSection? = null
-    var startupHelp: View? = null
-        private set
+    private var updateValue: TextView? = null
+    private var updateRunning = false
+    private val installedVersion = runCatching { activity.packageManager.getPackageInfo(activity.packageName, 0).versionName }.getOrNull() ?: "Unknown"
     private fun providerSummary(): String = runCatching {
-        val store = ProviderProfiles(activity)
-        val profiles = store.all().associateBy { it.id }
+        val store = ProviderProfiles(activity); val profiles = store.all().associateBy { it.id }
         "Speech: ${profiles[store.activeSpeechId()]?.name ?: "Manual"}; cleanup: ${profiles[store.activeCleanupId()]?.name ?: "Manual"}"
     }.getOrDefault("Saved profile needs attention")
+    private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
+    private fun column() = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
+    private fun note(value: String) = ModernUi.label(activity, value, 14f, muted = true).apply { setPadding(dp(4), dp(10), dp(4), dp(12)) }
+    private fun row(label: String, action: () -> Unit) = ModernUi.settingRow(activity, label, action)
+    private fun message(value: String) = activity.runOnUiThread { if (!activity.isDestroyed) Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
+    fun saveState(out: Bundle) = router.saveState(out)
+    fun handleBack(): Boolean = router.handleBack()
+    fun openSystem() = router.open(SettingsDestination.SYSTEM)
+    fun openSpeech() = router.open(SettingsDestination.SPEECH)
+    fun openLanguageModels() = router.open(SettingsDestination.LANGUAGE)
+    fun updateReadiness(summary: String) = router.readiness("$summary · Review System setup")
+    internal fun resetCustomRefinements() { prefs.edit().remove("custom_instructions").apply(); activity.refreshSettings() }
     fun refresh() {
         languageValue?.text = DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title
-        providersValue?.text = providerSummary()
-        refreshModelStorage()
+        providerValues.forEach { it.text = providerSummary() }
+        val mic = androidx.core.content.ContextCompat.checkSelfPermission(activity, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val service = WhisperAccessibilityService.instance != null
+        val enabled = prefs.getBoolean("service_master_enabled", true)
+        router.readiness(if (!enabled) "Dictation is paused · Open System setup" else if (mic && service) "Microphone and accessibility ready · Review System setup" else "Setup needs attention · Open System setup")
+        diagnostics?.text = "Android ${android.os.Build.VERSION.RELEASE} · microphone ${if (mic) "granted" else "needed"} · accessibility ${if (service) "connected" else "disconnected"} · recognition ${if (prefs.getBoolean("use_local", true)) "local" else "cloud"} · cleanup ${if (prefs.getBoolean("use_post_processing", false)) "on" else "off"}. No keys or transcripts are included."
+        tone.refresh()
+        refreshStorage()
     }
-    private fun refreshModelStorage() {
-        val target = modelStorageValue ?: return
+    private fun refreshStorage() {
+        val target = storageValue ?: return
         thread {
-            val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
-            val installed = MODEL_CATALOG.count { ModelDownloader.isInstalled(activity, it) }
-            activity.runOnUiThread { if (!activity.isDestroyed) target.text = "$installed installed · ${android.text.format.Formatter.formatFileSize(activity, bytes)} · View models" }
+            val models = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            val audio = java.io.File(activity.filesDir, "recordings").walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            val db = activity.databaseList().sumOf { activity.getDatabasePath(it).length() }
+            activity.runOnUiThread { if (!activity.isDestroyed) target.text = "Models: ${android.text.format.Formatter.formatFileSize(activity, models)} · Audio: ${android.text.format.Formatter.formatFileSize(activity, audio)} · Databases: ${android.text.format.Formatter.formatFileSize(activity, db)}" }
         }
     }
-    private fun message(value: String) = activity.runOnUiThread { Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
-    private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
-    private fun heading(label: String) = TextView(activity).apply {
-        tag = "settings-group-heading"
-        text = label; textSize = 13f; setTypeface(typeface, android.graphics.Typeface.BOLD)
-        setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
-        setPadding(dp(2), dp(20), dp(2), dp(10))
-    }
-    private fun row(label: String, action: () -> Unit) = ModernUi.settingRow(activity, label, action)
-    fun build(models: View, cleanupControls: View, bubbleControls: View, backupControls: View, aboutControls: View): View {
-        val flat = LinearLayout(activity).apply {
-        orientation = LinearLayout.VERTICAL
-        addView(heading("Speech and language"))
-        val language = row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
-            activity.showLanguageProfilePicker()
-        }
-        languageValue = language.findViewWithTag("setting-subtitle")
-        addView(language)
-        addView(row("Transcription provider · URL, model and key") { provider() })
-        val providers = row("Saved providers · ${providerSummary()}") { ProviderProfilesUi(activity).show() }
-        providersValue = providers.findViewWithTag("setting-subtitle")
-        addView(providers)
-        addView(row("Language help") {
-            AlertDialog.Builder(activity).setTitle("Choosing a language")
-                .setMessage("English selects English recognition where supported. Auto-detect leaves language selection to your chosen model without restricting it to a shortlist. Only languages supported by that model can be recognized; English-only models remain English-only. Short phrases can be misidentified. Larger models need more storage and memory and may run more slowly.")
-                .setPositiveButton("Close", null).show()
-        })
-        addView(TextView(activity).apply {
-            text = "AI cleanup sends transcript text to your selected provider, even with offline recognition."
-            textSize = 14f; setPadding(dp(8), dp(4), dp(8), dp(8))
-        })
-        addView(heading("Recording"))
-        for ((key, label, default) in listOf(Triple("recording_sound", "Recording stop sound", true), Triple("recording_vibration", "Recording vibration", false))) {
-            addView(com.google.android.material.materialswitch.MaterialSwitch(activity).apply {
-                text = label; isChecked = prefs.getBoolean(key, default)
-                setPadding(dp(8), dp(6), dp(8), dp(6))
-                setOnCheckedChangeListener { _, checked -> prefs.edit().putBoolean(key, checked).apply() }
+    fun build(setup: View, engine: View, models: View, cleanupControls: View, bubbleControls: View, backupControls: View, interfaceControls: View, aboutControls: View): View {
+        val preferences = column().apply {
+            addView(row("Appearance · System, Light or Dark") {
+                choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) { AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1)) }
+            })
+            val language = row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") { activity.showLanguageProfilePicker() }.apply { tag = "settings-language" }
+            languageValue = language.findViewWithTag("setting-subtitle"); addView(language)
+            addView(note("English selects English recognition where supported. Auto-detect uses the languages supported by your chosen speech model. English-only models remain English-only."))
+            addView(interfaceControls)
+            for ((key, label, default) in listOf(Triple("recording_sound", "Recording stop sound", true), Triple("recording_vibration", "Recording vibration", false))) {
+                addView(com.google.android.material.materialswitch.MaterialSwitch(activity).apply {
+                    text = label; isChecked = prefs.getBoolean(key, default)
+                    setOnCheckedChangeListener { _, checked -> prefs.edit().putBoolean(key, checked).apply() }
+                })
+            }
+            addView(bubbleControls)
+            addView(note("Drag the bubble vertically on either edge, or drag it across to switch between the left and right edges. It docks to the nearest edge when released. During recording, the circle grows inward into a compact dotted waveform capsule and returns to a circle on stop. Tap to start or stop; hold for push-to-talk."))
+            addView(row("Typing speed · ${prefs.getInt("typing_wpm", 40)} words/minute") {
+                val input = EditText(activity).apply { inputType = InputType.TYPE_CLASS_NUMBER; setText(prefs.getInt("typing_wpm", 40).toString()) }
+                val dialog = AlertDialog.Builder(activity).setTitle("Typing speed (1–300 WPM)").setView(input).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
+                dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
+                    val value = input.text.toString().toIntOrNull()
+                    if (value == null || value !in 1..300) input.error = "Enter 1–300" else { prefs.edit().putInt("typing_wpm", value).apply(); dialog.dismiss() }
+                } }; dialog.show()
             })
         }
-        if (android.os.Build.MANUFACTURER.trim().lowercase(java.util.Locale.ROOT) in setOf("xiaomi", "redmi", "poco")) {
-            addView(ModernUi.settingRow(activity, activity.getString(R.string.background_autostart_row), {
-                AlertDialog.Builder(activity).setTitle(R.string.background_autostart_title)
-                    .setMessage(R.string.background_autostart_help)
-                    .setPositiveButton(R.string.background_autostart_open) { _, _ -> openBackgroundStartupSettings() }
-                    .setNegativeButton("Close", null).show()
-            }, R.drawable.ic_ui_background_startup).apply { tag = "startup-help" })
+        fun providers(): View = row("Saved providers · ${providerSummary()}") { ProviderProfilesUi(activity).show() }.also { providerValues += it.findViewWithTag<TextView>("setting-subtitle") }
+        val speech = column().apply {
+            addView(engine); addView(providers()); addView(row("Transcription provider · HTTPS URL, speech model and key") { provider() })
+            addView(note("Use cloud recognition without downloading a local model. Compatible custom endpoints use the existing OpenAI-compatible adapters; provider availability and language support vary."))
+            addView(ModernUi.label(activity, "Local models", 18f, strong = true).apply { tag = "settings-local-models" })
+            models.visibility = View.VISIBLE; modelList = models; addView(models)
         }
-        addView(heading("Storage and appearance"))
-        val models = row("Local models · View installed and downloadable models") { activity.openLocalModels() }
-        modelShortcut = models
-        modelStorageValue = models.findViewWithTag("setting-subtitle")
-        addView(models)
-        refreshModelStorage()
-        addView(row("Appearance · light, dark or system") {
-            choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) {
-                AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1))
+        val language = column().apply {
+            addView(note("Direct preserves recognized speech. AI Cleanup sends transcript text to the independently selected cleanup provider. Tone rules apply only when cleanup is enabled."))
+            addView(cleanupControls); addView(providers())
+            addView(row("View base cleanup prompt · Read-only faithful cleanup rules") {
+                AlertDialog.Builder(activity).setTitle("Base cleanup prompt (read-only)").setView(ScrollView(activity).apply { addView(note(PostProcessor.DEFAULT_PROMPT).apply { setTextIsSelectable(true) }) }).setPositiveButton("Close", null).show()
+            }.apply { tag = "settings-view-prompt" })
+            addView(row("Reset custom refinements · Return to the default cleanup prompt") { confirm("Remove custom refinements? The fixed cleanup prompt, dictionary and provider keys remain.") {
+                resetCustomRefinements(); message("Custom refinements reset")
+            } }.apply { tag = "settings-reset-prompt" })
+        }
+        val privacy = column().apply {
+            addView(note("Text history, dictionary, snippets and usage statistics are stored on this phone. Local speech recognition processes audio on-device. Cloud recognition sends recorded audio to your selected speech provider. Optional AI Cleanup sends transcript text, selected tone and custom refinements to your cleanup provider, including when speech recognition is local. App assignments and installed app lists are never sent."))
+            val audioLabel = note("")
+            fun audioSummary() { val days = prefs.getInt("audio_retention_days", 0); audioLabel.text = if (days == 0) "Audio saving is off (default). Recordings are discarded after recognition." else "Audio is saved locally for $days days." }
+            audioSummary(); addView(audioLabel)
+            addView(row("Keep audio · Choose retention") {
+                choose("Audio retention", listOf("Off — discard audio", "1 day", "7 days", "30 days"), listOf(0,1,7,30), "audio_retention_days", 0) { RetentionWorker.runSoon(activity); audioSummary(); refreshStorage() }
+            })
+            val retention = row("Text history retention · ${textRetention()}") { }
+            retention.setOnClickListener { choose("Keep text history", listOf("Until I delete it", "7 days", "30 days", "90 days"), listOf(0,7,30,90), "text_retention_days", 0) {
+                retention.findViewWithTag<TextView>("setting-subtitle").text = textRetention(); RetentionWorker.runSoon(activity)
+            } }; addView(retention)
+            storageValue = note("Calculating storage…"); addView(storageValue)
+            addView(backupControls)
+            addView(row("Clear text history") { confirm("Delete all saved text? Usage statistics remain.") { thread { HistoryRepository(activity).use { it.clearHistory() }; message("History cleared"); refreshStorage() } } })
+            addView(row("Reset statistics") { confirm("Reset usage statistics? Text history remains.") { thread { HistoryRepository(activity).use { it.resetStatistics() }; message("Statistics reset") } } })
+        }
+        val system = column().apply {
+            addView(setup)
+            if (android.os.Build.MANUFACTURER.trim().lowercase(java.util.Locale.ROOT) in setOf("xiaomi", "redmi", "poco")) {
+                addView(ModernUi.settingRow(activity, activity.getString(R.string.background_autostart_row), {
+                    AlertDialog.Builder(activity).setTitle(R.string.background_autostart_title).setMessage(R.string.background_autostart_help)
+                        .setPositiveButton(R.string.background_autostart_open) { _, _ -> openBackgroundStartupSettings() }.setNegativeButton("Close", null).show()
+                }, R.drawable.ic_ui_background_startup).apply { tag = "startup-help" })
             }
-        })
-        val audioDays = prefs.getInt("audio_retention_days", 0)
-        addView(row("Keep audio · ${if (audioDays == 0) "Off" else "$audioDays days"}") {
-            choose("Audio retention", listOf("Off — discard audio", "1 day", "7 days", "30 days"), listOf(0,1,7,30), "audio_retention_days", 0) {
-                RetentionWorker.runSoon(activity); activity.recreate()
-            }
-        })
-        addView(row("Text history retention") {
-            choose("Keep text history", listOf("Until I delete it", "7 days", "30 days", "90 days"), listOf(0,7,30,90), "text_retention_days", 0) {
-                RetentionWorker.runSoon(activity); activity.recreate()
-            }
-        })
-        addView(row("Typing speed · ${prefs.getInt("typing_wpm", 40)} words/minute") {
-            val input = EditText(activity).apply { inputType = InputType.TYPE_CLASS_NUMBER; setText(prefs.getInt("typing_wpm", 40).toString()) }
-            val dialog = AlertDialog.Builder(activity).setTitle("Typing speed (1–300 WPM)").setView(input).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
-            dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
-                val value = input.text.toString().toIntOrNull()
-                if (value == null || value !in 1..300) input.error = "Enter 1–300"
-                else { prefs.edit().putInt("typing_wpm", value).apply(); dialog.dismiss(); activity.recreate() }
-            } }; dialog.show()
-        })
-        addView(heading("Manage your data"))
-        addView(row("Clear text history") { confirm("Delete all saved text? Statistics remain.") {
-            thread { HistoryRepository(activity).use { it.clearHistory() }; message("History cleared") }
-        } })
-        addView(row("Reset statistics") { confirm("Reset usage statistics? Text history remains.") {
-            thread { HistoryRepository(activity).use { it.resetStatistics() }; message("Statistics reset") }
-        } })
+            addView(note("Installed version: $installedVersion"))
+            diagnostics = note("").apply { tag = "settings-diagnostics" }; addView(diagnostics)
+            updateValue = note(prefs.getString("update_last_summary", "Latest version: not checked. Checks run only when you tap Check for Updates.").orEmpty())
+            addView(updateValue)
+            addView(row("Check for Updates · GitHub release metadata only") { checkUpdates() }.apply { tag = "settings-check-updates" })
+            addView(aboutControls)
         }
-        val groups = linkedMapOf<String, LinearLayout>()
-        var current: LinearLayout? = null
-        while (flat.childCount > 0) {
-            val child = flat.getChildAt(0)
-            flat.removeView(child)
-            if (child.tag == "settings-group-heading") {
-                current = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
-                groups[(child as TextView).text.toString()] = current
-            } else if (child.tag == "startup-help") {
-                startupHelp = child
-            } else current?.addView(child)
-        }
-        val speech = groups.getValue("Speech and language")
-        val recording = groups.getValue("Recording")
-        val storage = groups.getValue("Storage and appearance")
-        val data = groups.getValue("Manage your data")
-        return LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            // Keep dictation language directly below the top-level engine controls.
-            val language = speech.getChildAt(0)
-            speech.removeView(language)
-            addView(language)
-            speech.addView(cleanupControls)
-            addView(CollapsibleSettingsSection(activity, "providers", "Providers and cleanup", "Saved services, API keys and text cleanup", speech))
-            recording.addView(bubbleControls)
-            addView(CollapsibleSettingsSection(activity, "recording", "Recording and bubble", "Size, preview and feedback", recording))
-            modelList = models
-            storage.addView(models, 1)
-            storageSection = CollapsibleSettingsSection(activity, "storage", "Storage and appearance", "Local models, themes and retention", storage)
-            addView(storageSection)
-            setModelsExpanded(prefs.getBoolean("settings_models_expanded", false))
-            data.addView(backupControls, 0)
-            addView(CollapsibleSettingsSection(activity, "data", "Backup and data", "Backups, history and statistics", data))
-            val about = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; addView(aboutControls) }
-            addView(CollapsibleSettingsSection(activity, "about", "About", "App language and project", about))
-        }
+        router.page(SettingsDestination.PREFERENCES, preferences); router.page(SettingsDestination.TONE, tone.view)
+        router.page(SettingsDestination.SPEECH, speech); router.page(SettingsDestination.LANGUAGE, language)
+        router.page(SettingsDestination.PRIVACY, privacy); router.page(SettingsDestination.SYSTEM, system)
+        refresh(); return router.view
     }
+    private fun textRetention(): String = prefs.getInt("text_retention_days", 0).let { if (it == 0) "Until I delete it" else "$it days" }
     fun toggleLocalModels() {
-        storageSection?.setExpanded(true)
-        val expanded = modelList?.visibility != View.VISIBLE
-        setModelsExpanded(expanded)
-        prefs.edit().putBoolean("settings_models_expanded", expanded).apply()
-        if (expanded) modelList?.post {
-            modelList?.let { it.requestRectangleOnScreen(android.graphics.Rect(0, 0, it.width, dp(80)), false) }
-        }
+        router.open(SettingsDestination.SPEECH)
+        modelList?.post { modelList?.let { it.requestRectangleOnScreen(android.graphics.Rect(0, 0, it.width, dp(80)), false) } }
     }
-    private fun setModelsExpanded(expanded: Boolean) {
-        modelList?.visibility = if (expanded) View.VISIBLE else View.GONE
-        modelShortcut?.stateDescription = if (expanded) "Expanded" else "Collapsed"
-        (modelShortcut as? LinearLayout)?.let { (it.getChildAt(it.childCount - 1) as? ImageView)?.rotation = if (expanded) 90f else 0f }
+    private fun checkUpdates() {
+        if (updateRunning) return
+        updateRunning = true; updateValue?.text = "Installed: $installedVersion · Checking GitHub…"
+        thread {
+            try {
+                val release = UpdateChecker.check()
+                activity.runOnUiThread {
+                    if (!activity.isDestroyed) {
+                        val installed = ReleaseVersion.parse(installedVersion)
+                        val newer = release != null && (installed == null || release.version > installed)
+                        val summary = "Installed: $installedVersion · Latest: ${release?.tag ?: "no valid releases"}" + if (newer) " · Update available" else " · No newer release"
+                        prefs.edit().putString("update_last_summary", summary).apply(); updateValue?.text = summary
+                        val dialog = AlertDialog.Builder(activity).setTitle(if (newer) "Update available" else "Release check").setMessage(summary + "\nDownload and install manually from the repository release page.").setNegativeButton("Close", null)
+                        if (release != null) dialog.setPositiveButton("Open release") { _, _ ->
+                            try { activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(release.url))) }
+                            catch (_: android.content.ActivityNotFoundException) { message("No browser is available") }
+                        }
+                        dialog.show()
+                    }
+                }
+            } catch (error: Exception) {
+                val description = when (error) {
+                    is java.net.SocketTimeoutException -> "Update check timed out. Try again."
+                    is java.net.UnknownHostException -> "Couldn’t reach GitHub. Check your connection."
+                    is java.io.IOException -> error.message ?: "Couldn’t reach GitHub. Try again."
+                    else -> "Couldn’t read release metadata. Try again later."
+                }
+                activity.runOnUiThread { if (!activity.isDestroyed) updateValue?.text = "Installed: $installedVersion · $description" }
+            } finally { activity.runOnUiThread { updateRunning = false } }
+        }
     }
     private fun confirm(label: String, action: () -> Unit) {
         AlertDialog.Builder(activity).setMessage(label).setPositiveButton("Confirm") { _, _ -> action() }.setNegativeButton("Cancel", null).show()
     }
     private fun openBackgroundStartupSettings() {
         val intents = listOf(
-            android.content.Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")
-                .putExtra("package_name", activity.packageName),
-            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                android.net.Uri.parse("package:${activity.packageName}")),
-        )
+            android.content.Intent().setClassName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity").putExtra("package_name", activity.packageName),
+            android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${activity.packageName}")))
         for (intent in intents) {
             try { activity.startActivity(intent); return }
-            catch (_: android.content.ActivityNotFoundException) { /* Try app information on other firmware. */ }
-            catch (_: SecurityException) { /* Vendor settings may deny external entry. */ }
+            catch (_: android.content.ActivityNotFoundException) { }
+            catch (_: SecurityException) { }
         }
         message(activity.getString(R.string.background_autostart_unavailable))
     }

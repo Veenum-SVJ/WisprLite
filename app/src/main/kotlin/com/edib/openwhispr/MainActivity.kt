@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
         cleanupProviderRowSub = cleanupProviderRow.findViewWithTag("subtitle")
         dictationContainer.addView(cleanupProviderRow)
 
-        customInstructionsRow = settingsRow(getString(R.string.add_custom_instructions), getString(R.string.tap_add_refinements)) {
+        customInstructionsRow = settingsRow("Custom refinements", getString(R.string.tap_add_refinements)) {
             promptCustomInstructions()
         }
         customInstructionsRowSub = customInstructionsRow.findViewWithTag("subtitle")
@@ -349,7 +349,7 @@ class MainActivity : AppCompatActivity() {
             tag = "bubble-size-preview"
             setImageResource(R.drawable.ic_app_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xEE245E5D.toInt()) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ContextCompat.getColor(this@MainActivity, R.color.brand_blue)) }
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         fun updateBubblePreview(percent: Int) {
@@ -470,8 +470,7 @@ class MainActivity : AppCompatActivity() {
         outer.addView(settingsContainer)
         showTab(0)
 
-        val allSettings = vertical(0).apply { tag = "wispr-settings" }
-        val extras = SettingsExtras(this)
+        val extras = SettingsExtras(this, savedInstanceState)
         settingsExtras = extras
         fun detach(view: View): View {
             (view.parent as? android.view.ViewGroup)?.removeView(view)
@@ -483,15 +482,14 @@ class MainActivity : AppCompatActivity() {
             addView(detach(keyRow))
         }
         detach(modelContainer)
-        // Engine remains immediately below Status, Setup and Service.
+        // Keep recognition and cleanup controls live while giving each one a single settings home.
         while (dictationContainer.childCount > 2) dictationContainer.removeViewAt(2)
-        allSettings.addView(detach(statusContainer))
-        allSettings.addView(detach(dictationContainer))
+        val interfaceControls = detach(aboutGroup.getChildAt(0))
         statusContainer.visibility = View.VISIBLE
         dictationContainer.visibility = View.VISIBLE
-        allSettings.addView(extras.build(modelContainer, cleanupControls, detach(bubbleSizePanel), detach(backupGroup), detach(aboutGroup)))
-        extras.startupHelp?.let { statusContainer.addView(it, 3) }
-        navigation = WisprNavigation(this, allSettings, savedInstanceState)
+        val allSettings = extras.build(detach(statusContainer), detach(dictationContainer), modelContainer, cleanupControls,
+            detach(bubbleSizePanel), detach(backupGroup), interfaceControls, detach(aboutGroup))
+        navigation = WisprNavigation(this, allSettings, savedInstanceState) { extras.handleBack() }
         setContentView(navigation!!.build())
 
         if (!hasPerm(Manifest.permission.RECORD_AUDIO)) {
@@ -508,7 +506,7 @@ class MainActivity : AppCompatActivity() {
         navigation?.close()
         super.onDestroy()
     }
-    override fun onSaveInstanceState(outState: Bundle) { navigation?.saveState(outState); super.onSaveInstanceState(outState) }
+    override fun onSaveInstanceState(outState: Bundle) { navigation?.saveState(outState); settingsExtras?.saveState(outState); super.onSaveInstanceState(outState) }
     override fun onRequestPermissionsResult(c: Int, p: Array<String>, r: IntArray) {
         super.onRequestPermissionsResult(c, p, r); refresh()
     }
@@ -530,6 +528,8 @@ class MainActivity : AppCompatActivity() {
         navigation?.openSettings()
         settingsExtras?.toggleLocalModels()
     }
+
+    internal fun refreshSettings() = refresh()
 
     // --- Model Rows ---
 
@@ -755,8 +755,8 @@ class MainActivity : AppCompatActivity() {
         batteryDot.background = dotDrawable(if (unrestricted) DOT_GREEN else DOT_RED)
 
         languageRowSub.text = languageSummary()
-        customInstructionsRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
-        cleanupProviderRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
+        customInstructionsRow.visibility = View.VISIBLE
+        cleanupProviderRow.visibility = View.VISIBLE
         cleanupProviderRowSub.text = cleanupProviderSummary()
 
         keyRowSub.text = if (hasGroqKey) getString(R.string.saved_securely) else getString(R.string.key_needed_hint)
@@ -784,14 +784,15 @@ class MainActivity : AppCompatActivity() {
             !audio -> getString(R.string.status_missing_audio) to null
             !acc && ServiceWatchdog.isEnabledInSettings(this) -> getString(R.string.status_accessibility_disconnected) to null
             !acc -> getString(R.string.status_missing_accessibility) to null
-            useLocal && !hasModel -> getString(R.string.status_missing_model) to { tabLayout.getTabAt(1)?.select(); Unit }
-            !useLocal && !hasTranscriptionKey -> getString(R.string.status_missing_key) to { navigation?.openSettings(); Unit }
-            usePostProcessing && !hasCleanupKey -> getString(R.string.status_missing_cleanup_key) to { tabLayout.getTabAt(2)?.select(); Unit }
+            useLocal && !hasModel -> getString(R.string.status_missing_model) to { openLocalModels(); Unit }
+            !useLocal && !hasTranscriptionKey -> getString(R.string.status_missing_key) to { navigation?.openSettings(); settingsExtras?.openSpeech(); Unit }
+            usePostProcessing && !hasCleanupKey -> getString(R.string.status_missing_cleanup_key) to { navigation?.openSettings(); settingsExtras?.openLanguageModels(); Unit }
             else -> null to null
         }
         val mode = (if (useLocal) getString(R.string.mode_on_device) else getString(R.string.mode_cloud)) +
             (if (usePostProcessing) getString(R.string.mode_cleanup_suffix) else "")
         statusSubtitle.text = if (ready) getString(R.string.status_ready_mode, mode) else missing ?: getString(R.string.setup_required)
+        settingsExtras?.updateReadiness(statusSubtitle.text.toString())
         statusSubtitle.setTextColor(if (ready) attrColor(androidx.appcompat.R.attr.colorPrimary) else attrColor(android.R.attr.textColorSecondary))
         statusDotView.background = dotDrawable(if (ready) DOT_GREEN else DOT_RED)
         statusAction = if (ready) null else action
@@ -1163,9 +1164,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptCustomInstructions() {
-        // The base cleanup prompt itself is fixed in PostProcessor and never
-        // shown here -- this only lets the user append their own extra
-        // refinements on top of it (see PostProcessor.effectivePrompt).
+        // Custom refinements append to the fixed faithful cleanup rules.
         val input = EditText(this).apply {
             hint = getString(R.string.custom_instructions_hint)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
@@ -1191,6 +1190,7 @@ class MainActivity : AppCompatActivity() {
                 refresh()
             }
             .setNegativeButton(getString(R.string.cancel), null)
+            .setNeutralButton("Reset to default") { _, _ -> prefs().edit().remove("custom_instructions").apply(); refresh() }
             .create()
         showResizingDialog(dialog)
     }
@@ -1374,6 +1374,7 @@ class MainActivity : AppCompatActivity() {
             "groq_api_key" to SecureKeyStorage.groqApiKey(this),
             "cleanup_api_key" to SecureKeyStorage.cleanupApiKey(this),
         ) + ProviderProfiles(this).exportKeys(),
+        snippets = SnippetRepository(this).use { it.all() },
     )
 
     /** Checklist with "select all"; [onConfirm] receives the chosen item ids. */
@@ -1468,13 +1469,15 @@ class MainActivity : AppCompatActivity() {
         val items = snapshot.prefs.keys.filterNot { SettingsBackup.isExcludedPreference(it) }.sorted()
             .map { prefItemId(it) to it } +
             snapshot.secrets.filterValues { it.isNotBlank() }.keys.sorted()
-                .map { secretItemId(it) to secretLabel(it) }
+                .map { secretItemId(it) to secretLabel(it) } +
+            listOf("data:snippets" to "Saved snippets (text)")
         chooseBackupItems(R.string.backup_choose_export, items) { chosen ->
             askPassphrase(exporting = true) { passphrase ->
                 backupPassphrase = passphrase
                 pendingExport = SettingsBackup.Snapshot(
                     prefs = snapshot.prefs.filterKeys { prefItemId(it) in chosen },
                     secrets = snapshot.secrets.filterKeys { secretItemId(it) in chosen },
+                    snippets = if ("data:snippets" in chosen) snapshot.snippets else null,
                 )
                 val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                 createBackupLauncher.launch("openwispr-backup-$date.owb")
@@ -1524,7 +1527,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun chooseRestoreItems(snapshot: SettingsBackup.Snapshot) {
         val items = snapshot.prefs.keys.sorted().map { prefItemId(it) to it } +
-            snapshot.secrets.keys.sorted().map { secretItemId(it) to secretLabel(it) }
+            snapshot.secrets.keys.sorted().map { secretItemId(it) to secretLabel(it) } +
+            (if (snapshot.snippets == null) emptyList() else listOf("data:snippets" to "Saved snippets (text)"))
         chooseBackupItems(R.string.backup_choose_restore, items) { chosen ->
             applySelected(snapshot, chosen)
         }
@@ -1556,6 +1560,7 @@ class MainActivity : AppCompatActivity() {
                 snapshot.prefs.keys.filter { prefItemId(it) in chosen }.toSet(), selectedSecrets.keys) + ("welcome_done" to true)
             val oldSettings = changes.keys.associateWith { original[it] }
             val oldSecrets = SecureKeyStorage.encryptedEntries(this, selectedSecrets.keys)
+            val oldSnippets = if ("data:snippets" in chosen && snapshot.snippets != null) SnippetRepository(this).use { it.all() } else null
             try {
                 writeSettings(changes)
                 for ((name, value) in selectedSecrets) when (name) {
@@ -1564,8 +1569,11 @@ class MainActivity : AppCompatActivity() {
                     "cleanup_api_key" -> SecureKeyStorage.saveCleanupApiKey(this, value)
                     else -> SecureKeyStorage.saveProfileApiKey(this, name.removePrefix("provider_profile_"), value)
                 }
+                if (oldSnippets != null) SnippetRepository(this).use { it.replaceAll(requireNotNull(snapshot.snippets)) }
             } catch (failure: Exception) {
-                try { SecureKeyStorage.restoreEncryptedEntries(this, oldSecrets) } finally { writeSettings(oldSettings) }
+                try { SecureKeyStorage.restoreEncryptedEntries(this, oldSecrets) } finally {
+                    try { writeSettings(oldSettings) } finally { if (oldSnippets != null) SnippetRepository(this).use { it.replaceAll(oldSnippets) } }
+                }
                 throw failure
             }
         } } catch (_: Exception) { toast("Couldn’t restore the chosen settings. Include saved profiles with their selections and matching keys for changed URLs."); return }

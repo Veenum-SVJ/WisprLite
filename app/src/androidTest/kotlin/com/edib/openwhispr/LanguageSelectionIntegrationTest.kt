@@ -27,12 +27,9 @@ class LanguageSelectionIntegrationTest {
                 scenario.onActivity { activity ->
                     val navigation = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     navigation.openSettings()
-                    val settings = navigation.javaClass.getDeclaredField("settings").apply { isAccessible = true }.get(navigation) as ViewGroup
+                    activity.window.decorView.findViewWithTag<View>("settings-open-PREFERENCES").performClick()
                     fun displayed(): String {
-                        val extras = settings.getChildAt(2) as ViewGroup
-                        val row = (0 until extras.childCount).map { extras.getChildAt(it) }.single { view ->
-                            view.isClickable && descendants(view).filterIsInstance<TextView>().any { it.text.toString() == "Language" }
-                        }
+                        val row = activity.window.decorView.findViewWithTag<View>("settings-language")
                         return row.findViewWithTag<TextView>("setting-subtitle").text.toString()
                     }
                     assertEquals("Auto-detect", displayed())

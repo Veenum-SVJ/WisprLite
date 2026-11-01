@@ -68,10 +68,11 @@ class StartupNavigationTest {
                     descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
                     descendants(root).filterIsInstance<TextView>().single { it.text.toString() == "Settings" }.performClick()
                     val labels = descendants(root).filterIsInstance<TextView>().map { it.text.toString() }
-                    assertTrue(labels.any { it.startsWith("Transcription provider") })
-                    assertTrue(labels.any { it.startsWith("Appearance") })
-                    assertTrue(labels.any { it.startsWith("Keep audio") })
-                    assertTrue(labels.any { it.startsWith("Text history retention") })
+                    for (label in listOf("Preferences", "Tone & Style", "Speech-to-Text", "Language Models", "Privacy & Data", "System")) assertTrue(label, label in labels)
+                    root.findViewWithTag<View>("settings-open-PRIVACY").performClick()
+                    assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Keep audio" })
+                    activity.onBackPressedDispatcher.onBackPressed()
+                    assertEquals(View.VISIBLE, root.findViewWithTag<View>("settings-index").visibility)
                     activity.onBackPressedDispatcher.onBackPressed()
                     assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Home" })
                 }

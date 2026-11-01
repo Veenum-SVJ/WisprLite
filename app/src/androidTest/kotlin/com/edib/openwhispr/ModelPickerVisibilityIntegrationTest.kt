@@ -34,24 +34,19 @@ class ModelPickerVisibilityIntegrationTest {
                 scenario.onActivity { activity ->
                     val navigation = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     navigation.openSettings()
-                    val settings = activity.window.decorView.findViewWithTag<android.widget.LinearLayout>("wispr-settings")
-                    val first = descendants(settings.getChildAt(0)).filterIsInstance<TextView>().map { it.text.toString() }
-                    assertTrue(activity.getString(R.string.setup) in first)
-                    assertTrue("Service" in first)
-                    val engine = descendants(settings.getChildAt(1)).filterIsInstance<TextView>().map { it.text.toString() }
-                    assertTrue(activity.getString(R.string.engine) in engine)
-                    assertEquals("There must be a single Local models entry", 1, descendants(settings).filterIsInstance<TextView>().count { it.text.toString() == "Local models" })
-                    activity.window.decorView.findViewWithTag<View>("settings-toggle-storage").performClick()
-                    val shortcut = descendants(activity.window.decorView).filterIsInstance<ViewGroup>().single { view ->
-                        view.isClickable && descendants(view).filterIsInstance<TextView>().any { it.text.toString() == "Local models" }
-                    }
-                    shortcut.performClick()
+                    val root = activity.window.decorView
+                    assertEquals(View.VISIBLE, root.findViewWithTag<View>("settings-index").visibility)
+                    root.findViewWithTag<View>("settings-open-SYSTEM").performClick()
+                    val systemLabels = descendants(root.findViewWithTag<View>("settings-detail")).filterIsInstance<TextView>().map { it.text.toString() }
+                    assertTrue(activity.getString(R.string.setup) in systemLabels)
+                    assertTrue("Service" in systemLabels)
+                    activity.onBackPressedDispatcher.onBackPressed()
+                    activity.openLocalModels()
                     val container = activity.javaClass.getDeclaredField("modelContainer").apply { isAccessible = true }.get(activity) as View
                     assertEquals(View.VISIBLE, container.visibility)
-                    shortcut.performClick()
+                    assertEquals("There must be a single Local models entry", 1, descendants(root).filterIsInstance<TextView>().count { it.text.toString() == "Local models" })
                     activity.javaClass.getDeclaredMethod("refresh").apply { isAccessible = true }.invoke(activity)
-                    assertEquals("A refresh must not reopen the collapsed model list", View.GONE, container.visibility)
-                    shortcut.performClick()
+                    assertEquals("Refresh preserves the speech detail page", "Speech-to-Text", root.findViewWithTag<TextView>("settings-detail-title").text.toString())
                 }
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
