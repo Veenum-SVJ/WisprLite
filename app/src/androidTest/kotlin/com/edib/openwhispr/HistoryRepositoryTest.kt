@@ -14,7 +14,10 @@ class HistoryRepositoryTest {
         context.deleteDatabase("wisprlite-instrumentation.db")
         repo = HistoryRepository(context, "wisprlite-instrumentation.db")
     }
-    @After fun finish() { repo.close() }
+    @After fun finish() {
+        repo.close()
+        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("wisprlite-instrumentation.db")
+    }
     @Test fun unicodeAndExactlyOnceCountersSurviveHistoryDeletion() {
         val record = DictationRecord("one", 1000, "Ẹ káàárọ̀, abeg send am", null, 3000, "Direct")
         repo.saveSuccessful(record)
@@ -69,10 +72,10 @@ class HistoryRepositoryTest {
         val record = DictationRecord("persisted", 1000, "Ṣọlá, báwo ni?", "Ṣọlá, báwo ni?", 200, "Cleanup")
         repo.saveSuccessful(record)
         repo.close()
-        // Version 1 is the only released schema. Future migrations must be explicit;
+        // Future migrations must be explicit;
         // an unsupported upgrade must not reset tables or partially change user_version.
         val production = HistoryDatabase(context, name)
-        val future = object : android.database.sqlite.SQLiteOpenHelper(context, name, null, 2) {
+        val future = object : android.database.sqlite.SQLiteOpenHelper(context, name, null, 99) {
             override fun onCreate(db: android.database.sqlite.SQLiteDatabase) = error("Existing fixture database required")
             override fun onUpgrade(db: android.database.sqlite.SQLiteDatabase, oldVersion: Int, newVersion: Int) =
                 production.onUpgrade(db, oldVersion, newVersion)
@@ -84,6 +87,28 @@ class HistoryRepositoryTest {
         repo = HistoryRepository(context, name)
         assertEquals(record, repo.listBefore().single())
         assertEquals(1L, repo.totals().recordings)
-        HistoryDatabase(context, name).use { assertEquals(1, it.readableDatabase.version) }
+        HistoryDatabase(context, name).use { assertEquals(2, it.readableDatabase.version) }
+    }
+
+    @Test fun expandedSearchIsLiteralAndPaginationPreservesCounters() {
+        val records = listOf(
+            DictationRecord("a", 1000, "say template", null, 100, "Direct", "Ẹ https://example.org/100%_done\\ok"),
+            DictationRecord("b", 1000, "100%_done\\ok original", "processed", 200, "Cleanup"),
+            DictationRecord("c", 1000, "noise", "100%_done\\ok cleaned", 300, "Cleanup"),
+            DictationRecord("d", 1000, "100XXdone wrong", null, 400, "Direct"))
+        records.forEach(repo::saveSuccessful)
+        assertEquals(records.first(), repo.listBefore(search = "Ẹ").single())
+        assertEquals(records.first().expanded, records.first().delivered)
+        assertEquals("processed", records[1].delivered)
+        val first = repo.listBefore(limit = 2, search = "100%_done\\ok")
+        assertEquals(listOf("c", "b"), first.map { it.id })
+        assertEquals(listOf("a"), repo.listBefore(HistoryCursor(1000, first.last().id), 2, "100%_done\\ok").map { it.id })
+        assertTrue(repo.listBefore(search = "' OR 1=1 --").isEmpty())
+        assertEquals(4, repo.events().size)
+        repo.clearHistory()
+        assertEquals(4, repo.events().size)
+        assertEquals(4L, repo.totals().recordings)
+        repo.resetStatistics()
+        assertTrue(repo.events().isEmpty())
     }
 }
