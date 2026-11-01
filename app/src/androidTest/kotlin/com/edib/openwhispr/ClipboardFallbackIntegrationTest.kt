@@ -27,7 +27,15 @@ class ClipboardFallbackIntegrationTest {
                 val deadline = SystemClock.uptimeMillis() + 45_000
                 while (WhisperAccessibilityService.instance == null && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
                 val service = requireNotNull(WhisperAccessibilityService.instance) { "Own accessibility service must be bound" }
+                scenario.onActivity { activity ->
+                    activity.setContentView(android.widget.TextView(activity).apply { text = "Clipboard fallback fixture" })
+                }
                 instrumentation.waitForIdleSync()
+                val windowDeadline = SystemClock.uptimeMillis() + 5_000
+                while (SystemClock.uptimeMillis() < windowDeadline && service.rootInActiveWindow
+                    ?.findAccessibilityNodeInfosByText("Clipboard fallback fixture").isNullOrEmpty()) SystemClock.sleep(50)
+                assertFalse("Non-editable fixture must be active", service.rootInActiveWindow
+                    ?.findAccessibilityNodeInfosByText("Clipboard fallback fixture").isNullOrEmpty())
                 scenario.onActivity { activity ->
                     val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     val previous = clipboard.primaryClip
@@ -35,7 +43,7 @@ class ClipboardFallbackIntegrationTest {
                         val phrase = "Ẹ káàárọ̀, Ṣọlá. Abeg send am."
                         val injected = service.javaClass.getDeclaredMethod("injectText", String::class.java, String::class.java, Long::class.javaPrimitiveType)
                             .apply { isAccessible = true }.invoke(service, phrase, null, 0L) as Boolean
-                        assertFalse("Home has no editable field; injection should use clipboard fallback", injected)
+                        assertFalse("Fixture has no editable field; injection should use clipboard fallback", injected)
                         val clip = requireNotNull(clipboard.primaryClip)
                         assertEquals(phrase, clip.getItemAt(0).text.toString())
                         assertTrue(clip.description.extras?.getBoolean("android.content.extra.IS_SENSITIVE") == true)

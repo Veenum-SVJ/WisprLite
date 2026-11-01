@@ -1,6 +1,6 @@
-# Privacy — WisprLite
+# Privacy — OpenWisper
 
-WisprLite records speech only after you start dictation using its floating microphone button. The Accessibility Service identifies a focused text field and inserts the result. It does not upload the field's surrounding text for transcription or cleanup.
+OpenWisper records speech only after you start dictation using its floating microphone button. The Accessibility Service identifies a focused text field and inserts the result. It does not upload the field's surrounding text for transcription or cleanup.
 
 ## Local and cloud processing
 Local speech recognition processes audio on the phone. If a compatible local model is unavailable, dictation is refused; there is no automatic cloud fallback. Known speech-model packs download from the sherpa-onnx GitHub releases.
@@ -20,4 +20,4 @@ Per-app tone rules use the destination app identifier locally. The launcher app 
 When inserting text, the app may place it on the clipboard. On supported Android versions the clip is marked sensitive. The microphone, accessibility, notification and battery-management permissions support dictation and its background availability. You can pause the service or revoke permissions in Android Settings.
 
 ## Services
-WisprLite has no account, analytics service, transcript sync or relay backend. Source and updates are available from https://github.com/Veenum-SVJ/WisprLite. An explicit update check contacts the public GitHub releases API without transcripts or provider keys. The app does not install APK updates itself.
+OpenWisper has no account, analytics service, transcript sync or relay backend. Source and updates are available from https://github.com/Veenum-SVJ/OpenWisper. An explicit update check contacts the public GitHub releases API without transcripts or provider keys. The app does not install APK updates itself.

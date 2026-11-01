@@ -164,6 +164,7 @@ class MainScreensIntegrationTest {
                 descendants(activity.window.decorView).single { it.contentDescription == "Delete WisprLite" }.performClick()
                 dialog(screen).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             }
+            awaitUi(scenario) { activity -> descendants(activity.window.decorView).none { it.contentDescription == "Delete WisprLite" } }
             assertEquals(2, Dictionary.load(prefs).size)
             assertEquals(listOf("Shola", "Sola", "Scholar"), Dictionary.parseEntries(prefs.getString(Dictionary.PREF_KEY, null)).single { it.canonical == "Ṣọlá" }.aliases)
         } finally { scenario.onActivity { screen.close() } }

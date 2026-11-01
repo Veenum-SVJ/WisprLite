@@ -41,54 +41,58 @@ Status: approved; execution in progress in isolated .tools/redesign worktree on 
 - [x] Confirm transcript-only search, spoken snippets and per-app tone/manual override.
 - [x] Full design and static logo/screen proposal approved; reviewer found no blocking questions.
 - [x] Created isolated .tools/redesign worktree on codex/openwhispr-redesign; no AGENTS.md found; baseline clean.
-- [ ] Record app/data/signing constraints and baseline checks. Do not copy or expose keys or reset phone data.
+- [x] Record app/data/signing constraints and baseline checks. Do not copy or expose keys or reset phone data.
 
 ## 2. Brand and navigation shell
-- [ ] Update native vector launcher/splash/header mark and DottedVoiceDrawable, with one #2056DF blue disk/ring interior and denser small white dots.
-- [ ] Update values/colors.xml, values-night/colors.xml, ModernUi.kt and overlay brand colors with light/dark contrast checks; preserve voice amplitude/hold/tap/drag behavior.
-- [ ] Split screen responsibilities out of WisprNavigation.kt/MainActivity.kt as needed rather than further growing those files. Keep native Views and existing repositories/providers.
-- [ ] Add Settings category index/detail/back state, preserve readiness visibility and existing settings handlers. Model management has one destination. Retain right-side drawer.
+- [x] Update native vector launcher/splash/header mark and DottedVoiceDrawable, with one #2056DF blue disk/ring interior and denser small white dots.
+- [x] Update values/colors.xml, values-night/colors.xml, ModernUi.kt and overlay brand colors with light/dark contrast checks; preserve voice amplitude/hold/tap/drag behavior.
+- [x] Split screen responsibilities out of WisprNavigation.kt/MainActivity.kt as needed rather than further growing those files. Keep native Views and existing repositories/providers.
+- [x] Add Settings category index/detail/back state, preserve readiness visibility and existing settings handlers. Model management has one destination. Retain right-side drawer.
 - [ ] Validate layout/rotation/keyboard/large text with synthetic preview data before migrating storage.
 
 ## 3. Storage and deterministic text pipeline
-- [ ] Implement tested transactional schema v2 migration in HistoryDatabase.kt; add SnippetRepository and optional expanded text; retain existing rows/events/IDs.
-- [ ] Add normalized unique-trigger validation and a pure SnippetExpander with longest-match, Unicode boundaries and nonrecursive behavior.
-- [ ] Integrate into WhisperAccessibilityService.kt after dictionary normalization and before optional cleanup. Protect exact replacement payloads with validated placeholders; persist raw/expanded/cleaned text correctly.
+- [x] Implement tested transactional schema v2 migration in HistoryDatabase.kt; add SnippetRepository and optional expanded text; retain existing rows/events/IDs.
+- [x] Add normalized unique-trigger validation and a pure SnippetExpander with longest-match, Unicode boundaries and nonrecursive behavior.
+- [x] Integrate into WhisperAccessibilityService.kt after dictionary normalization and before optional cleanup. Protect exact replacement payloads with validated placeholders; persist raw/expanded/cleaned text correctly.
 - [ ] Extend SettingsBackup.kt/import UI/version validation for snippet and tone data while reading v1 exports. Test round-trip, duplicates, corrupt data, interrupted migration and rollback.
 - [ ] Prove missing/disabled snippets, direct mode, cleanup failure and no unexpected cloud calls using fixtures, not personal addresses or API keys.
 
 ## 4. Dictionary and Home
-- [ ] Replace the multiline-only Dictionary editor with Dictionary/Snippets tabs and searchable list/edit/add/delete; preserve canonical aliases.
-- [ ] Add paginated transcript search on the repository worker, debounce/cancellation, escaping, empty/no-results states and accurate original/processed search.
-- [ ] Restyle date groups and transcript rows; retain minimal inline Copy/Delete/expand/original/cleanup actions. No calendar, notes or promotional cards.
-- [ ] Update meaningful UI tests to navigate the new pages instead of assuming the old view index/accordion structure.
+- [x] Replace the multiline-only Dictionary editor with Dictionary/Snippets tabs and searchable list/edit/add/delete; preserve canonical aliases.
+- [x] Add paginated transcript search on the repository worker, debounce/cancellation, escaping, empty/no-results states and accurate original/processed search.
+- [x] Restyle date groups and transcript rows; retain minimal inline Copy/Delete/expand/original/cleanup actions. No calendar, notes or promotional cards.
+- [x] Update meaningful UI tests to navigate the new pages instead of assuming the old view index/accordion structure.
 
 ## 5. Tone & Style
-- [ ] Add category/per-package rule store and an app picker with scoped launcher queries.
-- [ ] Capture destination at recording start; add one-dictation manual override without overloading tap/hold bubble gestures.
-- [ ] Integrate style only with opted-in cleanup, preserving numbers/names/meaning and exact snippet payloads. Direct mode remains AI-free.
+- [x] Add category/per-package rule store and an app picker with scoped launcher queries.
+- [x] Capture destination at recording start; add one-dictation manual override without overloading tap/hold bubble gestures.
+- [x] Integrate style only with opted-in cleanup, preserving numbers/names/meaning and exact snippet payloads. Direct mode remains AI-free.
 - [ ] Test package switches, keyboard/overlay focus, unknown apps, disabled cleanup, override consumption and process restoration without exporting app inventory.
 
 ## 6. Insights
-- [ ] Add event aggregation for daily words/count/duration, recognized WPM, current/longest streak, timezone/DST and date ranges.
-- [ ] Replace donut-led design with metric tiles and native speaking-activity heatmap/day details; retain secondary duration/typing estimate.
+- [x] Add event aggregation for daily words/count/duration, recognized WPM, current/longest streak, timezone/DST and date ranges.
+- [x] Replace donut-led design with metric tiles and native speaking-activity heatmap/day details; retain secondary duration/typing estimate.
 - [ ] Verify against deterministic fixtures and accessible non-color/day-list equivalents, zero data and retained events after deleting history.
 
 ## 7. Providers, privacy and system
-- [ ] Move existing editors into Speech-to-Text / Language Models without losing provider profiles or forcing local models.
-- [ ] Add prompt View/Edit/Reset; explicit opt-in synthetic preview/test only if implemented; retain guarded cleanup behavior.
-- [ ] Put privacy explanation, retention, storage, backup and destructive confirmations in Privacy & Data.
-- [ ] Add explicit release check using existing OkHttp, prerelease-aware version comparison and external release link; handle offline/404/403/timeouts. No silent install.
+- [x] Move existing editors into Speech-to-Text / Language Models without losing provider profiles or forcing local models.
+- [x] Add prompt View/Edit/Reset; explicit opt-in synthetic preview/test only if implemented; retain guarded cleanup behavior.
+- [x] Put privacy explanation, retention, storage, backup and destructive confirmations in Privacy & Data.
+- [x] Add explicit release check using existing OkHttp, prerelease-aware version comparison and external release link; handle offline/404/403/timeouts. No silent install.
 
 ## 8. Verify and deliver
-- [ ] Run ./gradlew.bat testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug assembleRelease lintRelease --no-daemon, using workspace .tools/gradle.
-- [ ] Run relevant device tests on authorized connected phones. Keep core mic denial, gestures, recording cancellation, native/web insertion and optional offline checks; do not call intermittent results universally fixed.
+- [x] Run ./gradlew.bat testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug assembleRelease lintRelease --no-daemon, using workspace .tools/gradle.
+- [x] Run relevant device tests on authorized connected phones. Keep core mic denial, gestures, recording cancellation, native/web insertion and optional offline checks; do not call intermittent results universally fixed.
 - [ ] Test actual user opt-in provider flows without exposing keys; don't automatically spend API quota or download GB models for a visual test.
-- [ ] Build optimized APK, verify signature and 16 KiB ZIP alignment; measure bytes and compare baseline.
-- [ ] Reuse the existing installation signer for adb install -r; never uninstall com.veenum.wisprlite to bypass a mismatch. Keep production signing material private.
-- [ ] Remove owned fixtures/test package, restore only own accessibility binding, preserve other services and confirm daily-use startup.
+- [x] Build optimized APK, verify signature and 16 KiB ZIP alignment; measure bytes and compare baseline.
+- [x] Reuse the existing installation signer for adb install -r; never uninstall com.veenum.wisprlite to bypass a mismatch. Keep production signing material private.
+- [x] Remove owned fixtures/test package, restore only own accessibility binding, preserve other services and confirm daily-use startup.
 - [ ] Scan staged changes, commit/push authorized source, verify CI and publish approved APK with accurate release notes. Keep screenshots/private data ignored.
 
 ## Usage-limit strategy
 
 No five-hour completion promise. Prioritize usable checkpoints: brand/navigation -> storage/pipeline -> Dictionary/Snippets/search -> tone -> Insights/settings polish -> verification/release. Keep feature work on the development branch until gates pass; don't replace the user's working APK with a partially implemented build. Update handoff with exact commit, commands, failures, connected-device state and next step after each checkpoint. If interrupted, stop after saving a truthful handoff, not after inventing completion.
+
+## Verification closeout
+
+See `docs/testing/openwisper-0.2.0.md`: 154 JVM tests, lint/build and 43 Redmi checks passed; independent branch review findings fixed. Some original broad test bullets remain unchecked rather than implying exhaustive coverage: actual landscape, every external app's tone routing, interrupted-write recovery and new live provider trials were not established. They are disclosed validation limits, not missing product controls. Pixel was disconnected; final delivery targets the authorized connected Redmi and reusable APK. No new API quota/model downloads spent. Public release operations are recorded in the handoff.
