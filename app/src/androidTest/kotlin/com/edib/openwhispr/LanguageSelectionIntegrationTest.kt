@@ -35,15 +35,15 @@ class LanguageSelectionIntegrationTest {
                         }
                         return row.findViewWithTag<TextView>("setting-subtitle").text.toString()
                     }
-                    assertEquals("Yorùbá", displayed())
-                    for (profile in listOf(DictationLanguage.ENGLISH, DictationLanguage.AUTO, DictationLanguage.PIDGIN, DictationLanguage.YORUBA)) {
+                    assertEquals("Auto-detect", displayed())
+                    for (profile in listOf(DictationLanguage.ENGLISH, DictationLanguage.AUTO)) {
                         activity.selectLanguageProfile(profile)
                         assertEquals(profile.name, prefs.getString("language_profile", null))
                         assertEquals(profile.languageCode.orEmpty(), TranscriptionLanguages.localWhisperLanguage(prefs))
                         assertEquals("Visible language must follow the actual saved selection", profile.title, displayed())
                     }
                     navigation.refresh()
-                    assertEquals("Yorùbá", displayed())
+                    assertEquals("Auto-detect", displayed())
                 }
             }
         } finally {

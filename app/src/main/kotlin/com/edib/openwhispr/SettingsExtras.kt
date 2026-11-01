@@ -43,7 +43,7 @@ class SettingsExtras(private val activity: MainActivity) {
         addView(providers)
         addView(row("Language help") {
             AlertDialog.Builder(activity).setTitle("Choosing a language")
-                .setMessage("Mixed/Auto lets the model detect the language and can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints where a separate Pidgin code is unavailable. Recognition and tone-mark accuracy depend on your model.")
+                .setMessage("English selects English recognition where supported. Auto-detect leaves language selection to your chosen model without restricting it to a shortlist. Only languages supported by that model can be recognized; English-only models remain English-only. Short phrases can be misidentified. Larger models need more storage and memory and may run more slowly.")
                 .setPositiveButton("Close", null).show()
         })
         addView(TextView(activity).apply {

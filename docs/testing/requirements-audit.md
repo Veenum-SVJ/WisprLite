@@ -1,3 +1,5 @@
+> Current scope amendment (2026-11-01): English-first daily use, with only English and Auto-detect choices. Explicit Yoruba/Pidgin profiles and further personal language trials were withdrawn by the user. Historical failures below remain recorded; they do not establish supported-language accuracy. See [daily-use handoff](/docs/testing/daily-use-handoff.md).
+
 # Requirements audit — open until evidence is complete
 
 The goal remains the full approved PRD/design and seven-task plan. This file records outstanding work; passing builds are not treated as proof of speech accuracy.

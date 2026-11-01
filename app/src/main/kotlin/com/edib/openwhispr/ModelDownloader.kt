@@ -39,7 +39,7 @@ private val PARAKEET_V3_LANGUAGES = setOf(
     "mt", "pl", "pt", "ro", "sk", "sl", "es", "sv", "ru", "uk",
 )
 
-private val WHISPER_LANGUAGES = TranscriptionLanguages.CODES.toSet()
+private val WHISPER_LANGUAGES = TranscriptionLanguages.CODES.filterNot { it == "yue" }.toSet()
 
 val MODEL_CATALOG = listOf(
     Model("Parakeet 110M", "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8",
@@ -62,6 +62,18 @@ val MODEL_CATALOG = listOf(
     Model("Whisper Small (multilingual)", "sherpa-onnx-whisper-small",
         640, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES,
         downloadBytes = 639387718),
+    Model("Whisper Medium (multilingual)", "sherpa-onnx-whisper-medium",
+        1932, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES,
+        downloadBytes = 1931372882),
+    Model("Whisper Large-v2 (multilingual)", "sherpa-onnx-whisper-large-v2",
+        1135, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = WHISPER_LANGUAGES,
+        downloadBytes = 1134475725),
+    Model("Whisper Large-v3 (multilingual)", "sherpa-onnx-whisper-large-v3",
+        1069, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = TranscriptionLanguages.CODES.toSet(),
+        downloadBytes = 1068482488),
+    Model("Whisper Turbo (multilingual)", "sherpa-onnx-whisper-turbo",
+        564, R.string.model_quality_best, ModelArchitecture.WHISPER, languages = TranscriptionLanguages.CODES.toSet(),
+        downloadBytes = 563790207),
 )
 
 sealed class DownloadState {

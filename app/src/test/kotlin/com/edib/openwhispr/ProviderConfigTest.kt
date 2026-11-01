@@ -33,8 +33,12 @@ class ProviderConfigTest {
     }
     @Test fun `language profiles only force supported explicit codes`() {
         assertNull(DictationLanguage.AUTO.languageCode)
-        assertEquals("en", DictationLanguage.PIDGIN.languageCode)
         assertEquals("en", DictationLanguage.ENGLISH.languageCode)
-        assertEquals("yo", DictationLanguage.YORUBA.languageCode)
+        assertEquals(listOf(DictationLanguage.AUTO, DictationLanguage.ENGLISH), DictationLanguage.entries.toList())
+        assertEquals(DictationLanguage.AUTO, DictationLanguage.fromSaved("YORUBA"))
+        assertEquals(DictationLanguage.AUTO, DictationLanguage.fromSaved("PIDGIN"))
+        assertEquals(DictationLanguage.ENGLISH, DictationLanguage.fromSaved(null))
+        assertTrue(DictationLanguage.AUTO.acceptsModel(setOf("fr", "de")))
+        assertEquals("", DictationLanguage.AUTO.recognitionHint)
     }
 }

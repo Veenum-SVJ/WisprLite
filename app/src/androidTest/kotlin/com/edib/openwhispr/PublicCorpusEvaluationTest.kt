@@ -21,6 +21,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
  */
 @RunWith(AndroidJUnit4::class)
 class PublicCorpusEvaluationTest {
+    private data class ResearchLanguage(val name: String, val languageCode: String, val recognitionHint: String = "")
     @Test fun measureSavedProviderOnPinnedPublicSpeech() {
         val arguments = InstrumentationRegistry.getArguments()
         val provider = arguments.getString("publicCorpusProvider")
@@ -42,8 +43,8 @@ class PublicCorpusEvaluationTest {
         }
         assertTrue("Configure the saved provider key in WisprLite", selected.key.isNotBlank())
         val fixtures = listOf(
-            Triple("yoruba.wav", DictationLanguage.YORUBA, "f99f74cd579a9e63dfdde864856b6111426019dbd345557584c8519bc95306bb"),
-            Triple("pidgin.wav", DictationLanguage.PIDGIN, "35d76258b77a840c166d698696d08144e2e1ac9ca1f28c738a1b42f636ff47e4"),
+            Triple("yoruba.wav", ResearchLanguage("YORUBA", "yo"), "f99f74cd579a9e63dfdde864856b6111426019dbd345557584c8519bc95306bb"),
+            Triple("pidgin.wav", ResearchLanguage("PIDGIN", "en", "Nigerian Pidgin: Abeg, I dey come. Na so e be. Make we go."), "35d76258b77a840c166d698696d08144e2e1ac9ca1f28c738a1b42f636ff47e4"),
         )
         val directory = File(context.cacheDir, "public-corpus-eval")
         // Validate every fixture before making any paid request.

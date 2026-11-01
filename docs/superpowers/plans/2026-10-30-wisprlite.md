@@ -1,3 +1,5 @@
+> Current scope amendment (2026-11-01): English-first daily use, with only English and Auto-detect choices. Explicit Yoruba/Pidgin profiles and further personal language trials were withdrawn by the user. Historical failures below remain recorded; they do not establish supported-language accuracy. See [daily-use handoff](/docs/testing/daily-use-handoff.md).
+
 # WisprLite Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
@@ -73,5 +75,5 @@ Device-scope amendment: the user disconnected/took the Pixel 6 and explicitly di
 - [x] Enable release shrinking/resource shrinking and add only proven required keep rules; build lint/test/debug/release artifacts.
 - [x] Use adb devices -l; install only on user-authorized connected test device, without uninstalling their existing app.
 - [x] Test recording/insertion in standard fields and custom composers; airplane mode; background recovery; optional retention; custom cloud provider and cleanup if credentials entered in-app. Groq synthetic speech/cleanup passed; Google request failures and model-quality failures remain explicitly recorded separately.
-- [ ] Run English/Yoruba/Pidgin/mixed evaluation, retaining Pixel 6 baseline results and targeting remaining physical trials to Redmi 12 per the user's amendment; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
+- [x] Complete revised English-first evaluation (Yoruba/Pidgin accuracy acceptance withdrawn by user), retaining Pixel 6 baseline results and targeting remaining physical trials to Redmi 12 per the user's amendment; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
 - [ ] Inspect final diff and staged content for secrets; commit and push to authorized public WisprLite repository. Supply APK, repository link, measured results, and remaining limitations.

@@ -959,8 +959,7 @@ class MainActivity : AppCompatActivity() {
         val values = DictationLanguage.entries
         val selected = DictationLanguage.fromSaved(prefs().getString("language_profile", null))
         val labels = values.map { profile -> when (profile) {
-            DictationLanguage.AUTO -> "Mixed / Auto · guesses the language"
-            DictationLanguage.PIDGIN -> "Nigerian Pidgin · English-based recognition"
+            DictationLanguage.AUTO -> "Auto-detect · supported languages depend on the model"
             else -> profile.title
         } }.toTypedArray()
         android.app.AlertDialog.Builder(this).setTitle("Dictation language")
@@ -973,10 +972,6 @@ class MainActivity : AppCompatActivity() {
         prefs().edit().putString("language_profile", profile.name).apply()
         val selected = profile.languageCode?.let { setOf(it) } ?: emptySet()
         saveTranscriptionLanguages(selected)
-        if (profile in setOf(DictationLanguage.AUTO, DictationLanguage.PIDGIN) && prefs().getBoolean("use_local", true)) {
-            // Auto and Pidgin benefit from multilingual recognition, without claiming native Pidgin support.
-            suggestModelForLanguages(setOf("en", "yo"))
-        }
         navigation?.refresh()
     }
 

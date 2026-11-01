@@ -1,3 +1,5 @@
+> Current scope amendment (2026-11-01): English-first daily use, with only English and Auto-detect choices. Explicit Yoruba/Pidgin profiles and further personal language trials were withdrawn by the user. Historical failures below remain recorded; they do not establish supported-language accuracy. See [daily-use handoff](/docs/testing/daily-use-handoff.md).
+
 # Model provider badges
 
 The model picker identifies each model family with its provider's official logo. These marks are publisher labels, not WisprLite branding or an endorsement. Settings controls continue to use WisprLite's custom Signal icons.
@@ -27,3 +29,16 @@ The transcription adapter accepts HTTPS Whisper-compatible multipart audio trans
 Example: Groq base URL `https://api.groq.com/openai/v1`, speech model `whisper-large-v3-turbo`, and a Groq-issued API key. Other API formats require an adapter; newer APIs with different language parameters are not automatically compatible.
 
 Sources: [sherpa-onnx model release](https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models), [Groq speech API](https://console.groq.com/docs/speech-to-text).
+
+## Larger multilingual options
+
+The catalog also includes these official sherpa-onnx ASR archives:
+
+| Pack | Download bytes | Language metadata |
+| --- | ---: | --- |
+| Whisper Medium | 1,931,372,882 | 99 languages |
+| Whisper Large-v2 | 1,134,475,725 | 99 languages |
+| Whisper Large-v3 | 1,068,482,488 | 100 languages |
+| Whisper Turbo | 563,790,207 | 100 languages |
+
+These are compatible ONNX exports, not desktop GGUF/Q5 files. Model metadata supplies Whisper's feature dimension, including 128-bin v3/Turbo exports. The downloader uses Long byte counts and bounded extraction (2 GiB per file, 4 GiB total); available disk space and RAM remain practical constraints. Download size differs from compact installed storage. These newly listed larger packs have not been measured on either phone and are never downloaded automatically. Choose Auto-detect for model-supported languages, or English for explicit English decoding.

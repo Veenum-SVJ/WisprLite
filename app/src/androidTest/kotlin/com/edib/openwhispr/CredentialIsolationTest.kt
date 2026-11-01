@@ -15,16 +15,16 @@ class CredentialIsolationTest {
         try {
             prefs.edit().putStringSet(TranscriptionLanguages.PREF_KEY, setOf("zh"))
                 .putString("language_profile", "YORUBA").commit()
-            assertEquals(setOf("yo"), TranscriptionLanguages.saved(prefs))
-            assertEquals("yo", TranscriptionLanguages.localWhisperLanguage(prefs))
+            assertEquals(emptySet<String>(), TranscriptionLanguages.saved(prefs))
+            assertEquals("", TranscriptionLanguages.localWhisperLanguage(prefs))
             prefs.edit().putString("language_profile", "PIDGIN").commit()
-            assertEquals(setOf("en"), TranscriptionLanguages.saved(prefs))
-            assertEquals("en", TranscriptionLanguages.localWhisperLanguage(prefs))
+            assertEquals(emptySet<String>(), TranscriptionLanguages.saved(prefs))
+            assertEquals("", TranscriptionLanguages.localWhisperLanguage(prefs))
             prefs.edit().putString("language_profile", "AUTO").commit()
             assertTrue(TranscriptionLanguages.saved(prefs).isEmpty())
             assertEquals("", TranscriptionLanguages.localWhisperLanguage(prefs))
             prefs.edit().remove("language_profile").commit()
-            assertEquals(setOf("zh"), TranscriptionLanguages.saved(prefs))
+            assertEquals(setOf("en"), TranscriptionLanguages.saved(prefs))
         } finally { prefs.edit().clear().commit() }
     }
     @Test fun encryptedBackupRoundTripRestoresIndependentKeysOnDevice() {

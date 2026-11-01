@@ -12,6 +12,27 @@ import org.junit.runner.RunWith
 /** Explicit one-time trial setup, excluded from regression suites and the app APK. */
 @RunWith(AndroidJUnit4::class)
 class PrepareMixedVoiceUtility {
+    @Test fun restorePreviousLanguageAfterTrial() {
+        require(InstrumentationRegistry.getArguments().getString("confirmedSetup") == "restore_mixed_voice_language")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val prefs = context.getSharedPreferences("openwhispr", 0)
+        val file = File(context.cacheDir, "mixed-voice-trial-language.json")
+        val saved = JSONObject(file.readText(Charsets.UTF_8))
+        val previous = saved.optString("profile")
+        require(prefs.getString("language_profile", null) in setOf(DictationLanguage.AUTO.name, previous)) {
+            "Do not overwrite a different language selected by the user after the trial"
+        }
+        val edit = prefs.edit()
+        if (saved.getBoolean("had_profile")) edit.putString("language_profile", previous) else edit.remove("language_profile")
+        if (saved.getBoolean("had_legacy")) {
+            val values = saved.getJSONArray("legacy")
+            edit.putStringSet(TranscriptionLanguages.PREF_KEY, (0 until values.length()).map { values.getString(it) }.toSet())
+        } else edit.remove(TranscriptionLanguages.PREF_KEY)
+        assertTrue(edit.commit())
+        assertEquals(previous, prefs.getString("language_profile", null))
+        assertTrue(file.delete())
+        println("MIXED_VOICE_LANGUAGE_RESTORED: provider/model/cleanup settings unchanged")
+    }
     @Test fun prepareExistingCloudProviderForFixedMixedPhrase() {
         require(InstrumentationRegistry.getArguments().getString("confirmedSetup") == "mixed_voice_trial")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
