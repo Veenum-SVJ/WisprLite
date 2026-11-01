@@ -322,6 +322,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                 orientation = LinearLayout.VERTICAL; background = ModernUi.surface(activity)
                 tag = "insights_$label"; setPadding(dp(18), dp(16), dp(18), dp(16))
                 addView(ModernUi.label(activity, label, 14f, strong = true, muted = true))
+                addView(InsightDonutView(activity, totals.speakingMillis / 1000.0, saved), LinearLayout.LayoutParams(-1, dp(156)))
                 addView(LinearLayout(activity).apply {
                     gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(10), 0, dp(14))
                     addView(LinearLayout(activity).apply {
@@ -331,7 +332,13 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
                     }, LinearLayout.LayoutParams(0, -2, 1f))
                     addView(ModernUi.label(activity, "${totals.recordings} recordings", 15f, strong = true))
                 })
-                addView(ModernUi.label(activity, "${totals.speakingMillis / 60000} min speaking     ${saved.toInt() / 60} min estimated saved", 13f, muted = true))
+                fun duration(seconds: Long): String = if (seconds < 60) "$seconds sec" else "${seconds / 60} min ${seconds % 60} sec"
+                addView(ModernUi.label(activity, "Speaking · ${duration(totals.speakingMillis / 1000)}", 14f, strong = true))
+                addView(ModernUi.label(activity, "Estimated time saved · ${duration(saved.toLong())}", 14f).apply {
+                    setTextColor(ModernUi.color(activity, R.color.primary))
+                })
+                addView(ModernUi.label(activity, if (totals.recordings == 0L) "Your chart fills as you dictate."
+                    else "Teal: estimated time saved. Grey: speaking time. Based on ${prefs.getInt("typing_wpm", 40).coerceAtLeast(1)} words/min typing; excludes processing time.", 12f, muted = true))
             }
             content.addView(panel, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
         }

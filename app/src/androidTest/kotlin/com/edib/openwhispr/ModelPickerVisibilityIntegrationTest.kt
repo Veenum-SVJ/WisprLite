@@ -24,18 +24,33 @@ class ModelPickerVisibilityIntegrationTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val prefs = context.getSharedPreferences("openwhispr", 0)
-        val previous = listOf("use_local", "welcome_done").associateWith { if (prefs.contains(it)) prefs.getBoolean(it, true) else null }
+        val previous = listOf("use_local", "welcome_done", "settings_expanded_storage", "settings_models_expanded").associateWith { if (prefs.contains(it)) prefs.getBoolean(it, true) else null }
         val selectedModel = prefs.getString("model_name", null)
         val installed = MODEL_CATALOG.filter { ModelDownloader.isInstalled(context, it) }.map { it.archive }.toSet()
         try {
-            prefs.edit().putBoolean("use_local", false).putBoolean("welcome_done", true).commit()
+            prefs.edit().putBoolean("use_local", false).putBoolean("welcome_done", true)
+                .putBoolean("settings_expanded_storage", false).putBoolean("settings_models_expanded", false).commit()
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
                 scenario.onActivity { activity ->
                     val navigation = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     navigation.openSettings()
+                    val settings = activity.window.decorView.findViewWithTag<android.widget.LinearLayout>("wispr-settings")
+                    val first = descendants(settings.getChildAt(0)).filterIsInstance<TextView>().map { it.text.toString() }
+                    assertTrue(activity.getString(R.string.setup) in first)
+                    assertTrue("Service" in first)
+                    val engine = descendants(settings.getChildAt(1)).filterIsInstance<TextView>().map { it.text.toString() }
+                    assertTrue(activity.getString(R.string.engine) in engine)
+                    assertEquals("There must be a single Local models entry", 1, descendants(settings).filterIsInstance<TextView>().count { it.text.toString() == "Local models" })
+                    activity.window.decorView.findViewWithTag<View>("settings-toggle-storage").performClick()
                     val shortcut = descendants(activity.window.decorView).filterIsInstance<ViewGroup>().single { view ->
                         view.isClickable && descendants(view).filterIsInstance<TextView>().any { it.text.toString() == "Local models" }
                     }
+                    shortcut.performClick()
+                    val container = activity.javaClass.getDeclaredField("modelContainer").apply { isAccessible = true }.get(activity) as View
+                    assertEquals(View.VISIBLE, container.visibility)
+                    shortcut.performClick()
+                    activity.javaClass.getDeclaredMethod("refresh").apply { isAccessible = true }.invoke(activity)
+                    assertEquals("A refresh must not reopen the collapsed model list", View.GONE, container.visibility)
                     shortcut.performClick()
                 }
                 instrumentation.waitForIdleSync()
@@ -56,6 +71,10 @@ class ModelPickerVisibilityIntegrationTest {
                         val badges = children.filterIsInstance<ImageView>().filter { it.contentDescription?.toString()?.endsWith("model family") == true }
                         assertEquals(MODEL_CATALOG.size, badges.size)
                         assertTrue(badges.all { it.drawable != null && it.visibility == View.VISIBLE })
+                        for (model in MODEL_CATALOG.filter { it.archive in installed }) {
+                            val delete = children.single { it.contentDescription?.toString() == activity.getString(R.string.delete_model, model.name) }
+                            assertEquals("Every installed model, including the selected model, must be deletable in either mode", View.VISIBLE, delete.visibility)
+                        }
                         if (!local) {
                             assertTrue(container.width > 0 && container.height > 0)
                             val image = Bitmap.createBitmap(container.width, container.height, Bitmap.Config.ARGB_8888)
@@ -66,6 +85,28 @@ class ModelPickerVisibilityIntegrationTest {
                             } finally { image.recycle() }
                         }
                     }
+                }
+                scenario.onActivity { activity ->
+                    val navigation = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
+                    navigation.javaClass.getDeclaredMethod("show", String::class.java).apply { isAccessible = true }.invoke(navigation, "Insights")
+                }
+                val deadline = android.os.SystemClock.uptimeMillis() + 5000
+                var chartCount = 0
+                while (chartCount != 3 && android.os.SystemClock.uptimeMillis() < deadline) {
+                    instrumentation.waitForIdleSync()
+                    scenario.onActivity { chartCount = descendants(it.window.decorView).filterIsInstance<InsightDonutView>().size }
+                    if (chartCount != 3) Thread.sleep(50)
+                }
+                assertEquals("All three periods need a chart", 3, chartCount)
+                scenario.onActivity { activity ->
+                    val root = activity.window.decorView
+                    val labels = descendants(root).filterIsInstance<TextView>().map { it.text.toString() }
+                    assertEquals(3, labels.count { it.startsWith("Estimated time saved") })
+                    val image = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
+                    try {
+                        root.draw(Canvas(image))
+                        File(context.cacheDir, "model-picker-test/insights.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    } finally { image.recycle() }
                 }
             }
             assertEquals(selectedModel, prefs.getString("model_name", null))

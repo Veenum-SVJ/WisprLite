@@ -319,6 +319,8 @@ class WhisperAccessibilityService : AccessibilityService() {
     /** Reload local model (called from MainActivity when settings change) */
     fun reloadModel() { thread { initLocalModel() } }
 
+    internal fun canDeleteModels(): Boolean = state == State.IDLE
+
     // --- Overlay visibility (multi-signal, OR'd together) ---
 
     private fun refreshAccessibilityFocusSignal() {

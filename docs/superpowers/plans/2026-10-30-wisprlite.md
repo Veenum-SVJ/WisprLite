@@ -78,3 +78,11 @@ Device-scope amendment: the user disconnected/took the Pixel 6 and explicitly di
 - [x] Complete revised English-first evaluation (Yoruba/Pidgin accuracy acceptance withdrawn by user), retaining Pixel 6 baseline results and targeting remaining physical trials to Redmi 12 per the user's amendment; record model, accuracy observations, latency, heat, memory, APK/storage sizes. Do not claim unrun checks passed.
 - [x] Inspect final diff and staged content for secrets; commit and push to authorized public WisprLite repository. Supply APK, repository link, measured results, and remaining limitations.
 
+## Follow-up: 0.1.1 model removal and Insights
+- [x] Reveal Delete for every installed model, including the selected/only model; keep confirmation and prevent deletion during dictation.
+- [x] Refresh model storage and local engine after deletion; retain explicit cloud/local selection.
+- [x] Add native Insights donut charts with accessible numerical details and honest estimate labels.
+- [x] Build/lint/unit-test the update and verify model controls, charts and light/dark appearance on Pixel.
+- [ ] Remove new test fixtures and test package; sign and install optimized 0.1.1 on both phones without clearing data.
+- [ ] Scan, commit and push the follow-up, publish its APK and verify GitHub checks.
+- [x] Group Settings into native collapsible sections, put Status/Setup/Service/Engine first and keep a single inline Local models disclosure. Compile, targeted UI checks and light/dark visual review passed; wider regression is in progress.

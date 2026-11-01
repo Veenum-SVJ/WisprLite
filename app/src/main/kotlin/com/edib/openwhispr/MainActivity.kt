@@ -281,7 +281,6 @@ class MainActivity : AppCompatActivity() {
         dictationContainer.addView(group().apply { addView(cloudRow) })
 
         modelContainer = vertical(0)
-        modelContainer.addView(sectionHeader(getString(R.string.local_models)))
         val modelGroup = group()
         for (m in MODEL_CATALOG) modelGroup.addView(buildModelRow(m))
         modelContainer.addView(modelGroup)
@@ -471,15 +470,27 @@ class MainActivity : AppCompatActivity() {
         outer.addView(settingsContainer)
         showTab(0)
 
-        val allSettings = vertical(0)
+        val allSettings = vertical(0).apply { tag = "wispr-settings" }
         val extras = SettingsExtras(this)
         settingsExtras = extras
-        allSettings.addView(extras.build())
-        for (section in listOf(statusContainer, dictationContainer, settingsContainer)) {
-            outer.removeView(section)
-            section.visibility = View.VISIBLE
-            allSettings.addView(section)
+        fun detach(view: View): View {
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+            return view
         }
+        val cleanupControls = vertical(0).apply {
+            addView(detach(cleanupProviderRow))
+            addView(detach(postGroup))
+            addView(detach(keyRow))
+        }
+        detach(modelContainer)
+        // Engine remains immediately below Status, Setup and Service.
+        while (dictationContainer.childCount > 2) dictationContainer.removeViewAt(2)
+        allSettings.addView(detach(statusContainer))
+        allSettings.addView(detach(dictationContainer))
+        statusContainer.visibility = View.VISIBLE
+        dictationContainer.visibility = View.VISIBLE
+        allSettings.addView(extras.build(modelContainer, cleanupControls, detach(bubbleSizePanel), detach(backupGroup), detach(aboutGroup)))
+        extras.startupHelp?.let { statusContainer.addView(it, 3) }
         navigation = WisprNavigation(this, allSettings, savedInstanceState)
         setContentView(navigation!!.build())
 
@@ -517,7 +528,7 @@ class MainActivity : AppCompatActivity() {
 
     internal fun openLocalModels() {
         navigation?.openSettings()
-        modelContainer.post { modelContainer.requestRectangleOnScreen(android.graphics.Rect(0, 0, modelContainer.width, dp(80)), false) }
+        settingsExtras?.toggleLocalModels()
     }
 
     // --- Model Rows ---
@@ -646,7 +657,7 @@ class MainActivity : AppCompatActivity() {
         views.radio.isChecked = active
         views.radio.visibility = if (installed) View.VISIBLE else View.GONE
         views.dlBtn.visibility = if (installed) View.GONE else View.VISIBLE
-        views.delBtn.visibility = if (installed && !active) View.VISIBLE else View.GONE
+        views.delBtn.visibility = if (installed) View.VISIBLE else View.GONE
 
         if (views.progress.visibility == View.GONE) {
             val specs = modelSummary(model, installed)
@@ -671,7 +682,16 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.delete_model_title, model.name))
             .setMessage(R.string.delete_model_message)
             .setPositiveButton(R.string.delete) { _, _ ->
-                ModelDownloader.delete(this, model)
+                val service = WhisperAccessibilityService.instance
+                if (service?.canDeleteModels() == false) {
+                    Toast.makeText(this, "Finish dictation before deleting a model.", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
+                if (!ModelDownloader.delete(this, model)) {
+                    Toast.makeText(this, "Couldn't delete this model. Please try again.", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
+                service?.reloadModel()
                 refreshAllCards()
                 refresh()
             }
@@ -734,7 +754,6 @@ class MainActivity : AppCompatActivity() {
         accDot.background = dotDrawable(if (acc) DOT_GREEN else DOT_RED)
         batteryDot.background = dotDrawable(if (unrestricted) DOT_GREEN else DOT_RED)
 
-        modelContainer.visibility = View.VISIBLE
         languageRowSub.text = languageSummary()
         customInstructionsRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
         cleanupProviderRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE

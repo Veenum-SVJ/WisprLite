@@ -12,6 +12,12 @@ class SettingsExtras(private val activity: MainActivity) {
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
     private var languageValue: TextView? = null
     private var providersValue: TextView? = null
+    private var modelStorageValue: TextView? = null
+    private var modelList: View? = null
+    private var modelShortcut: View? = null
+    private var storageSection: CollapsibleSettingsSection? = null
+    var startupHelp: View? = null
+        private set
     private fun providerSummary(): String = runCatching {
         val store = ProviderProfiles(activity)
         val profiles = store.all().associateBy { it.id }
@@ -20,16 +26,27 @@ class SettingsExtras(private val activity: MainActivity) {
     fun refresh() {
         languageValue?.text = DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title
         providersValue?.text = providerSummary()
+        refreshModelStorage()
+    }
+    private fun refreshModelStorage() {
+        val target = modelStorageValue ?: return
+        thread {
+            val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            val installed = MODEL_CATALOG.count { ModelDownloader.isInstalled(activity, it) }
+            activity.runOnUiThread { if (!activity.isDestroyed) target.text = "$installed installed · ${android.text.format.Formatter.formatFileSize(activity, bytes)} · View models" }
+        }
     }
     private fun message(value: String) = activity.runOnUiThread { Toast.makeText(activity, value, Toast.LENGTH_LONG).show() }
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun heading(label: String) = TextView(activity).apply {
+        tag = "settings-group-heading"
         text = label; textSize = 13f; setTypeface(typeface, android.graphics.Typeface.BOLD)
         setTextColor(androidx.core.content.ContextCompat.getColor(activity, R.color.primary))
         setPadding(dp(2), dp(20), dp(2), dp(10))
     }
     private fun row(label: String, action: () -> Unit) = ModernUi.settingRow(activity, label, action)
-    fun build(): View = LinearLayout(activity).apply {
+    fun build(models: View, cleanupControls: View, bubbleControls: View, backupControls: View, aboutControls: View): View {
+        val flat = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
         addView(heading("Speech and language"))
         val language = row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") {
@@ -64,17 +81,14 @@ class SettingsExtras(private val activity: MainActivity) {
                     .setMessage(R.string.background_autostart_help)
                     .setPositiveButton(R.string.background_autostart_open) { _, _ -> openBackgroundStartupSettings() }
                     .setNegativeButton("Close", null).show()
-            }, R.drawable.ic_ui_background_startup))
+            }, R.drawable.ic_ui_background_startup).apply { tag = "startup-help" })
         }
         addView(heading("Storage and appearance"))
         val models = row("Local models · View installed and downloadable models") { activity.openLocalModels() }
-        val storage = models.findViewWithTag<TextView>("setting-subtitle")
+        modelShortcut = models
+        modelStorageValue = models.findViewWithTag("setting-subtitle")
         addView(models)
-        thread {
-            val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
-            val installed = MODEL_CATALOG.count { ModelDownloader.isInstalled(activity, it) }
-            activity.runOnUiThread { if (!activity.isDestroyed) storage.text = "$installed installed · ${android.text.format.Formatter.formatFileSize(activity, bytes)} · View models" }
-        }
+        refreshModelStorage()
         addView(row("Appearance · light, dark or system") {
             choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) {
                 AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1))
@@ -107,6 +121,57 @@ class SettingsExtras(private val activity: MainActivity) {
         addView(row("Reset statistics") { confirm("Reset usage statistics? Text history remains.") {
             thread { HistoryRepository(activity).use { it.resetStatistics() }; message("Statistics reset") }
         } })
+        }
+        val groups = linkedMapOf<String, LinearLayout>()
+        var current: LinearLayout? = null
+        while (flat.childCount > 0) {
+            val child = flat.getChildAt(0)
+            flat.removeView(child)
+            if (child.tag == "settings-group-heading") {
+                current = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
+                groups[(child as TextView).text.toString()] = current
+            } else if (child.tag == "startup-help") {
+                startupHelp = child
+            } else current?.addView(child)
+        }
+        val speech = groups.getValue("Speech and language")
+        val recording = groups.getValue("Recording")
+        val storage = groups.getValue("Storage and appearance")
+        val data = groups.getValue("Manage your data")
+        return LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            // Keep dictation language directly below the top-level engine controls.
+            val language = speech.getChildAt(0)
+            speech.removeView(language)
+            addView(language)
+            speech.addView(cleanupControls)
+            addView(CollapsibleSettingsSection(activity, "providers", "Providers and cleanup", "Saved services, API keys and text cleanup", speech))
+            recording.addView(bubbleControls)
+            addView(CollapsibleSettingsSection(activity, "recording", "Recording and bubble", "Size, preview and feedback", recording))
+            modelList = models
+            storage.addView(models, 1)
+            storageSection = CollapsibleSettingsSection(activity, "storage", "Storage and appearance", "Local models, themes and retention", storage)
+            addView(storageSection)
+            setModelsExpanded(prefs.getBoolean("settings_models_expanded", false))
+            data.addView(backupControls, 0)
+            addView(CollapsibleSettingsSection(activity, "data", "Backup and data", "Backups, history and statistics", data))
+            val about = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; addView(aboutControls) }
+            addView(CollapsibleSettingsSection(activity, "about", "About", "App language and project", about))
+        }
+    }
+    fun toggleLocalModels() {
+        storageSection?.setExpanded(true)
+        val expanded = modelList?.visibility != View.VISIBLE
+        setModelsExpanded(expanded)
+        prefs.edit().putBoolean("settings_models_expanded", expanded).apply()
+        if (expanded) modelList?.post {
+            modelList?.let { it.requestRectangleOnScreen(android.graphics.Rect(0, 0, it.width, dp(80)), false) }
+        }
+    }
+    private fun setModelsExpanded(expanded: Boolean) {
+        modelList?.visibility = if (expanded) View.VISIBLE else View.GONE
+        modelShortcut?.stateDescription = if (expanded) "Expanded" else "Collapsed"
+        (modelShortcut as? LinearLayout)?.let { (it.getChildAt(it.childCount - 1) as? ImageView)?.rotation = if (expanded) 90f else 0f }
     }
     private fun confirm(label: String, action: () -> Unit) {
         AlertDialog.Builder(activity).setMessage(label).setPositiveButton("Confirm") { _, _ -> action() }.setNegativeButton("Cancel", null).show()

@@ -42,6 +42,11 @@ internal object ModernUi {
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     fun settingsIcon(label: String): Int = when {
+        label.startsWith("Providers and cleanup") -> R.drawable.ic_ui_provider
+        label.startsWith("Recording and bubble") -> R.drawable.ic_ui_audio_retention
+        label.startsWith("Storage and appearance") -> R.drawable.ic_ui_appearance
+        label.startsWith("Backup and data") -> R.drawable.ic_ui_copy
+        label.startsWith("About") -> R.drawable.ic_ui_info
         label.startsWith("Transcription") || label.startsWith("Saved providers") || label.startsWith("Test connection") -> R.drawable.ic_ui_provider
         label.startsWith("Language help") -> R.drawable.ic_ui_info
         label.startsWith("Language") -> R.drawable.ic_ui_globe

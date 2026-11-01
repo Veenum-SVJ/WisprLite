@@ -29,6 +29,7 @@ class BubblePreviewIntegrationTest {
         val hadWelcome = prefs.contains("welcome_done")
         val welcome = prefs.getBoolean("welcome_done", false)
         val previousSize = prefs.all[BubbleSize.PREFERENCE_KEY]
+        val recordingExpanded = prefs.all["settings_expanded_recording"] as? Boolean
         prefs.edit().putBoolean("welcome_done", true).commit()
         try {
             ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -59,9 +60,12 @@ class BubblePreviewIntegrationTest {
                     val nav = activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity) as WisprNavigation
                     nav.openSettings()
                     val settings = nav.javaClass.getDeclaredField("settings").apply { isAccessible = true }.get(nav) as ViewGroup
-                    val extras = settings.getChildAt(0) as ViewGroup
+                    val extras = settings.getChildAt(2) as ViewGroup
                     val firstAction = (0 until extras.childCount).map { extras.getChildAt(it) }.first { it.isClickable }
-                    assertTrue("Language must be the first settings action", descendants(firstAction).filterIsInstance<TextView>().any { it.text.toString() == "Language" })
+                    assertTrue("Language follows top-level setup and engine controls", descendants(firstAction).filterIsInstance<TextView>().any { it.text.toString() == "Language" })
+                    if (activity.window.decorView.findViewWithTag<View>("settings-body-recording").visibility == View.GONE) {
+                        activity.window.decorView.findViewWithTag<View>("settings-toggle-recording").performClick()
+                    }
                 }
                 instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
@@ -102,6 +106,9 @@ class BubblePreviewIntegrationTest {
             }
             assertEquals("Programmatic preview checks must preserve the user's saved size", previousSize, prefs.all[BubbleSize.PREFERENCE_KEY])
         } finally {
+            prefs.edit().apply {
+                if (recordingExpanded == null) remove("settings_expanded_recording") else putBoolean("settings_expanded_recording", recordingExpanded)
+            }.commit()
             if (hadWelcome) prefs.edit().putBoolean("welcome_done", welcome).commit()
             else prefs.edit().remove("welcome_done").commit()
         }

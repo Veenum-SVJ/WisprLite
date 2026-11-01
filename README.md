@@ -4,7 +4,7 @@ A minimal native Android dictation app with configurable cloud providers and opt
 
 ## Screens
 - Home: inline text history, original/cleaned selection, copy/delete and cleanup actions, expandable long transcripts, Direct/Cleanup mode.
-- Insights: recordings, words, speaking duration and estimated typing time saved.
+- Insights: donut charts for Today, Last 7 days and All time, with recordings, words, speaking duration and estimated typing time saved beneath.
 - Dictionary: custom words, names and pronunciation aliases.
 - Settings: providers, offline models, language profiles, appearance, recording feedback, retention and encrypted settings backup.
 
@@ -18,6 +18,8 @@ On Xiaomi/Redmi/POCO, also allow WisprLite under Background autostart. Settings 
 Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. Saved providers keeps multiple encrypted credentials with separate explicit choices for speech and cleanup. Groq uses Whisper-compatible multipart speech; the Google AI Studio preset uses audio chat. Saving a profile does not enable cloud recording or cleanup, and failures never switch providers. Live provider/model availability still needs a configured account and speech trial. Cloud cleanup sends text even when speech recognition is offline.
 
 Model management remains visible in cloud and local modes, including installed packs, official publisher badges, download sizes and installed storage. See [saved profiles and Settings behavior](docs/design/saved-provider-profiles.md).
+
+In the 0.1.1 update, every downloaded model has a Delete action, including the selected model. You can remove all local packs and use cloud transcription only. Choose a saved provider's **Use for transcription** or **Use for AI cleanup** independently; for example, Groq speech with Google AI Studio cleanup. Direct mode skips cleanup. See [Insights and model removal](docs/design/insights-and-model-removal.md) for update status.
 
 The local catalog offers 12 compatible packs: multilingual and English Whisper Tiny, Base and Small; multilingual Medium, Large-v2, Large-v3 and Turbo; NVIDIA Parakeet; and Moonshine Tiny. Official provider logos, download sizes and installed storage appear in Settings. Downloads range from roughly 100 MB to 1.93 GB; models are downloaded separately from the APK. Larger packs need additional extraction space and RAM and may be slow on phones. The newly listed larger packs are official compatible sherpa-onnx exports, not phone performance or accuracy recommendations. Fresh Whisper installations retain the compact int8 pair when available. Desktop GGUF/Q5 files and arbitrary model files cannot be imported. See [model details](docs/design/model-provider-badges.md).
 
