@@ -1,10 +1,10 @@
 # Insights charts and complete model removal — 2026-11-01
 
-Status: version 0.1.1 is implemented, built and installed as an optimized update on Pixel. Its test package and owned fixtures are removed. Redmi deployment and the updated public APK are pending; the 0.1.0 preview predates these changes.
+Status: optimized version 0.1.1 is installed on Pixel and Redmi, test components are removed, and the [public APK is published](https://github.com/Veenum-SVJ/WisprLite/releases/tag/v0.1.1-preview). The 0.1.0 preview predates these changes.
 
 Verification: 122 unit tests and debug/release lint passed; the complete final build passed in 3m45s. Pixel model-control/chart assertions passed in 2.701s; light/dark appearance passed in 2.747s. The rendered dark Insights screenshot was visually reviewed. Redmi's attempted test-helper installation was cancelled and is not a passed check.
 
-The approval service temporarily blocked cleanup/signing because its usage limit was reached. It recovered after its stated reset; normal approved work resumed. Optimized deployment and publication of this update are still pending. The latest version also includes the [clean Settings layout](clean-settings.md).
+The approval service temporarily blocked cleanup/signing because its usage limit was reached. It recovered after its stated reset; normal approved work resumed. Optimized deployment and publication subsequently completed through the normal approval flow. The latest version also includes the [clean Settings layout](clean-settings.md).
 
 The user requested graphical Insights with details beneath, and cloud-only use without retaining local models.
 

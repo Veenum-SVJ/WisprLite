@@ -2,13 +2,15 @@
 
 A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
+[Download the Android 0.1.1 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.1.1-preview/WisprLite-0.1.1-android.apk) · 36.2 MB · Android 11+ / arm64. Models download separately.
+
 ## Screens
 - Home: inline text history, original/cleaned selection, copy/delete and cleanup actions, expandable long transcripts, Direct/Cleanup mode.
 - Insights: donut charts for Today, Last 7 days and All time, with recordings, words, speaking duration and estimated typing time saved beneath.
 - Dictionary: custom words, names and pronunciation aliases.
 - Settings: providers, offline models, language profiles, appearance, recording feedback, retention and encrypted settings backup.
 
-Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Warm light/dark themes follow the system by default.
+Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Warm light/dark themes follow the system by default. Settings starts with Status, Setup, Service and Engine, followed by Language and labelled collapsible sections. Open Storage and appearance → Local models for the single inline model list.
 
 ## Setup
 Install an APK, grant microphone access and enable the WisprLite Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
