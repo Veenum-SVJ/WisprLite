@@ -42,10 +42,14 @@ internal object ModernUi {
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     fun settingsIcon(label: String): Int = when {
-        label.startsWith("Transcription") || label.startsWith("Test connection") -> R.drawable.ic_ui_provider
+        label.startsWith("Transcription") || label.startsWith("Saved providers") || label.startsWith("Test connection") -> R.drawable.ic_ui_provider
         label.startsWith("Language help") -> R.drawable.ic_ui_info
         label.startsWith("Language") -> R.drawable.ic_ui_globe
         label.startsWith("Appearance") -> R.drawable.ic_ui_appearance
+        label.startsWith("Keep audio") -> R.drawable.ic_ui_audio_retention
+        label.startsWith("Text history retention") -> R.drawable.ic_ui_text_retention
+        label.startsWith("Typing") || label.startsWith("Keyboard") -> R.drawable.ic_ui_typing
+        label.startsWith("Local models") -> R.drawable.ic_ui_provider
         label.startsWith("Clear") -> R.drawable.ic_ui_delete
         label.startsWith("Reset") -> R.drawable.ic_ui_insights
         else -> R.drawable.ic_ui_clock
@@ -61,7 +65,7 @@ internal object ModernUi {
         addView(LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             addView(ModernUi.label(context, parts[0], 15f, strong = true))
-            if (parts.size > 1) addView(ModernUi.label(context, parts[1], 13f, muted = true))
+            if (parts.size > 1) addView(ModernUi.label(context, parts[1], 13f, muted = true).apply { tag = "setting-subtitle" })
         }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(context, 14); marginEnd = dp(context, 8) })
         addView(icon(context, R.drawable.ic_ui_chevron, 18))
         layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(context, 8) }

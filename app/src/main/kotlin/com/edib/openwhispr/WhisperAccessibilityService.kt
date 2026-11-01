@@ -1030,13 +1030,14 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun transcribeApi(pcm: ByteArray, job: Long) {
         val wav = WavWriter.encode(pcm)
-        val apiKey = SecureKeyStorage.transcriptionApiKey(this)
+        val selection = try { ProviderProfiles(this).speechSelection() } catch (_: Exception) {
+            reset("Check your selected speech provider in Settings"); return
+        }
+        val apiKey = selection.key
         if (apiKey.isBlank()) { reset("Add your transcription API key in Settings"); return }
 
         playRecordingStoppedTone()
-        val config = ProviderConfig(prefs().getString("transcription_base_url", null) ?: "https://api.groq.com/openai/v1",
-            prefs().getString("transcription_model", null) ?: "whisper-large-v3",
-            DictationLanguage.fromSaved(prefs().getString("language_profile", null)).recognitionHint)
+        val config = selection.config.copy(recognitionHint = DictationLanguage.fromSaved(prefs().getString("language_profile", null)).recognitionHint)
         transcriptionCall = TranscriberClient.transcribe(wav, apiKey, Dictionary.load(prefs()), TranscriptionLanguages.saved(prefs()), config) { result ->
             if (!session.isCurrent(job)) return@transcribe
             if (result.text != null && result.text.isNotBlank()) {
@@ -1068,15 +1069,17 @@ class WhisperAccessibilityService : AccessibilityService() {
             HistoryRepository(this).use { it.saveSuccessful(DictationRecord(historyId, System.currentTimeMillis(),
                 text, null, speakingMillis, if (usePostProcessing) "AI Cleanup" else "Direct")) }
         } catch (_: Exception) { toast("Couldn’t save transcript history; your dictation is still available") }
-        val cleanupConfig = CleanupProviderConfig.fromPreferences(
-            prefs().getString("cleanup_provider", null),
-            prefs().getString("cleanup_base_url", null),
-            prefs().getString("cleanup_model", null),
-        )
-        val apiKey = if (cleanupConfig.provider == CleanupProviderConfig.Provider.GROQ)
-            SecureKeyStorage.groqApiKey(this) else SecureKeyStorage.cleanupApiKey(this)
-
         if (usePostProcessing) {
+            val cleanup = try { ProviderProfiles(this).cleanupSelection() } catch (_: Exception) {
+                handler.post {
+                    if (!session.isCurrent(job)) return@post
+                    toast("Check your selected cleanup provider. Original text is preserved.")
+                    injectText(text); goIdle()
+                }
+                return
+            }
+            val cleanupConfig = cleanup.config
+            val apiKey = cleanup.key
             if (apiKey.isBlank()) {
                 handler.post {
                     if (!session.isCurrent(job)) return@post

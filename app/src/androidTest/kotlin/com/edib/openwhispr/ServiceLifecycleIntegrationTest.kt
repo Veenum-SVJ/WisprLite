@@ -24,6 +24,11 @@ class ServiceLifecycleIntegrationTest {
         fun field(name: String) = service.javaClass.getDeclaredField(name).apply { isAccessible = true }
         val recorderField = field("audioRecord")
         val before = HistoryRepository(context).use { it.totals(0).recordings }
+        val audioDirectory = java.io.File(context.filesDir, "recordings")
+        val audioBefore = audioDirectory.listFiles().orEmpty().map { it.name }.toSet()
+        fun assertNoNewAudio() {
+            assertTrue("Cancelled capture must not persist audio", audioDirectory.listFiles().orEmpty().none { it.name !in audioBefore })
+        }
         try {
             // This test cancels capture, so it cannot send audio to any provider.
             prefs.edit().putBoolean("use_local", false).putBoolean("service_master_enabled", true).commit()
@@ -38,6 +43,7 @@ class ServiceLifecycleIntegrationTest {
                 assertNull(field("pcmStream").get(service))
                 assertEquals("IDLE", field("state").get(service)?.toString())
             }
+            assertNoNewAudio()
             // Pausing must cancel a second live capture through the Settings switch path.
             instrumentation.runOnMainSync {
                 service.javaClass.getDeclaredMethod("startRecording").apply { isAccessible = true }.invoke(service)
@@ -55,6 +61,7 @@ class ServiceLifecycleIntegrationTest {
             service.refreshMasterEnabled()
             instrumentation.waitForIdleSync()
             assertEquals(before, HistoryRepository(context).use { it.totals(0).recordings })
+            assertNoNewAudio()
             val phrase = "WisprLite insertion: Ṣọlá, how you dey?"
             var injected = false
             val targetDeadline = System.currentTimeMillis() + 45_000

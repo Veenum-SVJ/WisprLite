@@ -285,9 +285,11 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         return row
     }
     private fun retryCleanup(record: DictationRecord, finished: () -> Unit = {}) {
-        val config = CleanupProviderConfig.fromPreferences(prefs.getString("cleanup_provider", null),
-            prefs.getString("cleanup_base_url", null), prefs.getString("cleanup_model", null))
-        val key = if (config.provider == CleanupProviderConfig.Provider.GROQ) SecureKeyStorage.groqApiKey(activity) else SecureKeyStorage.cleanupApiKey(activity)
+        val selection = try { ProviderProfiles(activity).cleanupSelection() } catch (_: Exception) {
+            finished(); Toast.makeText(activity, "Check your selected cleanup provider in Settings", Toast.LENGTH_LONG).show(); return
+        }
+        val config = selection.config
+        val key = selection.key
         if (key.isBlank()) { finished(); Toast.makeText(activity, "Configure a cleanup API key in Settings", Toast.LENGTH_LONG).show(); return }
         if (!cleanupPending.add(record.id)) { finished(); return }
         Toast.makeText(activity, "Sending transcript text for cleanup…", Toast.LENGTH_SHORT).show()
@@ -304,10 +306,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         }
     }
     private fun cleanupConfigured(): Boolean {
-        val config = CleanupProviderConfig.fromPreferences(prefs.getString("cleanup_provider", null),
-            prefs.getString("cleanup_base_url", null), prefs.getString("cleanup_model", null))
-        return (if (config.provider == CleanupProviderConfig.Provider.GROQ) SecureKeyStorage.groqApiKey(activity)
-            else SecureKeyStorage.cleanupApiKey(activity)).isNotBlank()
+        return runCatching { ProviderProfiles(activity).cleanupSelection().key.isNotBlank() }.getOrDefault(false)
     }
     private fun copy(value: String) {
         val clip = ClipData.newPlainText("WisprLite transcript", value)

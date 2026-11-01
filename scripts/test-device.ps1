@@ -91,9 +91,11 @@ try {
     Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.RECORD_AUDIO') | Out-Null
     if ($sdk -ge 33) { Invoke-Adb @('shell','pm','grant','com.veenum.wisprlite','android.permission.POST_NOTIFICATIONS') | Out-Null }
     Run-Suite 'storage-and-credentials' 'com.edib.openwhispr.HistoryRepositoryTest,com.edib.openwhispr.CredentialIsolationTest,com.edib.openwhispr.RetentionDeviceTest' ''
+    Run-Suite 'saved-provider-profiles' 'com.edib.openwhispr.ProviderProfilesIntegrationTest' ''
     Run-Suite 'watchdog-warning-delivery' 'com.edib.openwhispr.WatchdogDeliveryIntegrationTest' ''
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
     Run-Suite 'light-and-dark-appearance' 'com.edib.openwhispr.AppearanceIntegrationTest' 'activity'
+    Run-Suite 'model-picker-visibility' 'com.edib.openwhispr.ModelPickerVisibilityIntegrationTest' 'activity'
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
     Run-Suite 'bubble-size-preview-and-layout' 'com.edib.openwhispr.BubblePreviewIntegrationTest' 'activity'
     Run-Suite 'backup-picker-cancel' 'com.edib.openwhispr.BackupPickerIntegrationTest#cancellingDocumentPickerDiscardsPendingPassphraseAndSnapshot' 'activity'

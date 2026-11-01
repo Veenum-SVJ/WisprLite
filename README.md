@@ -13,7 +13,9 @@ Use the top-right menu to open the right-side drawer; Settings is anchored at th
 ## Setup
 Install an APK, grant microphone access and enable the WisprLite Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
 
-Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. API endpoints must support OpenAI-compatible multipart audio transcription. Cleanup can use a separate provider/key/model. Cloud cleanup sends text even when speech recognition is offline.
+Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. Saved providers keeps multiple encrypted credentials with separate explicit choices for speech and cleanup. Groq uses Whisper-compatible multipart speech; the Google AI Studio preset uses audio chat. Saving a profile does not enable cloud recording or cleanup, and failures never switch providers. Live provider/model availability still needs a configured account and speech trial. Cloud cleanup sends text even when speech recognition is offline.
+
+Model management remains visible in cloud and local modes, including installed packs, official publisher badges, download sizes and installed storage. See [saved profiles and Settings behavior](docs/design/saved-provider-profiles.md).
 
 The local catalog includes Whisper Tiny multilingual/English, Base and Small, NVIDIA Parakeet, and Moonshine Tiny, with official publisher badges. Download sizes and installed storage are shown separately; Tiny packs are approximately 100–120 MB downloads. Fresh Whisper installations omit redundant full-precision weights when a complete int8 pair is present; existing installations are preserved. Smaller models are not a verified fix for Yorùbá accuracy. See [model badges, storage and API compatibility](docs/design/model-provider-badges.md).
 

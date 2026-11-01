@@ -25,6 +25,12 @@ class SettingsExtras(private val activity: MainActivity) {
             activity.showLanguageProfilePicker()
         })
         addView(row("Transcription provider · URL, model and key") { provider() })
+        val selections = runCatching {
+            val store = ProviderProfiles(activity)
+            val profiles = store.all().associateBy { it.id }
+            "Speech: ${profiles[store.activeSpeechId()]?.name ?: "Manual"}; cleanup: ${profiles[store.activeCleanupId()]?.name ?: "Manual"}"
+        }.getOrDefault("Saved profile needs attention")
+        addView(row("Saved providers · $selections") { ProviderProfilesUi(activity).show() })
         addView(row("Language help") {
             AlertDialog.Builder(activity).setTitle("Choosing a language")
                 .setMessage("Mixed/Auto lets the model detect the language and can misidentify short phrases. Choose Yorùbá for Yoruba speech. Pidgin uses English-based recognition plus cloud vocabulary hints where a separate Pidgin code is unavailable. Recognition and tone-mark accuracy depend on your model.")
@@ -43,11 +49,13 @@ class SettingsExtras(private val activity: MainActivity) {
             })
         }
         addView(heading("Storage and appearance"))
-        val storage = TextView(activity).apply { text = "Model storage: calculating…"; textSize = 14f; setPadding(dp(8), dp(4), dp(8), dp(10)) }
-        addView(storage)
+        val models = row("Local models · View installed and downloadable models") { activity.openLocalModels() }
+        val storage = models.findViewWithTag<TextView>("setting-subtitle")
+        addView(models)
         thread {
             val bytes = java.io.File(activity.filesDir, "models").walkTopDown().filter { it.isFile }.sumOf { it.length() }
-            activity.runOnUiThread { if (!activity.isDestroyed) storage.text = "Model storage: ${android.text.format.Formatter.formatFileSize(activity, bytes)}" }
+            val installed = MODEL_CATALOG.count { ModelDownloader.isInstalled(activity, it) }
+            activity.runOnUiThread { if (!activity.isDestroyed) storage.text = "$installed installed · ${android.text.format.Formatter.formatFileSize(activity, bytes)} · View models" }
         }
         addView(row("Appearance · light, dark or system") {
             choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) {
@@ -129,9 +137,13 @@ class SettingsExtras(private val activity: MainActivity) {
         dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
             try {
                 ProviderConfig(url.text.toString(), model.text.toString()).transcriptionUrl()
-                SecureKeyStorage.saveTranscriptionApiKey(activity, key.text.toString().trim())
-                prefs.edit().putString("transcription_base_url", url.text.toString().trim()).putString("transcription_model", model.text.toString().trim()).apply()
+                ProviderProfiles.locked {
+                    SecureKeyStorage.saveTranscriptionApiKey(activity, key.text.toString().trim())
+                    prefs.edit().putString("transcription_base_url", url.text.toString().trim()).putString("transcription_model", model.text.toString().trim())
+                        .putString("transcription_api_format", SpeechApiFormat.MULTIPART.name).remove(ProviderProfiles.SPEECH_ID).commit()
+                }
                 dialog.dismiss()
+                activity.recreate()
             } catch (_: Exception) { url.error = "Enter a valid HTTPS URL and model" }
         } }; dialog.show()
     }

@@ -115,6 +115,7 @@ object SettingsBackup {
         }
         val secretsJson = json.getJSONObject("secrets")
         val secrets = secretsJson.keys().asSequence().associateWith { secretsJson.getString(it) }
+        prefs[ProviderProfiles.METADATA_KEY]?.let { ProviderProfileCodec.decode(it as String) }
         return Snapshot(prefs, secrets)
     }
 

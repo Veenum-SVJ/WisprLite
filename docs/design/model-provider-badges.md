@@ -22,7 +22,7 @@ Small packs prioritize storage and speed. They do not establish reliable Yor√πb√
 
 ## Custom API compatibility
 
-The current transcription adapter accepts HTTPS OpenAI-compatible multipart audio transcription endpoints with Bearer authentication. A base URL and API key alone cannot adapt arbitrary provider protocols. Speech and cleanup have separate model and credential settings.
+The transcription adapter accepts HTTPS Whisper-compatible multipart audio transcription endpoints with Bearer authentication, plus explicitly selected audio-chat requests for providers such as Google AI Studio. A base URL and API key alone cannot adapt arbitrary provider protocols. Saved profiles keep separate credentials and speech/cleanup selections.
 
 Example: Groq base URL `https://api.groq.com/openai/v1`, speech model `whisper-large-v3-turbo`, and a Groq-issued API key. Other API formats require an adapter; newer APIs with different language parameters are not automatically compatible.
 

@@ -64,6 +64,27 @@ object SecureKeyStorage {
 
     fun saveCleanupApiKey(context: Context, value: String) = save(context, CLEANUP_KEY, value)
 
+    fun profileApiKey(context: Context, id: String): String = synchronized(lock) {
+        securePrefs(context).getString(profileKey(id), null)?.let { decrypt(it) }.orEmpty()
+    }
+
+    fun saveProfileApiKey(context: Context, id: String, value: String) = save(context, profileKey(id), value)
+
+    internal fun profileKey(id: String): String {
+        require(id.matches(Regex("[a-f0-9]{32}"))) { "Invalid provider profile identifier" }
+        return "provider_profile_$id"
+    }
+
+    internal fun encryptedEntries(context: Context, keys: Set<String>): Map<String, String?> = synchronized(lock) {
+        keys.associateWith { securePrefs(context).getString(it, null) }
+    }
+
+    internal fun restoreEncryptedEntries(context: Context, entries: Map<String, String?>) = synchronized(lock) {
+        check(securePrefs(context).edit().apply {
+            entries.forEach { (key, value) -> if (value == null) remove(key) else putString(key, value) }
+        }.commit())
+    }
+
     private fun save(context: Context, preferenceKey: String, value: String) = synchronized(lock) {
         val editor = securePrefs(context).edit()
         if (value.isBlank()) editor.remove(preferenceKey)

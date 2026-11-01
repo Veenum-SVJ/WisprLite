@@ -40,7 +40,7 @@ Interfaces: ProviderConfig(baseUrl: String, model: String); DictationLanguage en
 Files: new HistoryDatabase.kt, HistoryRepository.kt, InsightCalculator.kt and tests.
 Interfaces: DictationRecord(id: String, createdAt: Long, original: String, cleaned: String?, speakingMillis: Long, mode: String); saveSuccessful(record), updateCleanup(id, text), listBefore(timestamp, limit), delete(id); aggregate counters keyed by local reporting date policy.
 - [x] Add tests: duplicate record ID increments once; cleanup retry increments zero times; deleting history retains aggregates; explicit reset clears aggregates; 80 words at 40 WPM with 30 speaking seconds saves 90 seconds.
-- [ ] Implement transactional SQLite persistence and paginated queries; test upgrade path and Unicode Yoruba round trip with instrumented SQLite checks.
+- [x] Implement transactional SQLite persistence and paginated queries; test upgrade path and Unicode Yoruba round trip with instrumented SQLite checks. Version1 creation/reopen and unsupported-upgrade rollback preserve Unicode/history/counters; forced transcript-write failure rolls back its statistics event.
 - [x] Integrate successful transcription save into existing dictation flow; errors do not create successful records.
 - [x] Run unit/instrumented checks available; commit and record any device dependency.
 

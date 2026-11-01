@@ -15,10 +15,10 @@ Sources: [LyngualLabs card](https://huggingface.co/LyngualLabs/whisper-small-yor
 
 ## Provider settings and saved profiles
 
-The current app holds one speech configuration and a separate cleanup configuration. It does not yet have a saved library of multiple speech-provider profiles. Replacing the speech URL/model/key replaces that active speech configuration; keys from different providers must not be combined in one field.
+The user subsequently approved saved provider profiles. The app now keeps named profiles with separate encrypted keys and explicit speech/cleanup selections, alongside manual settings. Keys from different providers must not be combined in one field.
 
-Groq's multipart speech endpoint matches the existing adapter. Google AI Studio issues Gemini credentials: Google's documented audio input uses its native API or audio content in chat completions, so the current multipart transcription adapter cannot be assumed compatible. Google's OpenAI-compatible chat endpoint is relevant to the existing text cleanup adapter, but has not been live-tested here.
+Groq uses multipart speech. Google AI Studio issues Gemini credentials and its preset now selects the explicitly implemented audio-chat request format. Google's compatible chat endpoint also serves text cleanup. Request construction/parsing is tested; actual account availability and recognition quality have not been live-tested here.
 
-A future saved-profile design should keep a distinct encrypted credential for each named provider, allow explicit speech and cleanup selections, and never silently switch providers after an error. This is a proposed follow-up, not an implemented feature or automatic upload authorization.
+Saved profiles do not enable cloud mode or cleanup and never silently switch providers after an error. See [profile behavior](../design/saved-provider-profiles.md). No new cloud upload has been performed as part of this implementation.
 
 Google source: [OpenAI compatibility and audio input](https://ai.google.dev/gemini-api/docs/openai?hl=en).

@@ -512,6 +512,11 @@ class MainActivity : AppCompatActivity() {
         settingsContainer.visibility = if (index == 2) View.VISIBLE else View.GONE
     }
 
+    internal fun openLocalModels() {
+        navigation?.openSettings()
+        modelContainer.post { modelContainer.requestRectangleOnScreen(android.graphics.Rect(0, 0, modelContainer.width, dp(80)), false) }
+    }
+
     // --- Model Rows ---
 
     private fun buildModelRow(model: Model): View {
@@ -682,11 +687,10 @@ class MainActivity : AppCompatActivity() {
         val useLocal = prefs().getBoolean("use_local", true)
         val usePostProcessing = prefs().getBoolean("use_post_processing", false)
         val groqApiKey = SecureKeyStorage.groqApiKey(this)
-        val cleanupConfig = cleanupProviderConfig()
-        val cleanupApiKey = if (cleanupConfig.provider == CleanupProviderConfig.Provider.GROQ)
-            groqApiKey else SecureKeyStorage.cleanupApiKey(this)
+        val cleanupSelection = runCatching { ProviderProfiles(this).cleanupSelection() }.getOrNull()
+        val cleanupApiKey = cleanupSelection?.key.orEmpty()
         val hasGroqKey = groqApiKey.isNotBlank()
-        val hasTranscriptionKey = SecureKeyStorage.transcriptionApiKey(this).isNotBlank()
+        val hasTranscriptionKey = runCatching { ProviderProfiles(this).speechSelection().key.isNotBlank() }.getOrDefault(false)
         val hasCleanupKey = cleanupApiKey.isNotBlank()
         val profile = DictationLanguage.fromSaved(prefs().getString("language_profile", null))
         val hasModel = MODEL_CATALOG.any { profile.acceptsModel(it.languages) && ModelDownloader.isInstalled(this, it) }
@@ -726,7 +730,7 @@ class MainActivity : AppCompatActivity() {
         accDot.background = dotDrawable(if (acc) DOT_GREEN else DOT_RED)
         batteryDot.background = dotDrawable(if (unrestricted) DOT_GREEN else DOT_RED)
 
-        modelContainer.visibility = if (useLocal) View.VISIBLE else View.GONE
+        modelContainer.visibility = View.VISIBLE
         languageRowSub.text = languageSummary()
         customInstructionsRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
         cleanupProviderRow.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
@@ -772,7 +776,10 @@ class MainActivity : AppCompatActivity() {
 
         // [ui] The cloud switch's subtitle says where audio goes.
         cloudRowSub.text = if (useLocal) "Off: transcribed on this phone"
-                           else "On: audio is sent to Groq (needs API key)"
+                           else runCatching {
+                               val selection = ProviderProfiles(this).speechSelection()
+                               "On: audio is sent to ${selection.config.transcriptionUrl().host}"
+                           }.getOrDefault("On: choose a valid speech provider in Settings")
 
         refreshAllCards()
         maybeShowBatteryWarning(acc, unrestricted)
@@ -1110,7 +1117,9 @@ class MainActivity : AppCompatActivity() {
                         return@setOnClickListener
                     }
                 }
+                ProviderProfiles.locked {
                 prefs().edit()
+                    .remove(ProviderProfiles.CLEANUP_ID)
                     .putString("cleanup_provider", selectedProvider.preferenceValue)
                     .putString("cleanup_base_url", nextConfig.baseUrl)
                     .putString("cleanup_model", nextConfig.model)
@@ -1118,6 +1127,7 @@ class MainActivity : AppCompatActivity() {
                 if (selectedProvider.requiresCustomConfiguration) {
                     apiKey.text.toString().trim().takeIf { it.isNotBlank() }
                         ?.let { SecureKeyStorage.saveCleanupApiKey(this, it) }
+                }
                 }
                 dialog.dismiss()
                 refresh()
@@ -1283,6 +1293,12 @@ class MainActivity : AppCompatActivity() {
     )
 
     private fun cleanupProviderSummary(): String {
+        val profiles = ProviderProfiles(this)
+        if (profiles.activeCleanupId() != null) {
+            return runCatching { val selection = profiles.cleanupSelection()
+                "${selection.config.model} · ${if (selection.key.isBlank()) "Add API key" else "Saved provider"}" }
+                .getOrDefault("Selected provider needs attention")
+        }
         val config = cleanupProviderConfig()
         val configured = when (config.provider) {
             CleanupProviderConfig.Provider.GROQ -> SecureKeyStorage.groqApiKey(this).isNotBlank()
@@ -1337,7 +1353,7 @@ class MainActivity : AppCompatActivity() {
             "transcription_api_key" to SecureKeyStorage.transcriptionApiKey(this),
             "groq_api_key" to SecureKeyStorage.groqApiKey(this),
             "cleanup_api_key" to SecureKeyStorage.cleanupApiKey(this),
-        ),
+        ) + ProviderProfiles(this).exportKeys(),
     )
 
     /** Checklist with "select all"; [onConfirm] receives the chosen item ids. */
@@ -1496,29 +1512,43 @@ class MainActivity : AppCompatActivity() {
 
     /** Writes only the chosen settings and keys; everything else on the device is left as it is. */
     private fun applySelected(snapshot: SettingsBackup.Snapshot, chosen: Set<String>) {
-        val editor = prefs().edit()
-        for ((key, value) in snapshot.prefs) {
-            if (prefItemId(key) !in chosen) continue
-            when (value) {
-                is String -> editor.putString(key, value)
-                is Int -> editor.putInt(key, value)
-                is Long -> editor.putLong(key, value)
-                is Float -> editor.putFloat(key, value)
-                is Boolean -> editor.putBoolean(key, value)
-                is Set<*> -> editor.putStringSet(key, value.map { it.toString() }.toSet())
+        fun writeSettings(values: Map<String, Any?>) {
+            check(prefs().edit().apply {
+                for ((key, value) in values) when (value) {
+                    null -> remove(key)
+                    is String -> putString(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
+                    is Boolean -> putBoolean(key, value)
+                    is Set<*> -> putStringSet(key, value.map { it.toString() }.toSet())
+                }
+            }.commit())
+        }
+        try { ProviderProfiles.locked {
+            val selectedSecrets = snapshot.secrets.filterKeys { name ->
+                secretItemId(name) in chosen && (name in setOf("transcription_api_key", "groq_api_key", "cleanup_api_key") ||
+                    name.matches(Regex("provider_profile_[a-f0-9]{32}")))
             }
-        }
-        editor.putBoolean("welcome_done", true)
-        check(editor.commit())
-        if (secretItemId("transcription_api_key") in chosen) {
-            SecureKeyStorage.saveTranscriptionApiKey(this, snapshot.secrets["transcription_api_key"].orEmpty())
-        }
-        if (secretItemId("groq_api_key") in chosen) {
-            SecureKeyStorage.saveGroqApiKey(this, snapshot.secrets["groq_api_key"].orEmpty())
-        }
-        if (secretItemId("cleanup_api_key") in chosen) {
-            SecureKeyStorage.saveCleanupApiKey(this, snapshot.secrets["cleanup_api_key"].orEmpty())
-        }
+            SecureKeyStorage.groqApiKey(this) // Complete any legacy migration before rollback snapshots.
+            val original = prefs().all
+            val changes = ProviderProfileRestore.prepare(original, snapshot.prefs,
+                snapshot.prefs.keys.filter { prefItemId(it) in chosen }.toSet(), selectedSecrets.keys) + ("welcome_done" to true)
+            val oldSettings = changes.keys.associateWith { original[it] }
+            val oldSecrets = SecureKeyStorage.encryptedEntries(this, selectedSecrets.keys)
+            try {
+                writeSettings(changes)
+                for ((name, value) in selectedSecrets) when (name) {
+                    "transcription_api_key" -> SecureKeyStorage.saveTranscriptionApiKey(this, value)
+                    "groq_api_key" -> SecureKeyStorage.saveGroqApiKey(this, value)
+                    "cleanup_api_key" -> SecureKeyStorage.saveCleanupApiKey(this, value)
+                    else -> SecureKeyStorage.saveProfileApiKey(this, name.removePrefix("provider_profile_"), value)
+                }
+            } catch (failure: Exception) {
+                try { SecureKeyStorage.restoreEncryptedEntries(this, oldSecrets) } finally { writeSettings(oldSettings) }
+                throw failure
+            }
+        } } catch (_: Exception) { toast("Couldn’t restore the chosen settings. Include saved profiles with their selections and matching keys for changed URLs."); return }
         WhisperAccessibilityService.instance?.apply {
             refreshBubbleSize()
             refreshPosition()
