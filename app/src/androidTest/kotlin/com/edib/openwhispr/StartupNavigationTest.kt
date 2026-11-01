@@ -36,12 +36,14 @@ class StartupNavigationTest {
                     assertFalse(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Settings" })
                     descendants(root).single { it.contentDescription == "Open navigation" }.performClick()
                     descendants(root).filterIsInstance<TextView>().single { it.text.toString() == "Dictionary" }.performClick()
-                    descendants(root).filterIsInstance<EditText>().single().setText("Ṣọlá | Shola\nẸ káàárọ̀")
+                    root.findViewWithTag<EditText>("dictionary-search").setText("Ṣọlá | Shola")
+                    root.findViewWithTag<View>("dictionary-tab-Snippets").performClick()
                 }
                 scenario.recreate()
                 scenario.onActivity { activity ->
                     val root = activity.window.decorView
-                    assertEquals("Ṣọlá | Shola\nẸ káàárọ̀", descendants(root).filterIsInstance<EditText>().single().text.toString())
+                    assertEquals("Ṣọlá | Shola", root.findViewWithTag<EditText>("dictionary-search").text.toString())
+                    assertTrue(root.findViewWithTag<View>("dictionary-tab-Snippets").isSelected)
                     assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Dictionary" })
                     activity.onBackPressedDispatcher.onBackPressed()
                     assertTrue(descendants(root).filterIsInstance<TextView>().any { it.text.toString() == "Home" })
@@ -53,10 +55,10 @@ class StartupNavigationTest {
                 val deadline = System.currentTimeMillis() + 5_000
                 while (!insightsLoaded && System.currentTimeMillis() < deadline) {
                     scenario.onActivity { activity ->
-                        val panel = activity.window.decorView.findViewWithTag<View>("insights_All time")
+                        val panel = activity.window.decorView.findViewWithTag<View>("insights-summary")
                         val labels = panel?.let { descendants(it).filterIsInstance<TextView>().map { view -> view.text.toString() } }.orEmpty()
-                        insightsLoaded = totals.words.toString() in labels && "words" in labels &&
-                            "${totals.recordings} recordings" in labels
+                        insightsLoaded = totals.words.toString() in labels && "Recognized words" in labels &&
+                            totals.recordings.toString() in labels && "Recordings" in labels
                     }
                     if (!insightsLoaded) Thread.sleep(100)
                 }

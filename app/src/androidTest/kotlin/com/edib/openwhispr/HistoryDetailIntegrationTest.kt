@@ -54,8 +54,9 @@ class HistoryDetailIntegrationTest {
                         previousClip = clipboard.primaryClip
                         capturedClipboard = true
                         val nav = requireNotNull(activity.javaClass.getDeclaredField("navigation").apply { isAccessible = true }.get(activity))
-                        card = nav.javaClass.getDeclaredMethod("transcriptCard", DictationRecord::class.java)
-                            .apply { isAccessible = true }.invoke(nav,
+                        val home = nav.javaClass.getDeclaredField("home").apply { isAccessible = true }.get(nav)!!
+                        card = home.javaClass.getDeclaredMethod("transcriptCard", DictationRecord::class.java)
+                            .apply { isAccessible = true }.invoke(home,
                                 DictationRecord("ui-inline-only", 1, original, cleaned, 5000, "AI Cleanup")) as View
                         val content = nav.javaClass.getDeclaredField("content").apply { isAccessible = true }.get(nav) as LinearLayout
                         content.addView(card, 0)

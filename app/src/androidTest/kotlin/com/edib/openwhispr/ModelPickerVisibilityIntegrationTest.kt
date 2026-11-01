@@ -92,16 +92,16 @@ class ModelPickerVisibilityIntegrationTest {
                 }
                 val deadline = android.os.SystemClock.uptimeMillis() + 5000
                 var chartCount = 0
-                while (chartCount != 3 && android.os.SystemClock.uptimeMillis() < deadline) {
+                while (chartCount != 1 && android.os.SystemClock.uptimeMillis() < deadline) {
                     instrumentation.waitForIdleSync()
-                    scenario.onActivity { chartCount = descendants(it.window.decorView).filterIsInstance<InsightDonutView>().size }
-                    if (chartCount != 3) Thread.sleep(50)
+                    scenario.onActivity { chartCount = descendants(it.window.decorView).filterIsInstance<SpeakingActivityView>().size }
+                    if (chartCount != 1) Thread.sleep(50)
                 }
-                assertEquals("All three periods need a chart", 3, chartCount)
+                assertEquals("Recent speaking activity needs a heatmap", 1, chartCount)
                 scenario.onActivity { activity ->
                     val root = activity.window.decorView
                     val labels = descendants(root).filterIsInstance<TextView>().map { it.text.toString() }
-                    assertEquals(3, labels.count { it.startsWith("Estimated time saved") })
+                    assertEquals(1, labels.count { it.startsWith("Estimated typing time saved") })
                     val image = Bitmap.createBitmap(root.width, root.height, Bitmap.Config.ARGB_8888)
                     try {
                         root.draw(Canvas(image))
