@@ -21,7 +21,7 @@ internal class SpeakingActivityView(context: Context, private val days: List<Spe
     private val recentStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(11)
     private var start = recentStart
     private val byDate = days.associateBy { it.date }
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = ReferenceTypography.face(context) }
     private val cell = ModernUi.dp(context, 30).toFloat()
     private val left = ModernUi.dp(context, 30).toFloat()
     private val top = ModernUi.dp(context, 30).toFloat()

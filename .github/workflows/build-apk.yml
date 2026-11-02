@@ -22,6 +22,23 @@ jobs:
         run: |
           mkdir -p .tools
           printf '%s' "$DEVELOPMENT_KEY" | base64 --decode > .tools/wisprlite-debug.keystore
+      - name: Restore licensed typography when configured
+        env:
+          YOWZA_FONT_01: ${{ secrets.YOWZA_FONT_01 }}
+          YOWZA_FONT_02: ${{ secrets.YOWZA_FONT_02 }}
+          YOWZA_FONT_03: ${{ secrets.YOWZA_FONT_03 }}
+          YOWZA_FONT_04: ${{ secrets.YOWZA_FONT_04 }}
+          YOWZA_FONT_05: ${{ secrets.YOWZA_FONT_05 }}
+          YOWZA_FONT_06: ${{ secrets.YOWZA_FONT_06 }}
+          YOWZA_FONT_07: ${{ secrets.YOWZA_FONT_07 }}
+          YOWZA_FONT_08: ${{ secrets.YOWZA_FONT_08 }}
+          YOWZA_FONT_09: ${{ secrets.YOWZA_FONT_09 }}
+        run: |
+          if [ -n "$YOWZA_FONT_01" ]; then
+            mkdir -p .tools/licensed-fonts
+            printf '%s' "$YOWZA_FONT_01" "$YOWZA_FONT_02" "$YOWZA_FONT_03" "$YOWZA_FONT_04" "$YOWZA_FONT_05" "$YOWZA_FONT_06" "$YOWZA_FONT_07" "$YOWZA_FONT_08" "$YOWZA_FONT_09" | base64 --decode > .tools/yowza-fonts.zip
+            unzip -q -o .tools/yowza-fonts.zip -d .tools/licensed-fonts
+          fi
       - run: ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug assembleRelease lintRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:

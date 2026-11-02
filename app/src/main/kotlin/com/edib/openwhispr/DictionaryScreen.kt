@@ -30,14 +30,26 @@ internal class DictionaryScreen(
     private fun dp(n: Int) = ModernUi.dp(activity, n)
 
     fun build(): View {
-        val tabs = LinearLayout(activity)
+        val tabs = LinearLayout(activity).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(20).toFloat(); setColor(ModernUi.color(activity, R.color.panel_muted))
+            }
+            layoutParams = LinearLayout.LayoutParams(-2, -2)
+            setPadding(dp(3), dp(3), dp(3), dp(3))
+        }
         for ((label, tab) in listOf("Dictionary" to false, "Snippets" to true)) {
             tabs.addView(screenButton(activity, label) {
                 state.putBoolean("snippets", tab); rebuild()
             }.apply {
                 tag = "dictionary-tab-$label"; isSelected = snippets == tab
-                if (snippets == tab) backgroundTintList = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.primary_container))
-            }, LinearLayout.LayoutParams(0, -2, 1f))
+                icon = androidx.core.content.ContextCompat.getDrawable(activity, if (tab) R.drawable.ic_ui_snippet else R.drawable.ic_ui_dictionary)
+                iconSize = dp(16); iconPadding = dp(6)
+                iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
+                cornerRadius = dp(18)
+                strokeWidth = 0
+                backgroundTintList = android.content.res.ColorStateList.valueOf(if (snippets == tab)
+                    ModernUi.color(activity, R.color.panel) else android.graphics.Color.TRANSPARENT)
+            }, LinearLayout.LayoutParams(-2, -2))
         }
         root.addView(tabs)
         root.addView(ModernUi.label(activity, if (snippets)
@@ -54,6 +66,7 @@ internal class DictionaryScreen(
                 state.putBoolean("descending", !state.getBoolean("descending")); rebuild()
             })
         })
+        list.background = ModernUi.surface(activity, radius = 8)
         root.addView(list)
         load()
         if (state.getBoolean("editing")) edit(state.getString("edit_word"), state.getString("edit_id"), restore = true)
@@ -84,6 +97,9 @@ internal class DictionaryScreen(
                         if (filter.isNotBlank()) "No matching entries. Clear the search to see all entries."
                         else if (tab) "No snippets yet. Add a trigger and the text it should insert."
                         else "No words yet. Add a name or phrase you use often.", 14f, muted = true).apply { setPadding(0, dp(20), 0, dp(20)) })
+                    if (words.isNotEmpty() || entries.isNotEmpty()) list.addView(ModernUi.label(activity,
+                        (if (filter.isNotBlank()) "Matches" else if (tab) "Snippets" else "Personal") + " · " + (words.size + entries.size),
+                        12f, muted = true).apply { setPadding(dp(12), dp(10), dp(12), dp(8)) })
                     words.forEach { word ->
                         addRow(word.canonical, word.aliases.joinToString(", "), "word-${word.canonical}",
                             { edit(word.canonical, null) }, { confirmDelete(word.canonical) { deleteWord(word.canonical) } })
@@ -104,17 +120,35 @@ internal class DictionaryScreen(
     }
 
     private fun addRow(title: String, subtitle: String, key: String, edit: () -> Unit, delete: () -> Unit, preview: (() -> Unit)? = null) {
+        if (list.childCount > 0) list.addView(View(activity).apply {
+            setBackgroundColor(ModernUi.color(activity, R.color.panel_outline))
+        }, LinearLayout.LayoutParams(-1, dp(1)))
         list.addView(LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL; tag = key; background = ModernUi.surface(activity)
-            setPadding(dp(14), dp(12), dp(14), dp(4))
-            addView(ModernUi.label(activity, title, 16f, strong = true))
-            if (subtitle.isNotEmpty()) addView(ModernUi.label(activity, subtitle, 13f, muted = true).apply { maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END })
+            orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL; tag = key
+            setPadding(dp(12), dp(6), dp(4), dp(6))
             addView(LinearLayout(activity).apply {
-                addView(screenButton(activity, "Edit", edit).apply { contentDescription = "Edit $title" })
-                if (preview != null) addView(screenButton(activity, "Preview", preview).apply { contentDescription = "Preview $title" })
-                addView(screenButton(activity, "Delete", delete).apply { contentDescription = "Delete $title" })
-            })
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+                orientation = LinearLayout.VERTICAL
+                addView(ModernUi.label(activity, title, 14f, strong = true))
+                if (subtitle.isNotEmpty()) addView(ModernUi.label(activity, subtitle, 12f, muted = true).apply {
+                    maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
+                })
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            fun action(label: String, callback: () -> Unit) = screenButton(activity, "", callback).apply {
+                contentDescription = "$label $title"; strokeWidth = 0; minWidth = 0
+                icon = androidx.core.content.ContextCompat.getDrawable(activity, when (label) {
+                    "Edit" -> R.drawable.ic_ui_edit; "Preview" -> R.drawable.ic_ui_preview; else -> R.drawable.ic_ui_delete
+                })
+                iconSize = dp(18); iconPadding = 0
+                iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
+                setPadding(dp(12), 0, dp(12), 0)
+                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+                androidx.appcompat.widget.TooltipCompat.setTooltipText(this, contentDescription)
+                backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            }
+            addView(action("Edit", edit))
+            if (preview != null) addView(action("Preview", preview))
+            addView(action("Delete", delete))
+        }, LinearLayout.LayoutParams(-1, -2))
     }
 
     private fun confirmDelete(label: String, action: () -> Unit) {

@@ -1,4 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nucleo Core Outline. Copyright Nucleo. Licensed for use within OpenWisper; see NOTICE. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-<path android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M5,4h14a2,2 0,0 1,2,2v12a2,2 0,0 1,-2,2H5a2,2 0,0 1,-2,-2V6a2,2 0,0 1,2,-2 M8,17h8"/>
-<path android:fillColor="#FF000000" android:pathData="M6,10a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M10.1,7a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M10.1,10a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M10.1,13a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M14.2,8.5a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M14.2,11.5a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M18.2,10a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0"/>
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M16 10L16 6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6L8 10C8 12.2091 9.79086 14 12 14C14.2091 14 16 12.2091 16 10Z" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M20 10V10C20 14.4183 16.4183 18 12 18V18C7.58172 18 4 14.4183 4 10V10" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M12 18V22" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M8 22H16" />
 </vector>

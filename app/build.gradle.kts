@@ -12,7 +12,41 @@ val releaseProps = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// Licensed brand fonts stay out of the public source tree. CI restores them from
+// a repository secret; public-source builds remain usable with system typography.
+val licensedFonts = rootProject.file(".tools/licensed-fonts")
+val referenceResources = layout.buildDirectory.dir("generated/reference-res")
+val prepareReferenceTypography = tasks.register("prepareReferenceTypography") {
+    inputs.files(fileTree(licensedFonts) { include("*.otf") })
+    outputs.dir(referenceResources)
+    doLast {
+        val output = referenceResources.get().asFile
+        val fonts = output.resolve("font").apply { mkdirs() }
+        val values = output.resolve("values").apply { mkdirs() }
+        val names = listOf("yowza_regular", "yowza_medium", "yowza_bold", "yowza_soft_regular", "yowza_soft_medium")
+        val available = names.map { licensedFonts.resolve("$it.otf").exists() }
+        require(available.all { it } || available.none { it }) { "Provide all five licensed Yowza font files or none" }
+        val enabled = available.all { it }
+        for (name in names) {
+            val destination = fonts.resolve("$name.otf")
+            if (enabled) licensedFonts.resolve("$name.otf").copyTo(destination, overwrite = true) else destination.delete()
+        }
+        fun family(name: String, members: List<Pair<String, Int>>) {
+            val file = fonts.resolve("$name.xml")
+            if (!enabled) { file.delete(); return }
+            file.writeText("<font-family xmlns:android=\"http://schemas.android.com/apk/res/android\">" +
+                members.joinToString("") { (font, weight) -> "<font android:font=\"@font/$font\" android:fontStyle=\"normal\" android:fontWeight=\"$weight\"/>" } + "</font-family>")
+        }
+        family("reference_sans", listOf("yowza_regular" to 400, "yowza_medium" to 500, "yowza_bold" to 700))
+        family("reference_display", listOf("yowza_soft_regular" to 400, "yowza_soft_medium" to 500))
+        val family = if (enabled) "@font/reference_sans" else "sans-serif"
+        values.resolve("reference_typography.xml").writeText("<resources><style name=\"Base.OpenWisperTypography\" parent=\"Theme.Material3.DayNight.NoActionBar\"><item name=\"fontFamily\">$family</item><item name=\"android:fontFamily\">$family</item></style></resources>")
+    }
+}
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(prepareReferenceTypography) }
+
 android {
+    sourceSets.getByName("main").res.srcDir(referenceResources)
     namespace = "com.edib.openwhispr"
     compileSdk = 35
 
@@ -41,8 +75,8 @@ android {
         minSdk = 30
         targetSdk = 35
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.2.1"
 
         ndk { abiFilters += "arm64-v8a" }
     }

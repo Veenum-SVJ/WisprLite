@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.OpenWhispr" parent="Theme.Material3Expressive.DayNight.NoActionBar">
+    <style name="Theme.OpenWhispr" parent="Base.OpenWisperTypography">
         <item name="colorOnSurface">@color/ink</item>
         <item name="colorOnSurfaceVariant">@color/ink_muted</item>
         <item name="colorOutline">@color/ink_muted</item>
@@ -11,6 +11,9 @@
         <item name="colorSurfaceContainerHighest">@color/panel_muted</item>
         <item name="android:colorBackground">@color/app_background</item>
         <item name="colorSurface">@color/app_background</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.OpenWisper.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.OpenWisper.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.OpenWisper.Large</item>
         <!-- Accent Colors -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryContainer">@color/primary_container</item>
@@ -31,5 +34,14 @@
     <!-- [ui] Launch theme for MainActivity. Identical to the app theme on
          Android 11; values-v31 adds the animated splash for Android 12+. -->
     <style name="Theme.OpenWhispr.Launch" parent="Theme.OpenWhispr" />
+    <style name="ShapeAppearance.OpenWisper.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerSize">6dp</item>
+    </style>
+    <style name="ShapeAppearance.OpenWisper.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">8dp</item>
+    </style>
+    <style name="ShapeAppearance.OpenWisper.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">12dp</item>
+    </style>
 </resources>
 

@@ -1,63 +1,45 @@
 package com.edib.openwhispr
 
 import android.animation.ValueAnimator
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorFilter
-import android.graphics.Paint
-import android.graphics.PixelFormat
+import android.content.Context
+import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
-import kotlin.math.cos
-import kotlin.math.sin
+import androidx.core.content.ContextCompat
 
-/** Circular dotted mark. Recording reflects measured audio; only processing loops. */
-internal class DottedVoiceDrawable : Drawable(), Runnable {
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+/** User-supplied logo; a small outer arc indicates processing without replacing the mark. */
+internal class DottedVoiceDrawable(context: Context) : Drawable(), Runnable {
+    private val logo by lazy { requireNotNull(ContextCompat.getDrawable(context, R.drawable.openwisper_logo)).mutate() }
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+    private val clip = Path()
+    private val arc = RectF()
     var recording = false
         set(value) { field = value; invalidateSelf() }
     var voiceLevel = 0f
         set(value) { field = value.coerceIn(0f, 1f); invalidateSelf() }
     var processing = false
-        set(value) {
-            field = value
-            unscheduleSelf(this)
-            invalidateSelf()
-        }
+        set(value) { field = value; unscheduleSelf(this); invalidateSelf() }
+    override fun onBoundsChange(bounds: Rect) {
+        logo.bounds = bounds
+        clip.reset(); clip.addOval(RectF(bounds), Path.Direction.CW)
+        paint.strokeWidth = bounds.width() * .025f
+        arc.set(bounds); arc.inset(paint.strokeWidth, paint.strokeWidth)
+    }
     override fun draw(canvas: Canvas) {
-        val save = canvas.save()
-        canvas.translate(bounds.left.toFloat(), bounds.top.toFloat())
-        canvas.scale(bounds.width() / 24f, bounds.height() / 24f)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 0.375f
-        canvas.drawCircle(12f, 12f, 10.875f, paint)
-        paint.style = Paint.Style.FILL
+        val saved = canvas.save(); canvas.clipPath(clip); logo.draw(canvas); canvas.restoreToCount(saved)
         if (processing) {
             val moving = ValueAnimator.areAnimatorsEnabled()
-            val phase = if (moving) (SystemClock.uptimeMillis() / 120 % 8).toInt() else 0
-            for (index in 0 until 8) {
-                val angle = index * Math.PI / 4 - Math.PI / 2
-                canvas.drawCircle(12f + cos(angle).toFloat() * 6.5f, 12f + sin(angle).toFloat() * 6.5f,
-                    if (index == phase) 1.4f else 0.9f, paint)
-            }
+            val angle = if (moving) (SystemClock.uptimeMillis() / 5 % 360).toFloat() else -90f
+            canvas.drawArc(arc, angle, 85f, false, paint)
             if (moving && isVisible) scheduleSelf(this, SystemClock.uptimeMillis() + 80)
-        } else {
-            val pattern = intArrayOf(2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 2)
-            for (column in pattern.indices) {
-                val rows = if (recording) 1 + (voiceLevel * (pattern[column] - 1)).toInt() else pattern[column]
-                for (row in 0 until rows) canvas.drawCircle(3.1875f + column * 1.7625f,
-                    12f + (row - (rows - 1) / 2f) * 1.3125f, 0.3f, paint)
-            }
         }
-        canvas.restoreToCount(save)
     }
     override fun run() { if (processing && isVisible) invalidateSelf() }
     override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
         if (!visible) unscheduleSelf(this)
         return super.setVisible(visible, restart)
     }
-    override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
-    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter; invalidateSelf() }
-    @Deprecated("Android Drawable API")
-    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+    override fun setAlpha(alpha: Int) { logo.alpha = alpha; paint.alpha = alpha; invalidateSelf() }
+    override fun setColorFilter(filter: ColorFilter?) { logo.colorFilter = filter; paint.colorFilter = filter; invalidateSelf() }
+    @Deprecated("Android Drawable API") override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }

@@ -112,7 +112,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var accessibilityFocusSignal = false
     private var imeVisibleSignal = false
     private var button: ImageView? = null
-    private val dottedLogo = DottedVoiceDrawable()
+    private val dottedLogo = DottedVoiceDrawable(this)
     private val recordingWave = RecordingCapsuleDrawable()
     private var cancelBubblePress: (() -> Unit)? = null
     // [ui] Smoothed recording level for the voice-reactive overlay (main thread).
@@ -621,7 +621,6 @@ class WhisperAccessibilityService : AccessibilityService() {
         val dimensions = BubbleSize.dimensions(currentBubbleSizePercent())
         val buttonSize = (dimensions.buttonDp * dp).toInt()
         val ringSize = (dimensions.ringDp * dp).toInt()
-        val pad = (dimensions.paddingDp * dp).toInt()
         val margin = (MARGIN_DP * dp).toInt()
 
         val ring = ProgressBar(this).apply {
@@ -633,7 +632,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         val img = ImageView(this).apply {
             setImageDrawable(dottedLogo)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setPadding(pad, pad, pad, pad)
+            setPadding(0, 0, 0, 0)
             background = circle(COLOR_IDLE)
         }
 
@@ -816,6 +815,8 @@ class WhisperAccessibilityService : AccessibilityService() {
         handler.post {
             val b = button ?: return@post
             updateOverlayShape(recording)
+            val inset = if (recording) (BubbleSize.dimensions(currentBubbleSizePercent()).paddingDp * dp).toInt() else 0
+            b.setPadding(inset, inset, inset, inset)
             b.background = if (recording) pill(0xB31A1A1A.toInt()) else circle(COLOR_IDLE)
             b.setImageDrawable(if (recording) recordingWave else dottedLogo)
             b.imageTintList = if (recording) ColorStateList.valueOf(COLOR_REC_ACCENT) else null

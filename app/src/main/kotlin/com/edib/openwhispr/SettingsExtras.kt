@@ -14,6 +14,7 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
     private val router = SettingsRouter(activity, savedState)
     private val tone = ToneStyleSettings(activity)
     private var languageValue: TextView? = null
+    private var themeChoices: com.google.android.material.button.MaterialButtonToggleGroup? = null
     private val providerValues = mutableListOf<TextView>()
     private var storageValue: TextView? = null
     private var diagnostics: TextView? = null
@@ -38,6 +39,7 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
     fun updateReadiness(summary: String) = router.readiness("$summary · Review System setup")
     internal fun resetCustomRefinements() { prefs.edit().remove("custom_instructions").apply(); activity.refreshSettings() }
     fun refresh() {
+        themeChoices?.let { choices -> choices.findViewWithTag<View>("theme-${prefs.getInt("appearance", -1)}")?.let { choices.check(it.id) } }
         languageValue?.text = DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title
         providerValues.forEach { it.text = providerSummary() }
         val mic = androidx.core.content.ContextCompat.checkSelfPermission(activity, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -59,8 +61,48 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
     }
     fun build(setup: View, engine: View, models: View, cleanupControls: View, bubbleControls: View, backupControls: View, interfaceControls: View, aboutControls: View): View {
         val preferences = column().apply {
-            addView(row("Appearance · System, Light or Dark") {
-                choose("Appearance", listOf("System", "Light", "Dark"), listOf(-1, 1, 2), "appearance", -1) { AppCompatDelegate.setDefaultNightMode(prefs.getInt("appearance", -1)) }
+            addView(ModernUi.label(activity, "Appearance", 14f, strong = true).apply { setPadding(0, 0, 0, 4) })
+            addView(note("Control how OpenWisper looks"))
+            addView(LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL; background = ModernUi.surface(activity, radius = 6)
+                setPadding(ModernUi.dp(activity, 12), ModernUi.dp(activity, 10), ModernUi.dp(activity, 12), ModernUi.dp(activity, 10))
+                addView(ModernUi.label(activity, "Theme", 14f, strong = true))
+                addView(ModernUi.label(activity, "Choose light, dark, or match your system", 12f, muted = true))
+                val choices = com.google.android.material.button.MaterialButtonToggleGroup(activity).apply {
+                    isSingleSelection = true; isSelectionRequired = true
+                    background = ModernUi.surface(activity, muted = true, radius = 6)
+                    layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = ModernUi.dp(activity, 8) }
+                }
+                themeChoices = choices
+                val selected = prefs.getInt("appearance", -1)
+                val values = mutableMapOf<Int, Int>()
+                for ((label, mode) in listOf("Light" to 1, "Dark" to 2, "Auto" to -1)) {
+                    val item = screenButton(activity, label) {}.apply {
+                        id = View.generateViewId(); tag = "theme-$mode"; isCheckable = true
+                        contentDescription = "Theme: $label"
+                        icon = androidx.core.content.ContextCompat.getDrawable(activity, when(mode) {
+                            1 -> R.drawable.ic_ui_sun; 2 -> R.drawable.ic_ui_moon; else -> R.drawable.ic_ui_monitor
+                        })
+                        iconSize = ModernUi.dp(activity, 14); iconPadding = ModernUi.dp(activity, 5)
+                        iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
+                        backgroundTintList = android.content.res.ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                            intArrayOf(ModernUi.color(activity, R.color.panel), android.graphics.Color.TRANSPARENT))
+                        strokeColor = android.content.res.ColorStateList(arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                            intArrayOf(ModernUi.color(activity, R.color.panel_outline), android.graphics.Color.TRANSPARENT))
+                    }
+                    values[item.id] = mode
+                    choices.addView(item, LinearLayout.LayoutParams(0, -2, 1f))
+                    if (mode == selected) choices.check(item.id)
+                }
+                choices.addOnButtonCheckedListener { _, id, checked ->
+                    if (checked) values[id]?.let { mode ->
+                        if (prefs.getInt("appearance", -1) != mode) {
+                            prefs.edit().putInt("appearance", mode).apply()
+                            AppCompatDelegate.setDefaultNightMode(mode)
+                        }
+                    }
+                }
+                addView(choices)
             })
             val language = row("Language · ${DictationLanguage.fromSaved(prefs.getString("language_profile", null)).title}") { activity.showLanguageProfilePicker() }.apply { tag = "settings-language" }
             languageValue = language.findViewWithTag("setting-subtitle"); addView(language)

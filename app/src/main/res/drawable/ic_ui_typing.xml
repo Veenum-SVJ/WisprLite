@@ -1,4 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nucleo Core Outline. Copyright Nucleo. Licensed for use within OpenWisper; see NOTICE. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-<path android:fillColor="#00000000" android:strokeColor="#FF000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M5,5h14a2,2 0,0 1,2,2v10a2,2 0,0 1,-2,2H5a2,2 0,0 1,-2,-2V7a2,2 0,0 1,2,-2 M8,16h8"/>
-<path android:fillColor="#FF000000" android:pathData="M6,9a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M11.1,9a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M16.2,9a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M6,12.5a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M11.1,12.5a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0 M16.2,12.5a0.9,0.9 0,1 0,1.8,0a0.9,0.9 0,1 0,-1.8,0"/>
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M4 18L20 18C21.1046 18 22 17.1046 22 16L22 8.00001C22 6.89544 21.1046 6.00001 20 6.00001L4 6.00001C2.89543 6.00001 2 6.89544 2 8.00001L2 16C2 17.1046 2.89543 18 4 18Z" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M6 10H6.01" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M10 10H10.01" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M10 14H14" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M6 14H6.01" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M18 14H18.01" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M14 10H14.01" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M18 10H18.01" />
 </vector>

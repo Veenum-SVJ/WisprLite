@@ -1,1 +1,5 @@
 WisprLite incorporates EdiBianco/OpenWhispr v4.0.0 (7f41114c1028190749b3bfeed721c3aef05d56fe), based on kafkasl/phone-whisper. See LICENSE and docs/upstream for original attribution. WisprLite modifications are documented in Git history.
+
+OpenWisper UI icon assets include Nucleo Core Outline artwork, Copyright Nucleo, used with the project owner's confirmed licence. These assets are licensed for use within this product, not as a standalone icon library. See https://nucleoapp.com/license and https://nucleoapp.com/copyright-notice .
+
+Yowza and Yowza Soft are separately licensed typefaces supplied to builds privately with the project owner's confirmed licence. Raw font files are excluded from public source. Public-source builds without these licensed inputs use Android system typography. The user-supplied OpenWisper logo is integrated unchanged.

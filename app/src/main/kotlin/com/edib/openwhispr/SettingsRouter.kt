@@ -22,7 +22,7 @@ class SettingsRouter(private val context: Context, savedState: Bundle? = null) {
     private val detail = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; tag = "settings-detail" }
     private val pages = linkedMapOf<SettingsDestination, View>()
     private var destination = savedState?.getString("settings-detail")?.let { runCatching { SettingsDestination.valueOf(it) }.getOrNull() }
-    private val title = ModernUi.label(context, "", 22f, strong = true).apply { tag = "settings-detail-title" }
+    private val title = ModernUi.label(context, "", 20f, strong = true).apply { tag = "settings-detail-title" }
     private val readiness = ModernUi.settingRow(context, "Dictation readiness · System setup", { open(SettingsDestination.SYSTEM) }).apply { tag = "settings-readiness" }
     init {
         index.addView(readiness)
@@ -30,9 +30,9 @@ class SettingsRouter(private val context: Context, savedState: Bundle? = null) {
         SettingsDestination.entries.forEach { target ->
             if (target.group != group) {
                 group = target.group
-                index.addView(ModernUi.label(context, group, 12f, strong = true, muted = true).apply { setPadding(4, 28, 4, 12) })
+                index.addView(ModernUi.label(context, group, 12f, strong = true, muted = true).apply { setPadding(4, 20, 4, 8) })
             }
-            index.addView(ModernUi.settingRow(context, "${target.title} · ${target.summary}", { open(target) }).apply { tag = "settings-open-${target.name}" })
+            index.addView(ModernUi.navigationRow(context, "${target.title} · ${target.summary}", { open(target) }).apply { tag = "settings-open-${target.name}" })
         }
         detail.addView(ModernUi.settingRow(context, "Back to Settings", { handleBack() }).apply { tag = "settings-detail-back" })
         detail.addView(title)

@@ -12,7 +12,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
     private val prefs = activity.getSharedPreferences("openwhispr", Context.MODE_PRIVATE)
     private val frame = FrameLayout(activity)
     private val body = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
-    private val title = ModernUi.label(activity, "Home", 28f, strong = true).apply { setPadding(dp(20), dp(14), dp(20), dp(10)) }
+    private val title = ModernUi.label(activity, "Home", 20f, strong = true).apply { setPadding(dp(16), dp(12), dp(16), dp(12)) }
     private val content = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
     private var destination = savedState?.getString("destination") ?: "Home"
     private val homeState = savedState?.getBundle("home_state") ?: android.os.Bundle()
@@ -43,7 +43,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
-        content.setPadding(dp(20), dp(4), dp(20), dp(24))
+        content.setPadding(dp(16), dp(12), dp(16), dp(24))
         activity.onBackPressedDispatcher.addCallback(activity, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (closeDrawer()) return
@@ -54,9 +54,9 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             }
         })
         val header = LinearLayout(activity).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(20), dp(8), dp(12), dp(8))
-            addView(ModernUi.logo(activity))
-            addView(ModernUi.label(activity, "OpenWisper", 19f, strong = true),
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(4), dp(8), dp(4))
+            addView(ModernUi.logo(activity, 24))
+            addView(ModernUi.label(activity, "OpenWisper", 16f, strong = true),
                 LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(10) })
             addView(com.google.android.material.button.MaterialButton(activity).apply {
                 contentDescription = "Open navigation"
@@ -71,6 +71,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
         }
         body.addView(header)
         body.addView(title)
+        body.addView(View(activity).apply { setBackgroundColor(ModernUi.color(activity, R.color.panel_outline)) }, LinearLayout.LayoutParams(-1, dp(1)))
         body.addView(ScrollView(activity).apply { addView(content) }, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(body, FrameLayout.LayoutParams(-1, -1))
         show(destination)
@@ -99,30 +100,31 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(40), dp(16), dp(20))
             val background = android.util.TypedValue()
             activity.theme.resolveAttribute(android.R.attr.colorBackground, background, true)
-            setBackgroundColor(background.data)
+            setBackgroundColor(ModernUi.color(activity, R.color.window_surface))
             isClickable = true
         }
         panel.addView(LinearLayout(activity).apply {
             gravity = Gravity.CENTER_VERTICAL
             addView(ModernUi.logo(activity, 36))
-            addView(ModernUi.label(activity, "OpenWisper", 22f, strong = true), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(12) })
+            addView(ModernUi.label(activity, "OpenWisper", 18f, strong = true), LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(12) })
             setPadding(dp(8), 0, dp(8), dp(28))
         })
         val icons = mapOf("Home" to R.drawable.ic_ui_home, "Insights" to R.drawable.ic_ui_insights,
             "Dictionary" to R.drawable.ic_ui_dictionary, "Settings" to R.drawable.ic_ui_settings)
         fun navigationRow(name: String) = com.google.android.material.button.MaterialButton(activity).apply {
-            text = name; isAllCaps = false; textSize = 16f
+            text = name; isAllCaps = false; textSize = 14f
             elevation = 0f; stateListAnimator = null
-            gravity = Gravity.START or Gravity.CENTER_VERTICAL; cornerRadius = dp(12)
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL; cornerRadius = dp(6)
             icon = androidx.core.content.ContextCompat.getDrawable(activity, icons.getValue(name))
-            iconPadding = dp(14); iconSize = dp(22)
+            iconPadding = dp(10); iconSize = dp(18)
             setPadding(dp(16), dp(10), dp(16), dp(10))
-            setTextColor(ModernUi.color(activity, if (destination == name) R.color.primary else R.color.ink))
-            iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.primary))
+            setTextColor(ModernUi.color(activity, R.color.ink))
+            typeface = ReferenceTypography.face(activity, strong = destination == name)
+            iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, if (destination == name) R.color.primary else R.color.ink_muted))
             backgroundTintList = android.content.res.ColorStateList.valueOf(if (destination == name)
                 ModernUi.color(activity, R.color.primary_container) else android.graphics.Color.TRANSPARENT)
             layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) }
-            minHeight = dp(52)
+            minHeight = dp(48)
             setOnClickListener { closeDrawer(); show(name) }
         }
         for (name in listOf("Home", "Insights", "Dictionary")) panel.addView(navigationRow(name))

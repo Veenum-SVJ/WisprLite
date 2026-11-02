@@ -17,5 +17,7 @@
     <color name="ink">#EEF0F4</color>
     <color name="ink_muted">#AFB5BF</color>
     <color name="panel_outline">#363940</color>
+    <color name="window_surface">#18191B</color>
+    <color name="surface_subtle">#212327</color>
 </resources>
 

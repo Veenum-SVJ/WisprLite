@@ -46,6 +46,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
     }
     fun build(): View {
         root.addView(LinearLayout(activity).apply {
+            setPadding(0, 0, 0, dp(8))
             val mode = button("") { }
             fun updateMode() { mode.text = if (!prefs.getBoolean("use_post_processing", false)) "Direct transcription" else if (cleanupConfigured()) "AI Cleanup" else "Cleanup · needs key" }
             updateMode()
@@ -56,7 +57,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
                     .setPositiveButton("Open Settings") { _, _ -> openSettings() }.setNegativeButton("Cancel", null).show()
                 else { prefs.edit().putBoolean("use_post_processing", !enabled).apply(); updateMode() }
             }
-            addView(mode, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(mode, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(6) })
             val tone = button("") { }
             fun updateTone() { tone.text = ToneRules(prefs).nextOverride()?.title ?: "Automatic / app style" }
             updateTone(); tone.contentDescription = "Tone for next dictation"
@@ -77,12 +78,26 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
         val searchRow = LinearLayout(activity).apply { gravity = Gravity.CENTER_VERTICAL }
         val search = screenInput(activity, "Search transcripts").apply {
             tag = "history-search"; setSingleLine(); setText(state.getString("search", ""))
+            background = ModernUi.surface(activity, muted = true, radius = 18)
+            val searchIcon = androidx.core.content.ContextCompat.getDrawable(activity, R.drawable.ic_ui_search)?.mutate()
+            searchIcon?.setTint(ModernUi.color(activity, R.color.ink_muted))
+            searchIcon?.setBounds(0, 0, dp(16), dp(16))
+            setCompoundDrawablesRelative(searchIcon, null, null, null); compoundDrawablePadding = dp(8)
         }
         searchRow.addView(search, LinearLayout.LayoutParams(0, -2, 1f))
-        searchRow.addView(button("Clear") { search.setText("") }.apply { contentDescription = "Clear transcript search" })
+        val clear = button("") { search.setText("") }.apply {
+            contentDescription = "Clear transcript search"
+            icon = androidx.core.content.ContextCompat.getDrawable(activity, R.drawable.ic_ui_close)
+            iconSize = dp(16); iconPadding = 0; minWidth = 0
+            strokeWidth = 0; backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
+            visibility = if (search.text.isNullOrEmpty()) View.GONE else View.VISIBLE
+        }
+        searchRow.addView(clear, LinearLayout.LayoutParams(dp(48), dp(48)))
         root.addView(searchRow); root.addView(content)
         search.onChange { value ->
-            state.putString("search", value); generation++; pending?.cancel(false)
+            state.putString("search", value); clear.visibility = if (value.isEmpty()) View.GONE else View.VISIBLE
+            generation++; pending?.cancel(false)
             val token = generation
             pending = worker.schedule({ activity.runOnUiThread { if (!closed && token == generation) refresh() } }, 250, TimeUnit.MILLISECONDS)
         }
@@ -104,7 +119,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
                 val day = java.time.Instant.ofEpochMilli(record.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
                 if (day != lastDay) {
                     val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }
-                    content.addView(ModernUi.label(activity, label, 14f, strong = true, muted = true).apply { setPadding(0, dp(22), 0, dp(10)) })
+                    content.addView(ModernUi.label(activity, label, 13f, muted = true).apply { setPadding(0, dp(22), 0, dp(10)) })
                     group = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; background = ModernUi.surface(activity) }
                     content.addView(group); lastDay = day
                 }
@@ -130,7 +145,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
             tag = "transcript-card-${record.id}"
             setPadding(dp(14), dp(8), dp(14), dp(12))
         }
-        val words = ModernUi.label(activity, currentText().take(220), 16f).apply {
+        val words = ModernUi.label(activity, currentText().take(220), 15f).apply {
             tag = "transcript-text"; maxLines = 5; ellipsize = android.text.TextUtils.TruncateAt.END
             setPadding(dp(2), dp(6), dp(2), 0)
         }
@@ -154,10 +169,11 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
         row.setOnClickListener { if (expanded || truncated()) { expanded = !expanded; refreshExpansion() } }
         val header = LinearLayout(activity).apply { gravity = Gravity.CENTER_VERTICAL }
         val metadata = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
             addView(ModernUi.label(activity, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(record.createdAt)), 12f, muted = true))
         }
         val status = ModernUi.label(activity, if (matchingExpanded) "Expanded · match" else if (showingOriginal) "Original · match" else if (record.cleaned != null) "AI cleaned" else if (record.expanded != null) "Expanded" else if (record.mode == "AI Cleanup") "Original" else "Direct", 12f, muted = true)
+        status.setPadding(dp(8), 0, dp(4), 0)
         if (record.delivered != record.original || matchingExpanded) {
             status.minimumHeight = dp(48)
             status.gravity = Gravity.CENTER_VERTICAL

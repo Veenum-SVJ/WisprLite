@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
         val bubbleSizePanel = vertical(dp(24), dp(8))
         val bubbleSizeLabel = TextView(this).apply {
             text = getString(R.string.bubble_size)
-            textSize = 18f
+            textSize = 15f
             setTextColor(attrColor(android.R.attr.textColorPrimary))
         }
         bubbleSizePanel.addView(bubbleSizeLabel)
@@ -353,6 +353,7 @@ class MainActivity : AppCompatActivity() {
         val bubblePreview = ImageView(this).apply {
             tag = "bubble-size-preview"
             setImageResource(R.drawable.ic_app_logo)
+            clipToOutline = true
             scaleType = ImageView.ScaleType.FIT_CENTER
             background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ContextCompat.getColor(this@MainActivity, R.color.brand_blue)) }
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
@@ -1218,7 +1219,7 @@ class MainActivity : AppCompatActivity() {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(24), dp(16), dp(24), dp(16))
+            setPadding(dp(16), dp(12), dp(16), dp(12))
             isClickable = onClick != null
             isFocusable = onClick != null
             if (onClick != null) {
@@ -1240,7 +1241,7 @@ class MainActivity : AppCompatActivity() {
 
         textContainer.addView(TextView(this).apply {
             text = title
-            textSize = 18f
+            textSize = 15f
             setTextColor(attrColor(android.R.attr.textColorPrimary))
         })
 
@@ -1262,22 +1263,22 @@ class MainActivity : AppCompatActivity() {
         text = title
         textSize = 14f
         setTypeface(typeface, Typeface.BOLD)
-        setTextColor(attrColor(androidx.appcompat.R.attr.colorPrimary)) // Neutral Android-like blue
-        // [ui] 40dp start = group() margin (16) + row padding (24), so the
-        // header lines up with the row text inside the panel below it.
-        setPadding(dp(40), dp(24), dp(24), dp(8))
+        setTextColor(ModernUi.color(this@MainActivity, R.color.ink))
+        // Align with the grouped row content, matching the reference section hierarchy.
+        setPadding(dp(16), dp(20), dp(16), dp(8))
     }
 
     /** [ui] A section panel: rounded, in the theme's surface-container
      * colour (light/dark aware), clipping row ripples to its corners. */
     private fun group() = vertical(0).apply {
         background = GradientDrawable().apply {
-            cornerRadius = dp(20).toFloat()
+            cornerRadius = dp(8).toFloat()
+            setStroke(dp(1), ModernUi.color(this@MainActivity, R.color.panel_outline))
             setColor(attrColor(com.google.android.material.R.attr.colorSurfaceContainer))
         }
         clipToOutline = true
         layoutParams = LinearLayout.LayoutParams(LP_MATCH, LP_WRAP).apply {
-            setMargins(dp(16), 0, dp(16), dp(8))
+            setMargins(0, 0, 0, dp(12))
         }
     }
 
