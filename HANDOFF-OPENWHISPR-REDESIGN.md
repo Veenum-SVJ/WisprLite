@@ -19,3 +19,8 @@ Release v0.2.1-preview is published. GitHub reports the APK uploaded with size37
 ## 0.2.2 notification follow-up
 
 New monochrome logo vector replaces default microphone in ongoing and recovery notifications. Version0.2.2/code5 installed on Pixel; live notification resource matches packaged logo; release build/lint/signature/alignment passed. APK .tools/releases/OpenWisper-0.2.2-android.apk, 37,545,488 bytes, SHA-256 a7a3eabf24b64d3d256b1a78a9d2b88728113cde11975465fad74bba267040ff. See docs/testing/openwisper-0.2.2.md. Redmi still disconnected. The earlier 0.2.1 GitHub CI reruns have all passed. New release delivery is v0.2.2-preview; verify uploaded asset before reporting publication.
+
+
+## Both phones updated
+
+Redmi 12 (50e64c4c7d76) reconnected and accepted the same optimized0.2.2 APK over0.2.0 using install -r. Launch, microphone permission, accessibility binding and new notification resource verified. Other accessibility service preserved. No helper installed; owned temporary UI XML removed. Pixel and Redmi now both have0.2.2; the earlier pending-Redmi checkpoints above are superseded. No main app data was cleared.
