@@ -242,7 +242,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             val notification = NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
                 .setContentTitle(getString(R.string.notification_content_title))
                 .setContentText(getString(R.string.notification_content_text))
-                .setSmallIcon(R.drawable.ic_mic)
+                .setSmallIcon(R.drawable.ic_notification_openwisper)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setOngoing(true)
                 .setSilent(true)

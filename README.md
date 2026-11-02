@@ -2,7 +2,9 @@
 
 Previously named WisprLite. A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
-[Download OpenWisper 0.2.1 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.1-preview/OpenWisper-0.2.1-android.apk) · 37.5 MB · Android 11+ / arm64. Models download separately.
+[Download OpenWisper 0.2.2 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.2-preview/OpenWisper-0.2.2-android.apk) · 37.5 MB · Android 11+ / arm64. Models download separately.
+
+The 0.2.2 update uses a monochrome ring-and-waveform OpenWisper logo for service notifications, replacing the default microphone icon. Android supplies its status-bar tint.
 
 ## Screens
 The 0.2.1 redesign keeps existing providers, models and history when updated with the same signer. See [verification and limits](docs/testing/openwisper-0.2.1.md).

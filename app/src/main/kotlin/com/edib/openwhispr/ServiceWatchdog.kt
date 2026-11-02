@@ -94,7 +94,7 @@ object ServiceWatchdog {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_mic)
+                .setSmallIcon(R.drawable.ic_notification_openwisper)
                 .setContentTitle(context.getString(R.string.watchdog_title))
                 .setContentText(context.getString(R.string.watchdog_text))
                 .setContentIntent(open)
