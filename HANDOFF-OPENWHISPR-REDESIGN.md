@@ -24,3 +24,7 @@ New monochrome logo vector replaces default microphone in ongoing and recovery n
 ## Both phones updated
 
 Redmi 12 (50e64c4c7d76) reconnected and accepted the same optimized0.2.2 APK over0.2.0 using install -r. Launch, microphone permission, accessibility binding and new notification resource verified. Other accessibility service preserved. No helper installed; owned temporary UI XML removed. Pixel and Redmi now both have0.2.2; the earlier pending-Redmi checkpoints above are superseded. No main app data was cleared.
+
+## 0.2.3 clipboard follow-up
+
+Readable plain-text clipboard previews enabled for dictation and history copies; typing WPM explained in Settings. Pixel0.2.3/code6 optimized install-r, launch and own service binding verified; test helper removed, data preserved. Debug/test assemblies and debug lint passed; exact Unicode readable clipboard fallback phone check passed; release build/lint/signature/16 KiB alignment passed. APK .tools/releases/OpenWisper-0.2.3-android.apk:37,545,488 bytes, SHA-256 b44e24cb62b06b41f15d99efba54afe9c7da545bc4f6b54361a90de8e6bf192c. Only Pixel connected for this update; Redmi remains0.2.2. The roughly30-second lingering UI is UNRESOLVED: async clarification pending about clipboard preview versus floating bubble/capsule versus feedback. Do not claim timeout fixed or change global accessibility timeouts. User already received WPM explanation; no speech-speed setting exists. See docs/testing/openwisper-0.2.3.md. Release target v0.2.3-preview; verify asset state before reporting published.
