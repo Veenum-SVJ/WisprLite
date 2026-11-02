@@ -495,12 +495,8 @@ class WhisperAccessibilityService : AccessibilityService() {
                     buttonParams.height = buttonSize
                     button?.layoutParams = buttonParams
                 }
-                button?.setPadding(
-                    (dimensions.paddingDp * dp).toInt(),
-                    (dimensions.paddingDp * dp).toInt(),
-                    (dimensions.paddingDp * dp).toInt(),
-                    (dimensions.paddingDp * dp).toInt()
-                )
+                val logoInset = if (state == State.RECORDING) (dimensions.paddingDp * dp).toInt() else 0
+                button?.setPadding(logoInset, logoInset, logoInset, logoInset)
                 wm.updateViewLayout(view, lp)
                 updateOverlayShape(state == State.RECORDING)
 
@@ -838,8 +834,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** Swaps the overlay's icon: the app logo while idle, the mic glyph
-     * while recording/transcribing. */
+    /** Preserve the supplied logo while idle/processing and use the live waveform while recording. */
     private fun setIcon(res: Int) {
         handler.post { dottedLogo.recording = false; button?.setImageDrawable(if (state == State.RECORDING) recordingWave else dottedLogo) }
     }

@@ -118,7 +118,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
             for (record in records) {
                 val day = java.time.Instant.ofEpochMilli(record.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
                 if (day != lastDay) {
-                    val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.toString() }
+                    val label = when (day) { LocalDate.now() -> "Today"; LocalDate.now().minusDays(1) -> "Yesterday"; else -> day.format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.getDefault())) }
                     content.addView(ModernUi.label(activity, label, 13f, muted = true).apply { setPadding(0, dp(22), 0, dp(10)) })
                     group = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; background = ModernUi.surface(activity) }
                     content.addView(group); lastDay = day
@@ -150,7 +150,8 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
             setPadding(dp(2), dp(6), dp(2), 0)
         }
         val more = button("Read more") { }.apply {
-            minHeight = dp(48); textSize = 12f; cornerRadius = dp(10)
+            minHeight = dp(48); textSize = 12f; cornerRadius = dp(0); strokeWidth = 0
+            setPadding(dp(2), 0, dp(8), 0)
             backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
             setTextColor(ModernUi.color(activity, R.color.primary))
             elevation = 0f; stateListAnimator = null
@@ -194,7 +195,7 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
             contentDescription = description
             icon = androidx.core.content.ContextCompat.getDrawable(activity, iconResource)
             iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
-            iconSize = dp(20); iconPadding = 0
+            iconSize = dp(16); iconPadding = 0
             iconGravity = com.google.android.material.button.MaterialButton.ICON_GRAVITY_TEXT_START
             backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
             cornerRadius = dp(24); elevation = 0f; stateListAnimator = null

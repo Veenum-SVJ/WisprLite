@@ -37,14 +37,14 @@ internal object ModernUi {
         layoutParams = LinearLayout.LayoutParams(dp(context, size), dp(context, size))
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
-    fun icon(context: Context, resource: Int, size: Int = 22) = ImageView(context).apply {
+    fun icon(context: Context, resource: Int, size: Int = 16) = ImageView(context).apply {
         setImageResource(resource); imageTintList = ColorStateList.valueOf(color(context, R.color.ink_muted))
         layoutParams = LinearLayout.LayoutParams(dp(context, size), dp(context, size))
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
     fun settingsIcon(label: String): Int = when {
         label.startsWith("Preferences") -> R.drawable.ic_ui_appearance
-        label.startsWith("Tone & Style") -> R.drawable.ic_ui_cleanup
+        label.startsWith("Tone & Style") -> R.drawable.ic_ui_tone
         label.startsWith("Speech-to-Text") -> R.drawable.ic_ui_audio_retention
         label.startsWith("Language Models") -> R.drawable.ic_ui_brain
         label.startsWith("Privacy & Data") -> R.drawable.ic_ui_shield
@@ -83,8 +83,8 @@ internal object ModernUi {
             orientation = LinearLayout.VERTICAL
             addView(ModernUi.label(context, parts[0], 14f, strong = true))
             if (parts.size > 1) addView(ModernUi.label(context, parts[1], 13f, muted = true).apply { tag = "setting-subtitle" })
-        }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(context, 14); marginEnd = dp(context, 8) })
-        addView(icon(context, R.drawable.ic_ui_chevron, 18))
+        }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(context, 8); marginEnd = dp(context, 8) })
+        addView(icon(context, R.drawable.ic_ui_chevron, 14))
         layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(context, 6) }
         setOnClickListener { action() }
     }

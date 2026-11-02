@@ -116,7 +116,7 @@ class WisprNavigation(private val activity: MainActivity, private val settings: 
             elevation = 0f; stateListAnimator = null
             gravity = Gravity.START or Gravity.CENTER_VERTICAL; cornerRadius = dp(6)
             icon = androidx.core.content.ContextCompat.getDrawable(activity, icons.getValue(name))
-            iconPadding = dp(10); iconSize = dp(18)
+            iconPadding = dp(8); iconSize = dp(16)
             setPadding(dp(16), dp(10), dp(16), dp(10))
             setTextColor(ModernUi.color(activity, R.color.ink))
             typeface = ReferenceTypography.face(activity, strong = destination == name)

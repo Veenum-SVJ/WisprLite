@@ -2,22 +2,22 @@
 
 Previously named WisprLite. A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
-[Download OpenWisper 0.2.0 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.0-preview/OpenWisper-0.2.0-android.apk) · 36.3 MB · Android 11+ / arm64. Models download separately.
+[Download OpenWisper 0.2.1 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.1-preview/OpenWisper-0.2.1-android.apk) · 37.5 MB · Android 11+ / arm64. Models download separately.
 
 ## Screens
-The 0.2.0 redesign keeps existing providers, models and history when updated with the same signer. See [verification and limits](docs/testing/openwisper-0.2.0.md).
+The 0.2.1 redesign keeps existing providers, models and history when updated with the same signer. See [verification and limits](docs/testing/openwisper-0.2.1.md).
 
 - Home: searchable transcript history, inline copy/delete and original/expanded/cleaned text, expandable long transcripts and Direct/Cleanup mode.
 - Insights: speaking activity heatmap, selectable day details, words, recordings, speaking time and streaks. Typing time saved is an estimate.
 - Dictionary: custom words and pronunciation aliases, plus snippets whose spoken shortcuts expand saved text.
 - Settings: grouped Preferences, Tone & Style, Speech-to-Text, Language Models, Privacy & Data, and System pages.
 
-Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. Blue fine-dot branding pairs neutral light and charcoal dark themes. Tone rules are optional, remembered per destination app; a manual override applies to the next dictation. Direct mode never enables AI cleanup. Snippet payloads are protected through cleanup; invalid AI placeholder output falls back to the expanded text.
+Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. The supplied blue waveform logo, licensed Yowza typography and Nucleo icons accompany desktop OpenWhispr light-mode styling adapted to mobile, with a dark theme too. Tone rules are optional, remembered per destination app; a manual override applies to the next dictation. Direct mode never enables AI cleanup. Snippet payloads are protected through cleanup; invalid AI placeholder output falls back to the expanded text.
 
 ## Setup
-Install an APK, grant microphone access and enable the WisprLite Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
+Install an APK, grant microphone access and enable the OpenWisper Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.
 
-On Xiaomi/Redmi/POCO, also allow WisprLite under Background autostart. Settings includes a shortcut and explanation; this permission is separate from standard battery optimization. On the tested Redmi, enabling it allowed automatic service recovery after an idle process kill. This is not a guarantee against every firmware restriction, force-stop or reboot case.
+On Xiaomi/Redmi/POCO, also allow OpenWisper under Background autostart. Settings includes a shortcut and explanation; this permission is separate from standard battery optimization. On the tested Redmi, enabling it allowed automatic service recovery after an idle process kill. This is not a guarantee against every firmware restriction, force-stop or reboot case.
 
 Choose cloud transcription and enter an HTTPS API base URL, model name and API key, or download and activate a compatible offline model. Saved providers keeps multiple encrypted credentials with separate explicit choices for speech and cleanup. Groq uses Whisper-compatible multipart speech; the Google AI Studio preset uses audio chat. Saving a profile does not enable cloud recording or cleanup, and failures never switch providers. Live provider/model availability still needs a configured account and speech trial. Cloud cleanup sends text even when speech recognition is offline.
 

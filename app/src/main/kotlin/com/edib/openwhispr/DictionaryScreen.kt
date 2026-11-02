@@ -138,7 +138,7 @@ internal class DictionaryScreen(
                 icon = androidx.core.content.ContextCompat.getDrawable(activity, when (label) {
                     "Edit" -> R.drawable.ic_ui_edit; "Preview" -> R.drawable.ic_ui_preview; else -> R.drawable.ic_ui_delete
                 })
-                iconSize = dp(18); iconPadding = 0
+                iconSize = dp(16); iconPadding = 0
                 iconTint = android.content.res.ColorStateList.valueOf(ModernUi.color(activity, R.color.ink_muted))
                 setPadding(dp(12), 0, dp(12), 0)
                 layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))

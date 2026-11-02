@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SquareSparkle: Copyright (c) 2024 OpenWhispr Team, MIT. See docs/licenses/OpenWhispr-Desktop-MIT.txt. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:strokeColor="#FF000000" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="@android:color/transparent" android:pathData="M14,4 H7 A3,3 0,0 0,4,7 V17 A3,3 0,0 0,7,20 H17 A3,3 0,0 0,20,17 V10 M12,9.5 V14.5 M9.5,12 H14.5 M19,2.5 V7.5 M16.5,5 H21.5" />
+</vector>

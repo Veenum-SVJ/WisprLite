@@ -7,12 +7,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 enum class SettingsDestination(val title: String, val group: String, val summary: String) {
-    PREFERENCES("Preferences", "APP", "Appearance, language and recording bubble"),
-    TONE("Tone & Style", "APP", "Category tones and app preferences"),
-    SPEECH("Speech-to-Text", "AI MODELS", "Recognition providers and local models"),
-    LANGUAGE("Language Models", "AI MODELS", "AI cleanup, providers and prompts"),
-    PRIVACY("Privacy & Data", "SYSTEM", "Storage, retention and encrypted backups"),
-    SYSTEM("System", "SYSTEM", "Setup, diagnostics and updates")
+    PREFERENCES("Preferences", "App", "Appearance, language and recording bubble"),
+    TONE("Tone & Style", "App", "Category tones and app preferences"),
+    SPEECH("Speech-to-Text", "AI Models", "Recognition providers and local models"),
+    LANGUAGE("Language Models", "AI Models", "AI cleanup, providers and prompts"),
+    PRIVACY("Privacy & Data", "System", "Storage, retention and encrypted backups"),
+    SYSTEM("System", "System", "Setup, diagnostics and updates")
 }
 
 /** Keeps each live editor in one parent. Refreshing never rebuilds a detail page. */
@@ -32,7 +32,7 @@ class SettingsRouter(private val context: Context, savedState: Bundle? = null) {
                 group = target.group
                 index.addView(ModernUi.label(context, group, 12f, strong = true, muted = true).apply { setPadding(4, 20, 4, 8) })
             }
-            index.addView(ModernUi.navigationRow(context, "${target.title} · ${target.summary}", { open(target) }).apply { tag = "settings-open-${target.name}" })
+            index.addView(ModernUi.navigationRow(context, target.title, { open(target) }).apply { tag = "settings-open-${target.name}"; contentDescription = "${target.title}. ${target.summary}" })
         }
         detail.addView(ModernUi.settingRow(context, "Back to Settings", { handleBack() }).apply { tag = "settings-detail-back" })
         detail.addView(title)
