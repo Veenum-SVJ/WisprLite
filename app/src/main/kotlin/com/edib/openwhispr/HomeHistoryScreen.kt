@@ -252,7 +252,6 @@ internal class HomeHistoryScreen(private val activity: AppCompatActivity, privat
     }
     private fun copy(value: String) {
         val clip = ClipData.newPlainText("OpenWisper transcript", value)
-        if (android.os.Build.VERSION.SDK_INT >= 33) clip.description.extras = android.os.PersistableBundle().apply { putBoolean("android.content.extra.IS_SENSITIVE", true) }
         (activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
         Toast.makeText(activity, "Copied", Toast.LENGTH_SHORT).show()
     }

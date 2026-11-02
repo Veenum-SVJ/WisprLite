@@ -20,7 +20,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.PersistableBundle
 import android.text.InputType
 import android.util.Log
 import android.view.Gravity
@@ -1218,8 +1217,8 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     /** Inserts [text] into the focused field. Returns true if it landed.
      *
-     * [privacy] Insertion pastes, so the text goes on the clipboard first
-     * (marked sensitive, see copyToClipboard); if nothing accepts it, it
+     * Insertion pastes, so the text goes on the clipboard first;
+     * if nothing accepts it, it
      * stays there for the user to paste. [feedback] is shown only in that
      * case -- previously it was shown before insertion, even on success. */
     private fun injectText(
@@ -1250,18 +1249,10 @@ class WhisperAccessibilityService : AccessibilityService() {
         return injected
     }
 
-    /** [privacy] Puts dictated text on the clipboard (needed: paste-based
-     * injection and the manual fallback read it from there), marked as
-     * sensitive. Android 13+ then hides it in the clipboard preview, and
-     * keyboards that honour the flag keep it out of clipboard suggestions.
-     * Pasting is unaffected. The extra's key is the literal value of
-     * ClipDescription.EXTRA_IS_SENSITIVE (API 33), so this compiles and runs
-     * on minSdk 30, where it is simply ignored. */
+    /** Paste-based insertion and manual fallback share a plain-text clip.
+     * Keep the transcript readable in Android's clipboard preview. */
     private fun copyToClipboard(text: String) {
-        val clip = ClipData.newPlainText("openwhispr", text)
-        clip.description.extras = PersistableBundle().apply {
-            putBoolean("android.content.extra.IS_SENSITIVE", true)
-        }
+        val clip = ClipData.newPlainText("OpenWisper transcript", text)
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
     }
 

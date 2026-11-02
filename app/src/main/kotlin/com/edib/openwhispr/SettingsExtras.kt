@@ -118,12 +118,13 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
             addView(note("Drag the bubble vertically on either edge, or drag it across to switch between the left and right edges. It docks to the nearest edge when released. During recording, the circle grows inward into a compact dotted waveform capsule and returns to a circle on stop. Tap to start or stop; hold for push-to-talk."))
             addView(row("Typing speed · ${prefs.getInt("typing_wpm", 40)} words/minute") {
                 val input = EditText(activity).apply { inputType = InputType.TYPE_CLASS_NUMBER; setText(prefs.getInt("typing_wpm", 40).toString()) }
-                val dialog = AlertDialog.Builder(activity).setTitle("Typing speed (1–300 WPM)").setView(input).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
+                val dialog = AlertDialog.Builder(activity).setTitle("Your typing speed").setMessage("Words you normally type per minute (1–300). Insights uses this only to estimate time saved. It does not change dictation or insertion speed.").setView(input).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()
                 dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
                     val value = input.text.toString().toIntOrNull()
                     if (value == null || value !in 1..300) input.error = "Enter 1–300" else { prefs.edit().putInt("typing_wpm", value).apply(); dialog.dismiss() }
                 } }; dialog.show()
             })
+            addView(note("Typing speed is measured in words per minute, not seconds. For example, 40 words/minute means typing 40 words in one minute. It only affects the estimated typing time saved in Insights."))
         }
         fun providers(): View = row("Saved providers · ${providerSummary()}") { ProviderProfilesUi(activity).show() }.also { providerValues += it.findViewWithTag<TextView>("setting-subtitle") }
         val speech = column().apply {

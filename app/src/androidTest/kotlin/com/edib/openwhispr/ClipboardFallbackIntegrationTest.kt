@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ClipboardFallbackIntegrationTest {
-    @Test fun noEditableFieldKeepsUnicodeOnSensitiveClipboardWithoutSavingHistory() {
+    @Test fun noEditableFieldKeepsReadableUnicodeOnClipboardWithoutSavingHistory() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val prefs = context.getSharedPreferences("openwhispr", 0)
@@ -46,7 +46,8 @@ class ClipboardFallbackIntegrationTest {
                         assertFalse("Fixture has no editable field; injection should use clipboard fallback", injected)
                         val clip = requireNotNull(clipboard.primaryClip)
                         assertEquals(phrase, clip.getItemAt(0).text.toString())
-                        assertTrue(clip.description.extras?.getBoolean("android.content.extra.IS_SENSITIVE") == true)
+                        assertFalse("Transcript preview should show words rather than password dots",
+                            clip.description.extras?.getBoolean("android.content.extra.IS_SENSITIVE") == true)
                     } finally {
                         if (previous == null) clipboard.clearPrimaryClip() else clipboard.setPrimaryClip(previous)
                     }
