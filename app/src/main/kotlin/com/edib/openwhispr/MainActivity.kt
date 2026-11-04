@@ -352,10 +352,10 @@ class MainActivity : AppCompatActivity() {
 
         val bubblePreview = ImageView(this).apply {
             tag = "bubble-size-preview"
-            setImageResource(R.drawable.ic_app_logo)
+            setImageDrawable(DottedVoiceDrawable())
             clipToOutline = true
             scaleType = ImageView.ScaleType.FIT_CENTER
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ContextCompat.getColor(this@MainActivity, R.color.brand_blue)) }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.TRANSPARENT) }
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         fun updateBubblePreview(percent: Int) {

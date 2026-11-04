@@ -1,5 +1,8 @@
 package com.edib.openwhispr
 
+import android.animation.ValueAnimator
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.accessibilityservice.AccessibilityService
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,12 +28,12 @@ import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
-import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -81,10 +84,6 @@ class WhisperAccessibilityService : AccessibilityService() {
         private const val NOTIF_CHANNEL_ID = "openwhispr_service"
         private const val NOTIF_ID = 1
 
-        private const val COLOR_IDLE = 0xFF2056DF.toInt()
-        // [ui] Soft red for the recording state (logo tint + outline);
-        // replaces the old solid red / grey button colours.
-        private const val COLOR_REC_ACCENT = 0xFFFFFFFF.toInt()
         private const val COLOR_FEEDBACK_BG = 0xEE1C1C1E.toInt()
         private const val COLOR_RING = 0xFFE8EAED.toInt()
     }
@@ -102,17 +101,13 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var overlayView: FrameLayout? = null
     private var overlayShown = false
 
-    // Two independent signals feed overlay visibility (OR'd together): an
-    // accessibility-tree focus check (event-driven AND polled as a failsafe,
-    // since some apps -- notably WhatsApp/Telegram -- don't reliably fire
-    // focus events for their custom message composers) and the system
-    // keyboard's own visibility (window-manager-level, doesn't depend on the
-    // foreground app cooperating with accessibility at all).
-    private var accessibilityFocusSignal = false
-    private var imeVisibleSignal = false
+    private var keyboardVisible = false
+    private var focusedHardwareEditor = false
+    private var pendingOverlayVisible: Boolean? = null
     private var button: ImageView? = null
-    private val dottedLogo = DottedVoiceDrawable(this)
-    private val recordingWave = RecordingCapsuleDrawable()
+    private val dottedLogo = DottedVoiceDrawable()
+    private var bubbleMorph: ValueAnimator? = null
+    private var holdRecording = false
     private var cancelBubblePress: (() -> Unit)? = null
     // [ui] Smoothed recording level for the voice-reactive overlay (main thread).
     private var audioLevel = 0f
@@ -191,6 +186,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         try { recorder?.stop() } catch (_: RuntimeException) { }
         try { recorder?.release() } catch (_: RuntimeException) { }
         pcmStream = null
+        holdRecording = false
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
@@ -201,6 +197,7 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         serviceAlive = false
+        bubbleMorph?.removeAllListeners(); bubbleMorph?.cancel(); bubbleMorph = null
         cancelRecording()
         handler.removeCallbacksAndMessages(null)
         thread { synchronized(modelLock) { localTranscriber?.close(); localTranscriber = null } }
@@ -331,80 +328,69 @@ class WhisperAccessibilityService : AccessibilityService() {
     // --- Overlay visibility (multi-signal, OR'd together) ---
 
     private fun refreshAccessibilityFocusSignal() {
+        // Input connections can remain started after navigation or IME dismissal.
+        // Overlay insets can also remain cached. Only fresh window visibility is
+        // authoritative for the software keyboard; neither stale signal is OR'd in.
+        keyboardVisible = false
+        focusedHardwareEditor = false
         try {
-            val root = rootInActiveWindow
-            val focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            // The foreground app's own tree is only one witness: web-based
-            // composers (the Claude app's Code tab) often don't report an
-            // editable focus at all. The other two come from the system.
-            accessibilityFocusSignal = (focused != null && isEditableTextField(focused)) ||
-                hasActiveTextInput() || isKeyboardWindowShown()
-            focused?.recycle()
-            root?.recycle()
+            keyboardVisible = isKeyboardWindowShown()
+            val config = resources.configuration
+            if (config.keyboard != android.content.res.Configuration.KEYBOARD_NOKEYS &&
+                config.hardKeyboardHidden == android.content.res.Configuration.HARDKEYBOARDHIDDEN_NO) {
+                val root = rootInActiveWindow
+                try {
+                    val focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    try {
+                        focusedHardwareEditor = focused != null && focused.isVisibleToUser &&
+                            focused.isEnabled && isEditableTextField(focused)
+                    } finally { focused?.recycle() }
+                } finally { root?.recycle() }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "refreshAccessibilityFocusSignal failed", e)
-        } finally {
-            updateOverlayVisibility()
+        } finally { updateOverlayVisibility() }
+    }
+
+    private fun isEditableTextField(node: AccessibilityNodeInfo): Boolean =
+        node.isEditable || node.className?.toString().orEmpty().contains("EditText")
+
+    private fun isKeyboardWindowShown(): Boolean = windows.any { window ->
+        if (window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) false else {
+            val bounds = android.graphics.Rect()
+            window.getBoundsInScreen(bounds)
+            val root = window.root
+            try { !bounds.isEmpty && root?.isVisibleToUser != false }
+            finally { root?.recycle() }
         }
     }
 
-    private fun isEditableTextField(node: AccessibilityNodeInfo): Boolean {
-        val className = node.className?.toString().orEmpty()
-        return node.isEditable || className.contains("EditText")
-    }
-
-    /** Android 13+: a text field has an open input connection to this
-     * service (flagInputMethodEditor), the same one injectText types
-     * through. True whatever the app's accessibility tree says. */
-    private fun hasActiveTextInput(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
-        val method = inputMethod ?: return false
-        val inputType = method.currentInputEditorInfo?.inputType ?: return false
-        return method.currentInputStarted && inputType != InputType.TYPE_NULL
-    }
-
-    /** The keyboard's own window is on screen. Needs
-     * flagRetrieveInteractiveWindows; without it the list is empty. */
-    private fun isKeyboardWindowShown(): Boolean =
-        try {
-            windows?.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } == true
-        } catch (e: Exception) {
-            false
-        }
-
-    /** Fed by the overlay view's WindowInsets listener -- catches apps whose
-     * custom composers (WhatsApp, Telegram, ...) never fire accessibility
-     * focus events at all, since this signal comes from the window manager
-     * rather than the foreground app's own accessibility tree. */
-    private fun onKeyboardVisibilityChanged(visible: Boolean) {
-        imeVisibleSignal = visible
-        updateOverlayVisibility()
-    }
-
-    private fun wantsOverlay(): Boolean =
-        masterEnabled() && (accessibilityFocusSignal || imeVisibleSignal || state != State.IDLE)
+    private fun wantsOverlay(): Boolean = BubbleVisibility.shouldShow(
+        masterEnabled(), state != State.IDLE, keyboardVisible, focusedHardwareEditor
+    )
 
     private fun updateOverlayVisibility() {
         val shouldShow = wantsOverlay()
-        handler.removeCallbacks(overlayVisibilityDebounce)
         if (shouldShow == overlayShown) {
-            // Self-heal: the view can drift from overlayShown (e.g. after an app
-            // switch), leaving it hidden while it should show. Re-show it here.
+            handler.removeCallbacks(overlayVisibilityDebounce)
+            pendingOverlayVisible = null
             if (shouldShow && overlayView?.visibility != View.VISIBLE) animateOverlayIn()
             return
         }
-        // Only act once the new state has held for OVERLAY_DEBOUNCE_MS, so rapid
-        // focus flapping between apps doesn't restart the fades.
+        // Repeated content events must not restart a pending hide indefinitely.
+        if (pendingOverlayVisible == shouldShow) return
+        handler.removeCallbacks(overlayVisibilityDebounce)
+        pendingOverlayVisible = shouldShow
         handler.postDelayed(overlayVisibilityDebounce, OVERLAY_DEBOUNCE_MS)
     }
 
-    private val overlayVisibilityDebounce = Runnable { applyOverlayVisibility() }
-
-    private fun applyOverlayVisibility() {
+    private val overlayVisibilityDebounce = Runnable {
+        pendingOverlayVisible = null
         val shouldShow = wantsOverlay()
-        if (shouldShow == overlayShown) return
-        overlayShown = shouldShow
-        if (shouldShow) animateOverlayIn() else animateOverlayOut()
+        if (shouldShow != overlayShown) {
+            overlayShown = shouldShow
+            if (shouldShow) animateOverlayIn() else animateOverlayOut()
+        }
     }
 
     private fun masterEnabled() = prefs().getBoolean("service_master_enabled", true)
@@ -440,8 +426,10 @@ class WhisperAccessibilityService : AccessibilityService() {
                 .setDuration(FADE_OUT_MS)
                 .setInterpolator(AccelerateInterpolator())
                 .withEndAction {
-                    view.visibility = View.INVISIBLE
-                    setTouchable(false)
+                    if (!wantsOverlay()) {
+                        view.visibility = View.INVISIBLE
+                        setTouchable(false)
+                    }
                 }
                 .start()
         }
@@ -628,7 +616,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             setImageDrawable(dottedLogo)
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(0, 0, 0, 0)
-            background = circle(COLOR_IDLE)
+            background = null
         }
 
         val overlay = BubbleOverlay(this).apply {
@@ -640,14 +628,7 @@ class WhisperAccessibilityService : AccessibilityService() {
             setOnClickListener { onTap() }
             alpha = 0f
             visibility = View.INVISIBLE
-            setOnApplyWindowInsetsListener { _, insets ->
-                try {
-                    onKeyboardVisibilityChanged(insets.isVisible(WindowInsets.Type.ime()))
-                } catch (e: Exception) {
-                    Log.e(TAG, "IME insets check failed", e)
-                }
-                insets
-            }
+
         }
 
         val params = WindowManager.LayoutParams(
@@ -668,6 +649,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         val gesture = BubbleGesture(BubbleSize.dimensions(currentBubbleSizePercent()).tapThresholdDp * dp)
         val beginHold = Runnable {
             if (serviceAlive && state == State.IDLE && gesture.hold()) {
+                holdRecording = true
                 startRecording()
                 if (state == State.RECORDING && prefs().getBoolean("recording_vibration", false)) overlay.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
             }
@@ -679,6 +661,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                     startX = params.x; startY = params.y
                     touchX = ev.rawX; touchY = ev.rawY
                     gesture.down(state == State.IDLE)
+                    if (state == State.IDLE) holdRecording = false
                     handler.postDelayed(beginHold, 350)
                     true
                 }
@@ -768,8 +751,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         feedbackLayoutParams = null
     }
 
-    // [ui] Outline colour/width are parameters now (recording uses a thin
-    // soft-red outline); the defaults keep the original white hairline.
+    // Position preview uses a separate placeholder outline.
     private fun circle(color: Int, stroke: Int = Color.WHITE, strokePx: Int = 1) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL
         setColor(color)
@@ -784,9 +766,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         setColor(color)
     }
 
-    /** [ui] Recording tints the button's icon soft red with a thin red
-     * outline (and onAudioLevel makes the button follow your voice);
-     * otherwise the original hairline. The icon itself is set by setIcon. */
+    /** Resize the touch window at transition endpoints, keeping the same edge. */
     private fun updateOverlayShape(recording: Boolean) {
         val view = overlayView ?: return
         val lp = layoutParams ?: return
@@ -794,7 +774,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         val margin = (MARGIN_DP * dp).toInt()
         val left = lp.x + lp.width / 2 <= screenW / 2
         val height = (dims.ringDp * dp).toInt()
-        val width = if (recording) minOf(screenW - 2 * margin, (132 * dp * currentBubbleSizePercent() / 100f).toInt()).coerceAtLeast(height) else height
+        val width = if (recording) minOf(screenW - 2 * margin, (100 * dp * currentBubbleSizePercent() / 100f).toInt()).coerceAtLeast(height) else height
         lp.width = width; lp.height = height
         lp.x = if (left) margin else maxOf(margin, screenW - width - margin)
         lp.y = lp.y.coerceIn(margin, maxOf(margin, screenH - height - margin))
@@ -809,33 +789,43 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun setRecordingLook(recording: Boolean) {
         handler.post {
             val b = button ?: return@post
-            updateOverlayShape(recording)
-            val inset = if (recording) (BubbleSize.dimensions(currentBubbleSizePercent()).paddingDp * dp).toInt() else 0
-            b.setPadding(inset, inset, inset, inset)
-            b.background = if (recording) pill(0xB31A1A1A.toInt()) else circle(COLOR_IDLE)
-            b.setImageDrawable(if (recording) recordingWave else dottedLogo)
-            b.imageTintList = if (recording) ColorStateList.valueOf(COLOR_REC_ACCENT) else null
-            audioLevel = 0f
+            bubbleMorph?.removeAllListeners(); bubbleMorph?.cancel(); bubbleMorph = null
+            val lp = layoutParams ?: return@post
+            dottedLogo.dockedLeft = lp.x + lp.width / 2 <= screenW / 2
             dottedLogo.recording = recording
+            dottedLogo.holdRecording = holdRecording
             dottedLogo.voiceLevel = 0f
-            recordingWave.voiceLevel = 0f
-            b.animate().cancel()
-            b.scaleX = 1f; b.scaleY = 1f
-            overlayView?.contentDescription = if (recording) "Recording. Tap to stop." else "Dictation. Tap or hold to record."
-            if (recording && android.animation.ValueAnimator.areAnimatorsEnabled()) {
-                val lp = layoutParams
-                val target = b.layoutParams.width.coerceAtLeast(1)
-                b.pivotX = if (lp != null && lp.x + lp.width / 2 > screenW / 2) target.toFloat() else 0f
-                b.scaleX = ((BubbleSize.dimensions(currentBubbleSizePercent()).buttonDp * dp) / target).coerceIn(.2f, 1f)
-                b.alpha = .6f
-                b.animate().scaleX(1f).alpha(1f).setDuration(160).start()
-            } else b.alpha = 1f
+            audioLevel = 0f
+            b.background = null; b.imageTintList = null
+            b.setImageDrawable(dottedLogo)
+            b.animate().cancel(); b.scaleX = 1f; b.scaleY = 1f; b.alpha = 1f
+            val description = if (recording) {
+                if (holdRecording) "Recording while held. Release to finish." else "Recording. Tap to stop."
+            } else if (state == State.TRANSCRIBING) "Processing dictation. Please wait."
+                else "Dictation. Tap or hold to record."
+            overlayView?.contentDescription = description
+            // Allocate the expanded window once, then animate only the drawable.
+            // Keep the same edge anchor and artwork throughout expansion/collapse.
+            if (recording) updateOverlayShape(true)
+            val target = if (recording) 1f else 0f
+            if (!ValueAnimator.areAnimatorsEnabled() || dottedLogo.expansion == target) {
+                dottedLogo.expansion = target
+                if (!recording) updateOverlayShape(false)
+            } else {
+                bubbleMorph = ValueAnimator.ofFloat(dottedLogo.expansion, target).apply {
+                    duration = if (recording) 260 else 220
+                    interpolator = DecelerateInterpolator(1.5f)
+                    addUpdateListener { dottedLogo.expansion = it.animatedValue as Float }
+                    addListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            if (!recording) updateOverlayShape(false)
+                            bubbleMorph = null
+                        }
+                    })
+                    start()
+                }
+            }
         }
-    }
-
-    /** Preserve the supplied logo while idle/processing and use the live waveform while recording. */
-    private fun setIcon(res: Int) {
-        handler.post { dottedLogo.recording = false; button?.setImageDrawable(if (state == State.RECORDING) recordingWave else dottedLogo) }
     }
 
     private fun setBusy(visible: Boolean) {
@@ -898,14 +888,13 @@ class WhisperAccessibilityService : AccessibilityService() {
         if (state != State.RECORDING) return
         audioLevel = maxOf(level, audioLevel * 0.85f)
         dottedLogo.voiceLevel = audioLevel
-        recordingWave.voiceLevel = audioLevel
     }
 
     // --- State machine ---
 
     private fun onTap() {
         when (state) {
-            State.IDLE -> startRecording()
+            State.IDLE -> { holdRecording = false; startRecording() }
             State.RECORDING -> stopAndTranscribe()
             State.TRANSCRIBING -> {}
         }
@@ -952,7 +941,6 @@ class WhisperAccessibilityService : AccessibilityService() {
         state = State.RECORDING
         setBusy(false)
         setRecordingLook(true) // [ui]
-        setIcon(R.drawable.ic_mic)
         setOpacity(active = true)
         updateOverlayVisibility()
 
@@ -989,8 +977,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private fun stopAndTranscribe() {
         val job = recordingJob
         state = State.TRANSCRIBING
-        setRecordingLook(false) // [ui] white bars + the existing spinner ring
-        setIcon(R.drawable.ic_mic)
+        setRecordingLook(false) // Collapse into the animated processing waveform.
         setBusy(true)
         updateOverlayVisibility()
 
@@ -1208,7 +1195,6 @@ class WhisperAccessibilityService : AccessibilityService() {
         state = State.IDLE
         setBusy(false)
         setRecordingLook(false) // [ui]
-        setIcon(R.drawable.ic_app_logo)
         setOpacity(active = false)
         updateOverlayVisibility()
     }

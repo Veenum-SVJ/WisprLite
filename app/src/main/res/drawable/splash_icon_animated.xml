@@ -1,1 +1,3 @@
-<inset xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/ic_launcher_foreground" android:insetLeft="12%" android:insetTop="12%" android:insetRight="12%" android:insetBottom="12%" />
+<!-- Draw the white logo mark directly on the launch screen's blue surface.
+     The full-colour launcher image remains unchanged. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:drawable="@drawable/ic_notification_openwisper" android:insetLeft="12%" android:insetTop="12%" android:insetRight="12%" android:insetBottom="12%" />

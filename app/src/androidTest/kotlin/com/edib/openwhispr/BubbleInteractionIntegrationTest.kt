@@ -44,12 +44,18 @@ class BubbleInteractionIntegrationTest {
             instrumentation.waitForIdleSync()
             val recordingParams = field("layoutParams").get(service) as WindowManager.LayoutParams
             assertTrue("Recording expands the logo into a compact capsule", recordingParams.width > recordingParams.height)
+            assertTrue("Capsule should remain compact relative to the logo", recordingParams.width.toFloat() / recordingParams.height < 2f)
+            val logo = field("dottedLogo").get(service) as DottedVoiceDrawable
+            assertFalse("Tap recording should use the continuous mode styling", logo.holdRecording)
             instrumentation.runOnMainSync { service.onInterrupt() }
             instrumentation.waitForIdleSync()
             touch(MotionEvent.ACTION_DOWN)
             val holdDeadline = SystemClock.uptimeMillis() + 3000
             while (state() != "RECORDING" && SystemClock.uptimeMillis() < holdDeadline) SystemClock.sleep(50)
             assertEquals("RECORDING", state())
+            instrumentation.waitForIdleSync()
+            assertTrue("Holding should show the release-to-finish styling", logo.holdRecording)
+            assertTrue(overlay.contentDescription.toString().contains("Release to finish"))
             touch(MotionEvent.ACTION_CANCEL)
             assertEquals("IDLE", state())
             touch(MotionEvent.ACTION_DOWN)
