@@ -2,7 +2,7 @@
 
 Previously named WisprLite. A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
-[Download OpenWisper 0.2.4 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.4-preview/OpenWisper-0.2.4-android.apk) · 37.5 MB · Android 11+ / arm64. Models download separately.
+[Download OpenWisper 0.2.5 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.5-preview/OpenWisper-0.2.5-android.apk) · 37.6 MB · Android 11+ / arm64. Models download separately.
 
 The 0.2.2 update uses a monochrome ring-and-waveform OpenWisper logo for service notifications, replacing the default microphone icon. Android supplies its status-bar tint.
 
@@ -19,6 +19,12 @@ The 0.2.1 redesign keeps existing providers, models and history when updated wit
 - Settings: grouped Preferences, Tone & Style, Speech-to-Text, Language Models, Privacy & Data, and System pages.
 
 Use the top-right menu to open the right-side drawer; Settings is anchored at the bottom. The supplied blue waveform logo, licensed Yowza typography and Nucleo icons accompany desktop OpenWhispr light-mode styling adapted to mobile, with a dark theme too. Tone rules are optional, remembered per destination app; a manual override applies to the next dictation. Direct mode never enables AI cleanup. Snippet payloads are protected through cleanup; invalid AI placeholder output falls back to the expanded text.
+
+## Updates
+
+From version0.2.5, open Settings → System → Check for Updates. Choose Download and install to fetch the APK inside OpenWisper, watch progress or cancel, then confirm Android’s installation prompt. On first use, Android may ask you to allow installations from OpenWisper; return to the app afterward. Completed downloads can be installed again without re-downloading if you cancel the installer. Updates preserve settings and history. This flow is for the GitHub-distributed APK; older versions need a one-time APK/ADB update to get it.
+
+Downloads use the official repository’s uploaded APK, published SHA-256 and size; the app also checks package identity, a newer Android version code and the existing signing certificate before requesting installation. No background update checks, silent installs or speech-provider credentials are used.
 
 ## Setup
 Install an APK, grant microphone access and enable the OpenWisper Accessibility Service. On some Xiaomi/Redmi phones, enabling Install via USB or approving the installation prompt is necessary during development.

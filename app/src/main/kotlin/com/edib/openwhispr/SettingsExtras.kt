@@ -19,8 +19,6 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
     private var storageValue: TextView? = null
     private var diagnostics: TextView? = null
     private var modelList: View? = null
-    private var updateValue: TextView? = null
-    private var updateRunning = false
     private val installedVersion = runCatching { activity.packageManager.getPackageInfo(activity.packageName, 0).versionName }.getOrNull() ?: "Unknown"
     private fun providerSummary(): String = runCatching {
         val store = ProviderProfiles(activity); val profiles = store.all().associateBy { it.id }
@@ -170,9 +168,7 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
             }
             addView(note("Installed version: $installedVersion"))
             diagnostics = note("").apply { tag = "settings-diagnostics" }; addView(diagnostics)
-            updateValue = note(prefs.getString("update_last_summary", "Latest version: not checked. Checks run only when you tap Check for Updates.").orEmpty())
-            addView(updateValue)
-            addView(row("Check for Updates · GitHub release metadata only") { checkUpdates() }.apply { tag = "settings-check-updates" })
+            addView(AppUpdatesUi(activity).view)
             addView(aboutControls)
         }
         router.page(SettingsDestination.PREFERENCES, preferences); router.page(SettingsDestination.TONE, tone.view)
@@ -184,37 +180,6 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
     fun toggleLocalModels() {
         router.open(SettingsDestination.SPEECH)
         modelList?.post { modelList?.let { it.requestRectangleOnScreen(android.graphics.Rect(0, 0, it.width, dp(80)), false) } }
-    }
-    private fun checkUpdates() {
-        if (updateRunning) return
-        updateRunning = true; updateValue?.text = "Installed: $installedVersion · Checking GitHub…"
-        thread {
-            try {
-                val release = UpdateChecker.check()
-                activity.runOnUiThread {
-                    if (!activity.isDestroyed) {
-                        val installed = ReleaseVersion.parse(installedVersion)
-                        val newer = release != null && (installed == null || release.version > installed)
-                        val summary = "Installed: $installedVersion · Latest: ${release?.tag ?: "no valid releases"}" + if (newer) " · Update available" else " · No newer release"
-                        prefs.edit().putString("update_last_summary", summary).apply(); updateValue?.text = summary
-                        val dialog = AlertDialog.Builder(activity).setTitle(if (newer) "Update available" else "Release check").setMessage(summary + "\nDownload and install manually from the repository release page.").setNegativeButton("Close", null)
-                        if (release != null) dialog.setPositiveButton("Open release") { _, _ ->
-                            try { activity.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(release.url))) }
-                            catch (_: android.content.ActivityNotFoundException) { message("No browser is available") }
-                        }
-                        dialog.show()
-                    }
-                }
-            } catch (error: Exception) {
-                val description = when (error) {
-                    is java.net.SocketTimeoutException -> "Update check timed out. Try again."
-                    is java.net.UnknownHostException -> "Couldn’t reach GitHub. Check your connection."
-                    is java.io.IOException -> error.message ?: "Couldn’t reach GitHub. Try again."
-                    else -> "Couldn’t read release metadata. Try again later."
-                }
-                activity.runOnUiThread { if (!activity.isDestroyed) updateValue?.text = "Installed: $installedVersion · $description" }
-            } finally { activity.runOnUiThread { updateRunning = false } }
-        }
     }
     private fun confirm(label: String, action: () -> Unit) {
         AlertDialog.Builder(activity).setMessage(label).setPositiveButton("Confirm") { _, _ -> action() }.setNegativeButton("Cancel", null).show()

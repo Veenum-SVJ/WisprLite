@@ -30,4 +30,17 @@ class UpdateCheckerTest {
     @Test fun parserRejectsBrokenMetadata() {
         assertThrows(Exception::class.java) { UpdateChecker.latest("not json") }
     }
+    @Test fun directInstallRequiresTheExpectedUploadedApkWithSizeAndSha256() {
+        val digest = "ab".repeat(32)
+        fun metadata(name: String = "OpenWisper-1.2.3-android.apk", hash: String = "sha256:$digest", size: Long = 100, state: String = "uploaded") =
+            """[{"tag_name":"v1.2.3-preview","assets":[{"name":"$name","size":$size,"digest":"$hash","state":"$state","browser_download_url":"https://other.test/payload"}]}]"""
+        val release = requireNotNull(UpdateChecker.latest(metadata()))
+        assertEquals(digest, release.apk?.sha256)
+        assertTrue(UpdateTransfer.url(release).startsWith("https://github.com/Veenum-SVJ/WisprLite/releases/download/"))
+        assertNull(UpdateChecker.latest(metadata(name = "other.apk"))?.apk)
+        assertNull(UpdateChecker.latest(metadata(hash = "sha1:$digest"))?.apk)
+        assertNull(UpdateChecker.latest(metadata(size = 0))?.apk)
+        assertNull(UpdateChecker.latest(metadata(size = UpdateTransfer.MAX_BYTES + 1))?.apk)
+        assertNull(UpdateChecker.latest(metadata(state = "new"))?.apk)
+    }
 }

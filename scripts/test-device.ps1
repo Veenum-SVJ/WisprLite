@@ -121,6 +121,7 @@ try {
     Run-Suite 'startup-and-recreation' 'com.edib.openwhispr.StartupNavigationTest' 'activity'
     Run-Suite 'light-and-dark-appearance' 'com.edib.openwhispr.AppearanceIntegrationTest' 'activity'
     Run-Suite 'model-picker-visibility' 'com.edib.openwhispr.ModelPickerVisibilityIntegrationTest' 'activity'
+    Run-Suite 'update-installer-validation' 'com.edib.openwhispr.UpdateInstallerDeviceTest' 'activity'
     Run-Suite 'long-history-detail' 'com.edib.openwhispr.HistoryDetailIntegrationTest' 'activity'
     Run-Suite 'bubble-size-preview-and-layout' 'com.edib.openwhispr.BubblePreviewIntegrationTest' 'activity'
     Run-Suite 'language-selection-labels' 'com.edib.openwhispr.LanguageSelectionIntegrationTest' 'activity'

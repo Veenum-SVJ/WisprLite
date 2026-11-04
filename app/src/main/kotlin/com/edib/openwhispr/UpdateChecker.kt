@@ -36,7 +36,9 @@ data class ReleaseVersion(val major: Long, val minor: Long, val patch: Long, val
         }
     }
 }
-data class AvailableRelease(val tag: String, val version: ReleaseVersion) {
+data class ReleaseApk(val name: String, val size: Long, val sha256: String)
+
+data class AvailableRelease(val tag: String, val version: ReleaseVersion, val apk: ReleaseApk? = null) {
     val url: String get() = "https://github.com/Veenum-SVJ/WisprLite/releases/tag/$tag"
 }
 object UpdateChecker {
@@ -49,7 +51,21 @@ object UpdateChecker {
             val tag = item.optString("tag_name")
             // Never trust html_url from metadata; construct the fixed repository URL ourselves.
             // '+' is safe in the URL path, while slashes, query and fragment characters fail SemVer.
-            ReleaseVersion.parse(tag)?.let { AvailableRelease(tag, it) }
+            ReleaseVersion.parse(tag)?.let { version ->
+                val expected = "OpenWisper-${version.major}.${version.minor}.${version.patch}-android.apk"
+                val assets = item.optJSONArray("assets") ?: JSONArray()
+                val apk = (0 until assets.length()).mapNotNull assetMap@ { assetIndex ->
+                    val asset = assets.optJSONObject(assetIndex) ?: return@assetMap null
+                    val publishedDigest = asset.optString("digest")
+                    val digest = publishedDigest.removePrefix("sha256:")
+                    val size = asset.optLong("size", 0)
+                    if (asset.optString("name") == expected && asset.optString("state") == "uploaded" &&
+                        publishedDigest.startsWith("sha256:") && digest.matches(Regex("[0-9a-fA-F]{64}")) && size in 1..UpdateTransfer.MAX_BYTES) {
+                        ReleaseApk(expected, size, digest.lowercase(java.util.Locale.ROOT))
+                    } else null
+                }.firstOrNull()
+                AvailableRelease(tag, version, apk)
+            }
         }.maxByOrNull { it.version }
     }
     fun check(): AvailableRelease? {
