@@ -16,3 +16,6 @@ Signed APK37,561,928 bytes; SHA-256d080778169900303b30aafafacd30b09f11c98060c9f7
 
 
 Product-source CI passed: https://github.com/Veenum-SVJ/WisprLite/actions/runs/41795653398 . Public release asset uploaded and GitHub size/digest match the local and installed APK. The live trial validates the successful Redmi path; interrupted process downloads restart rather than resume, and not every OEM installer/cancellation scenario was exercised physically.
+
+
+Pixel6 later updated from0.2.3/code6 to0.2.5/code8 with install-r. Normal launch, microphone permission, bound own accessibility service/no crashes and unchanged other enabled service verified. Installed APK digest matches the release exactly. No helper present or main-app data clear. Both phones now have0.2.5; the real in-app self-update trial above was on Redmi.

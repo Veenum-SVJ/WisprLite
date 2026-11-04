@@ -1,3 +1,7 @@
+# Both phones updated — 0.2.5
+
+Pixel6 (25151FDF6001AW) subsequently connected and updated from0.2.3/code6 to optimized0.2.5/code8 using install-r. Normal launch, microphone permission, own bound accessibility service and no crashed services verified; other accessibility service retained. Installed base.apk SHA-256 exactly matches d080778169900303b30aafafacd30b09f11c98060c9f742e1c5a5faf2b6678c3. No test helper present, no main app data clear. Both Pixel and Redmi now have0.2.5 and all prior bubble/branding/clipboard/in-app-update changes. Earlier Pixel-pending statements below are superseded. No new live speech or Pixel self-update trial performed for this installation.
+
 # Latest checkpoint — OpenWisper0.2.5
 
 In-app updates implemented and delivered. Branch codex/in-app-updates, product commitc007e71, being fast-forwarded to default implementation. System → Check for Updates offers Download and install, private download/progress/cancel, checksum/package/newer-version/signer validation, narrow FileProvider URI, Android unknown-source permission and installation confirmation. No browser or silent install. Completed APK+metadata survive process restart; partials restart rather than resume. No new dependencies; new REQUEST_INSTALL_PACKAGES permission only for this explicit GitHub APK update flow. See docs/testing/openwisper-0.2.5.md and README.
