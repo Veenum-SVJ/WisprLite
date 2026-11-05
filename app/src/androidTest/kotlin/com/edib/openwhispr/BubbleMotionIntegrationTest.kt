@@ -42,14 +42,13 @@ class BubbleMotionIntegrationTest {
             drawable.holdRecording = true
             val hold = capture("hold-recording")
             assertFalse("Hold must have a visually distinct outline and release cue", tap.sameAs(hold))
+            assertEquals("Hold uses a circular live-logo silhouette, not the tap capsule", 0, occupied(hold, 160, 320))
             drawable.recording = false; drawable.expansion = 0f; drawable.processing = true
             val processing = capture("processing")
             assertFalse("Processing changes the waveform inside the logo", idle.sameAs(processing))
             assertEquals("Processing must remain inside the circular logo", 0, occupied(processing, 160, 320))
-            if (ValueAnimator.areAnimatorsEnabled()) {
-                SystemClock.sleep(230)
-                assertFalse("Loading waveform must move", processing.sameAs(capture("processing-next")))
-            }
+            SystemClock.sleep(230)
+            assertFalse("Processing must remain animated even when system transitions are disabled", processing.sameAs(capture("processing-next")))
             drawable.processing = false; drawable.dockedLeft = false
             val right = capture("idle-right")
             assertEquals("Right dock must not jump to the left during collapse", 0, occupied(right, 0, 160))

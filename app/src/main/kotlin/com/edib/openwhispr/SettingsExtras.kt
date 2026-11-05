@@ -113,7 +113,7 @@ class SettingsExtras(private val activity: MainActivity, savedState: Bundle? = n
                 })
             }
             addView(bubbleControls)
-            addView(note("Drag the bubble vertically on either edge, or drag it across to switch between the left and right edges. It docks to the nearest edge when released. The monochrome circle smoothly expands into a compact waveform capsule. Tap to start or stop; hold to record with a bright outline and release cue, then release to finish. Processing animates the waveform inside the circle."))
+            addView(note("Drag the bubble along either edge or across to switch sides. Tap opens the waveform capsule; tap again to finish. Hold stays circular with a live waveform, double ring and HOLD indicator; release to finish. Processing animates the waveform inside the circle, including when Android transition animations are off."))
             addView(row("Typing speed · ${prefs.getInt("typing_wpm", 40)} words/minute") {
                 val input = EditText(activity).apply { inputType = InputType.TYPE_CLASS_NUMBER; setText(prefs.getInt("typing_wpm", 40).toString()) }
                 val dialog = AlertDialog.Builder(activity).setTitle("Your typing speed").setMessage("Words you normally type per minute (1–300). Insights uses this only to estimate time saved. It does not change dictation or insertion speed.").setView(input).setPositiveButton("Save", null).setNegativeButton("Cancel", null).create()

@@ -774,12 +774,13 @@ class WhisperAccessibilityService : AccessibilityService() {
         val margin = (MARGIN_DP * dp).toInt()
         val left = lp.x + lp.width / 2 <= screenW / 2
         val height = (dims.ringDp * dp).toInt()
-        val width = if (recording) minOf(screenW - 2 * margin, (100 * dp * currentBubbleSizePercent() / 100f).toInt()).coerceAtLeast(height) else height
+        val capsule = recording && !holdRecording
+        val width = if (capsule) minOf(screenW - 2 * margin, (100 * dp * currentBubbleSizePercent() / 100f).toInt()).coerceAtLeast(height) else height
         lp.width = width; lp.height = height
         lp.x = if (left) margin else maxOf(margin, screenW - width - margin)
         lp.y = lp.y.coerceIn(margin, maxOf(margin, screenH - height - margin))
         (button?.layoutParams as? FrameLayout.LayoutParams)?.let {
-            it.width = if (recording) width - (12 * dp).toInt() else (dims.buttonDp * dp).toInt()
+            it.width = if (capsule) width - (12 * dp).toInt() else (dims.buttonDp * dp).toInt()
             it.height = (dims.buttonDp * dp).toInt(); button?.layoutParams = it
         }
         runCatching { (getSystemService(WINDOW_SERVICE) as WindowManager).updateViewLayout(view, lp) }

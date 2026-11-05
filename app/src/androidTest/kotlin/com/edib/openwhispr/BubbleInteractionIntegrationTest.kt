@@ -55,6 +55,7 @@ class BubbleInteractionIntegrationTest {
             assertEquals("RECORDING", state())
             instrumentation.waitForIdleSync()
             assertTrue("Holding should show the release-to-finish styling", logo.holdRecording)
+            assertEquals("Hold recording must stay circular instead of opening the tap capsule", recordingParams.height, recordingParams.width)
             assertTrue(overlay.contentDescription.toString().contains("Release to finish"))
             touch(MotionEvent.ACTION_CANCEL)
             assertEquals("IDLE", state())

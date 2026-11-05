@@ -2,13 +2,15 @@
 
 Previously named WisprLite. A minimal native Android dictation app with configurable cloud providers and optional downloadable offline speech models.
 
-[Download OpenWisper 0.2.5 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.5-preview/OpenWisper-0.2.5-android.apk) · 37.6 MB · Android 11+ / arm64. Models download separately.
+[Download OpenWisper 0.2.6 preview APK](https://github.com/Veenum-SVJ/WisprLite/releases/download/v0.2.6-preview/OpenWisper-0.2.6-android.apk) · 37.6 MB · Android 11+ / arm64. Models download separately.
 
 The 0.2.2 update uses a monochrome ring-and-waveform OpenWisper logo for service notifications, replacing the default microphone icon. Android supplies its status-bar tint.
 
 The 0.2.3 update makes copied transcripts readable in clipboard previews and explains the words-per-minute setting used by Insights. Clipboard previews follow Android/keyboard behavior.
 
 The 0.2.4 update adds a monochrome floating bubble, a shorter capsule that expands smoothly from the logo, distinct hold-to-record feedback and an in-logo loading waveform. Idle visibility follows the current keyboard or physical-keyboard editor, fixing retained bubbles after typing. The splash draws its mark directly on the blue background to remove the square image boundary.
+
+The 0.2.6 update makes tap and hold visually distinct (capsule versus circular HOLD button) and keeps the loading waveform active when Android animation scales are zero.
 
 ## Screens
 The 0.2.1 redesign keeps existing providers, models and history when updated with the same signer. See [verification and limits](docs/testing/openwisper-0.2.1.md).
@@ -41,7 +43,7 @@ The local catalog offers 12 compatible packs: multilingual and English Whisper T
 
 Language at the top of Settings offers **English** (the default) and **Auto-detect**. Auto-detect uses the languages supported by the chosen model; English-only models remain English-only. Short phrases can be misidentified. Explicit Yoruba and Nigerian Pidgin profiles were removed at the user's request after unsuccessful accuracy trials. Historical research is retained for transparency and is not a current accuracy guarantee. Existing retired profiles migrate to Auto-detect; you can select English explicitly.
 
-Tap the floating bubble to start/stop, or hold to record and release to transcribe. Drag it vertically along either screen edge; releasing docks it to the nearest left or right side. During recording the circular logo grows inward into a translucent black compact capsule with a microphone-responsive dotted waveform. Settings provides a live bubble-size preview. Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
+Tap the floating bubble to start/stop, or hold to record and release to transcribe. Drag it vertically along either screen edge; releasing docks it to the nearest left or right side. Tap recording opens the compact waveform capsule. Hold recording stays circular with a live waveform, double ring and HOLD indicator; release to finish. Processing animates inside the logo even if Android transition animations are disabled. Settings provides a live bubble-size preview. Audio saving is off by default. Text history and statistics stay on the device; see [PRIVACY.md](PRIVACY.md).
 
 ## Development
 Requires JDK 17, Android SDK platform 35 and build-tools 35.0.0. Set sdk.dir in an untracked local.properties file.

@@ -131,6 +131,7 @@ try {
     Run-Suite 'model-availability' 'com.edib.openwhispr.ModelAvailabilityIntegrationTest' 'service'
     Run-Suite 'bubble-gestures-and-placement' 'com.edib.openwhispr.BubbleInteractionIntegrationTest' 'service'
     Run-Suite 'bubble-monochrome-motion' 'com.edib.openwhispr.BubbleMotionIntegrationTest' ''
+    Run-Suite 'bubble-processing-frames' 'com.edib.openwhispr.BubbleProcessingIntegrationTest' 'service'
     Run-Suite 'bubble-current-keyboard-visibility' 'com.edib.openwhispr.BubbleVisibilityIntegrationTest' 'service-activity'
     Run-Suite 'microphone-and-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service'
     Run-Suite 'web-composer-insertion' 'com.edib.openwhispr.ServiceLifecycleIntegrationTest' 'service-web'

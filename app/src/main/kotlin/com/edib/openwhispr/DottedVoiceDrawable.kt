@@ -1,6 +1,5 @@
 package com.edib.openwhispr
 
-import android.animation.ValueAnimator
 import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
@@ -29,7 +28,8 @@ internal class DottedVoiceDrawable : Drawable(), Runnable {
     override fun draw(canvas: Canvas) {
         val h = bounds.height().toFloat()
         if (h <= 0f) return
-        val width = h + (bounds.width() - h) * expansion
+        val holding = recording && holdRecording
+        val width = if (holding) h else h + (bounds.width() - h) * expansion
         val left = if (dockedLeft) bounds.left.toFloat() else bounds.right - width
         val centerX = left + width / 2f
         val centerY = bounds.exactCenterY()
@@ -45,8 +45,16 @@ internal class DottedVoiceDrawable : Drawable(), Runnable {
         paint.strokeWidth = unit * .65f
         surface.inset(unit * .8f, unit * .8f)
         canvas.drawRoundRect(surface, h / 2f, h / 2f, paint)
+        if (holding) {
+            paint.alpha = opacity
+            paint.strokeWidth = unit * .5f
+            surface.inset(unit * 1.2f, unit * 1.2f)
+            canvas.drawRoundRect(surface, h / 2f, h / 2f, paint)
+        }
 
-        val moving = processing && ValueAnimator.areAnimatorsEnabled()
+        // Processing is functional progress feedback, independent of Android's
+        // transition/animator duration scale. In particular Pixel can have scale=0.
+        val moving = processing
         val time = if (moving) SystemClock.uptimeMillis() / 190.0 else 0.0
         paint.alpha = opacity
         paint.strokeWidth = unit * .95f
@@ -56,12 +64,12 @@ internal class DottedVoiceDrawable : Drawable(), Runnable {
             val top = tops[column]
             val bottom = bottoms[column]
             val idleHeight = (bottom - top) * unit
-            val liveHeight = unit * (1.5f + voiceLevel * (7f + 5f * sin(column * 1.7).toFloat()))
+            val liveHeight = (unit * (1.5f + voiceLevel * (7f + 5f * sin(column * 1.7).toFloat()))).coerceAtMost(h * if (holding) .4f else .5f)
             val loadHeight = unit * (3f + 8f * ((sin(time - column * .65) + 1) / 2).toFloat())
             val height = if (processing) idleHeight + (loadHeight - idleHeight) * (1f - expansion)
                 else idleHeight + (liveHeight - idleHeight) * expansion
             val idleY = bounds.top + (top + bottom) * .5f * unit
-            val y = idleY + (centerY - idleY) * expansion
+            val y = idleY + (centerY - idleY) * expansion - if (holding) h * .09f * expansion else 0f
             // Preserve the two segmented bars of the supplied waveform while idle.
             val gap = (1f - expansion) * if (processing) 0f else 1.5f * unit
             if ((column == 1 || column == 4) && gap > .1f) {
@@ -74,11 +82,13 @@ internal class DottedVoiceDrawable : Drawable(), Runnable {
         canvas.drawLine(centerX, bounds.top + 17.8f * unit, centerX, bounds.top + 19.2f * unit, paint)
         canvas.drawLine(centerX - 2.1f * unit, bounds.top + 19.2f * unit,
             centerX + 2.1f * unit, bounds.top + 19.2f * unit, paint)
-        if (recording && holdRecording) {
-            paint.alpha = (opacity * expansion).toInt()
-            paint.strokeWidth = unit * .7f
-            val y = bounds.bottom - 4f * unit
-            canvas.drawLine(centerX - 2f * unit, y, centerX + 2f * unit, y, paint)
+        if (holding) {
+            paint.alpha = opacity
+            paint.style = Paint.Style.FILL
+            paint.typeface = Typeface.DEFAULT_BOLD
+            paint.textAlign = Paint.Align.CENTER
+            paint.textSize = h * .17f
+            canvas.drawText("HOLD", centerX, bounds.bottom - h * .22f, paint)
         }
         if (moving && isVisible) scheduleSelf(this, SystemClock.uptimeMillis() + 32)
     }
